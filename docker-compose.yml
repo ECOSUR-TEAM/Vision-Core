@@ -1,0 +1,7 @@
+services:
+  vision-core:
+    build: .
+    environment:
+      - VISION_CORE_RTSP_URL=${VISION_CORE_RTSP_URL:-rtsp://frigate:8554/stream}
+    volumes:
+      - ./:/app

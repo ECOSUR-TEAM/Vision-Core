@@ -16,7 +16,6 @@ pytest
 domain/           entidades + ports (contratos), sin dependencias externas
 application/      VisionCoreApp: orquesta el pipeline usando solo los ports
 infrastructure/   implementaciones concretas (una carpeta por módulo/dueño)
-interfaces/       entrypoint (main.py)
 tests/            un espejo de domain/ y application/
 ```
 

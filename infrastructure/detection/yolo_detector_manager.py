@@ -21,12 +21,16 @@ class YoloDetectorManager(DetectorManager):
         result = self._model.predict(frame, verbose=False)[0]
         detections: list[Detection] = []
         for box in result.boxes:
+            class_id = int(box.cls[0])
+            confidence = float(box.conf[0])
+            if class_id != PERSON_CLASS_ID or confidence <= CONFIDENCE_THRESHOLD:
+                continue
             x1, y1, x2, y2 = box.xyxy[0].tolist()
             detections.append(
                 Detection(
                     bbox=BBox(x1=x1, y1=y1, x2=x2, y2=y2),
-                    class_id=int(box.cls[0]),
-                    confidence=float(box.conf[0]),
+                    class_id=class_id,
+                    confidence=confidence,
                     track_id=UNASSIGNED_TRACK_ID,
                 )
             )

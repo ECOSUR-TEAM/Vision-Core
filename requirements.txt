@@ -1,7 +1,7 @@
 numpy
 opencv-python
 pytest
+ultralytics
 # Añadir según módulo:
-# ultralytics        # VC-DETECT (YOLOv8)
 # norfair            # VC-DETECT (tracking) — alternativa: implementación propia BYTE
 # torch, torchvision # VC-REID (embeddings)

@@ -26,7 +26,15 @@ class InMemoryReID(ReIDMemory):
         self._lost: dict[str, tuple[np.ndarray, float]] = {}
 
     def resolve(self, track_id: int, embedding: np.ndarray, bbox: BBox) -> str:
+        now = time.time()
+
+        self._lost = {
+            person_id: (stored_embedding, timestamp)
+            for person_id, (stored_embedding, timestamp) in self._lost.items()
+            if now - timestamp < TTL_SECONDS
+        }
         raise NotImplementedError
 
     def mark_lost(self, person_id: str, embedding: np.ndarray) -> None:
-        raise NotImplementedError
+        self._lost[person_id] = (embedding, time.time())
+   

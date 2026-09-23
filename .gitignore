@@ -5,3 +5,4 @@ venv/
 *.pt
 .pytest_cache/
 .env
+bus.jpg

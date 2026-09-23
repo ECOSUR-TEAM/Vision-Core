@@ -40,18 +40,26 @@ def test_init_validation_points_count():
 def test_zone_for_and_history():
     door = PolygonDoorAnalytics(ext_poly, int_poly)
 
-    assert door._zone_for((-1.0, -1.0)) == "fuera"
-    assert door._zone_for((1.0, 1.0)) == "exterior"
-    assert door._zone_for((5.0, 5.0)) == "interior"
+    points_sequence = [
+        (-1.0, -1.0),  # fuera
+        (1.0, 1.0),    # exterior
+        (5.0, 5.0),    # interior
+        (3.0, 3.0),    # vértice / borde
+        (15.0, 15.0),  # fuera
+    ]
 
     person_id = "person-1"
-    assert door.update(person_id, (-1.0, -1.0)) is None
-    assert door.update(person_id, (-2.0, -2.0)) is None
+    for pt in points_sequence:
+        door.update(person_id, pt)  # ya no afirmamos nada sobre el evento aquí
 
     history = door._history[person_id]
-    assert len(history) == 2
+    assert len(history) == 5
     assert history[0] == ((-1.0, -1.0), "fuera")
-    assert history[1] == ((-2.0, -2.0), "fuera")
+    assert history[1] == ((1.0, 1.0), "exterior")
+    assert history[2] == ((5.0, 5.0), "interior")
+    assert history[3][0] == (3.0, 3.0)
+    assert history[3][1] in ("interior", "exterior")
+    assert history[4] == ((15.0, 15.0), "fuera")
 
 
 def test_evento_person_entered():

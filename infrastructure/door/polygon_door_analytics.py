@@ -16,10 +16,6 @@ class PolygonDoorAnalytics(DoorAnalytics):
     """
 
     def __init__(self, exterior_zone: Polygon, interior_zone: Polygon) -> None:
-        if exterior_zone is None or interior_zone is None:
-            raise ValueError("exterior_zone e interior_zone son obligatorios")
-        if len(exterior_zone.points) < 3 or len(interior_zone.points) < 3:
-            raise ValueError("un polígono necesita al menos 3 puntos")
         self._exterior = exterior_zone
         self._interior = interior_zone
         self._history: dict[str, list[tuple[float, float]]] = {}

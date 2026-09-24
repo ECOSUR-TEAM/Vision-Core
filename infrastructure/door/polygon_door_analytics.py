@@ -7,10 +7,10 @@ from domain.ports import DoorAnalytics
 class PolygonDoorAnalytics(DoorAnalytics):
     """VC-DOORLOGIC (Melissa).
 
-    TODO:
-    - Clasificar evento en update(): secuencia exterior->interior = PERSON_ENTERED,
-      interior->exterior = PERSON_EXITED, toque en exterior sin llegar a
-      interior = FALSE_ALARM. Devolver Event solo en la transición.
+    Determina la zona (interior/exterior/fuera) de cada posición reportada,
+    mantiene un historial por person_id, y emite un Event solo cuando hay
+    una transición de zona relevante (PERSON_ENTERED, PERSON_EXITED,
+    FALSE_ALARM).
     """
 
     def __init__(self, exterior_zone: Polygon, interior_zone: Polygon) -> None:

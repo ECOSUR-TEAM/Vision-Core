@@ -31,6 +31,9 @@ def main() -> None:
         on_event=print_event,
     )
     app.run()
+    
+def print_event(event: Event) -> None:
+    print(event.to_json())
 
 
 if __name__ == "__main__":

@@ -20,3 +20,4 @@ gdown
 # Añadir según módulo:
 # ultralytics        # VC-DETECT (YOLOv8)
 # norfair            # VC-DETECT (tracking) — alternativa: implementación propia BYTE
+

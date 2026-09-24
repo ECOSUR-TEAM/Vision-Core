@@ -7,3 +7,4 @@ venv/
 .pytest_cache/
 .env
 third_party/
+bus.jpg

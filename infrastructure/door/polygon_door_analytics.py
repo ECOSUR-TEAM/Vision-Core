@@ -21,6 +21,7 @@ class PolygonDoorAnalytics(DoorAnalytics):
         self._exterior = exterior_zone
         self._interior = interior_zone
         self._history: dict[str, list[tuple[tuple[float, float], str]]] = {}
+        self._last_zone: dict[str, str] = {}
 
     @staticmethod
     def _point_in_polygon(point: tuple[float, float], polygon: Polygon) -> bool:
@@ -50,7 +51,20 @@ class PolygonDoorAnalytics(DoorAnalytics):
 
     def update(self, person_id: str, position: tuple[float, float]) -> Optional[Event]:
         zone = self._zone_for(position)
-        if person_id not in self._history:
-            self._history[person_id] = []
-        self._history[person_id].append((position, zone))
-        return None
+        self._history.setdefault(person_id, []).append((position, zone))
+
+        previous_zone = self._last_zone.get(person_id)
+
+        if zone == previous_zone:
+            return None
+
+        event = None
+        if previous_zone == "exterior" and zone == "interior":
+            event = Event(event="PERSON_ENTERED", person_id=person_id)
+        elif previous_zone == "interior" and zone == "exterior":
+            event = Event(event="PERSON_EXITED", person_id=person_id)
+        elif previous_zone == "exterior" and zone == "fuera":
+            event = Event(event="FALSE_ALARM", person_id=person_id)
+
+        self._last_zone[person_id] = zone
+        return event

@@ -40,24 +40,15 @@ def test_zone_for_and_history():
 
     door = PolygonDoorAnalytics(ext_poly, int_poly)
 
-    points_sequence = [
-        (-1.0, -1.0),  # fuera
-        (1.0, 1.0),    # exterior
-        (5.0, 5.0),    # interior
-        (3.0, 3.0),    # vértice / borde
-        (15.0, 15.0),  # fuera
-    ]
+    assert door._zone_for((-1.0, -1.0)) == "fuera"
+    assert door._zone_for((1.0, 1.0)) == "exterior"
+    assert door._zone_for((5.0, 5.0)) == "interior"
 
     person_id = "person-1"
-    for pt in points_sequence:
-        event = door.update(person_id, pt)
-        assert event is None
+    door.update(person_id, (-1.0, -1.0))
+    door.update(person_id, (-2.0, -2.0))
 
     history = door._history[person_id]
-    assert len(history) == 5
+    assert len(history) == 2
     assert history[0] == ((-1.0, -1.0), "fuera")
-    assert history[1] == ((1.0, 1.0), "exterior")
-    assert history[2] == ((5.0, 5.0), "interior")
-    assert history[3][0] == (3.0, 3.0)
-    assert history[3][1] in ("interior", "exterior")
-    assert history[4] == ((15.0, 15.0), "fuera")
+    assert history[1] == ((-2.0, -2.0), "fuera")

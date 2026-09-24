@@ -40,6 +40,18 @@ def test_init_validation_points_count():
 def test_zone_for_and_history():
     door = PolygonDoorAnalytics(ext_poly, int_poly)
 
+    assert door._zone_for((-1.0, -1.0)) == "fuera"
+    assert door._zone_for((1.0, 1.0)) == "exterior"
+    assert door._zone_for((5.0, 5.0)) == "interior"
+
+    person_id = "person-1"
+def test_zone_for_and_history():
+    door = PolygonDoorAnalytics(ext_poly, int_poly)
+
+    assert door._zone_for((-1.0, -1.0)) == "fuera"
+    assert door._zone_for((1.0, 1.0)) == "exterior"
+    assert door._zone_for((5.0, 5.0)) == "interior"
+
     points_sequence = [
         (-1.0, -1.0),  # fuera
         (1.0, 1.0),    # exterior

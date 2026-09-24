@@ -6,7 +6,7 @@ from infrastructure.video.rtsp_video_source import RtspVideoSource
 from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-
+from infrastructure.reid.embedder import OsnetEmbedder
 
 def dummy_embedder(crop):
     raise NotImplementedError("Embedder de ReID pendiente (VC-REID)")
@@ -27,7 +27,7 @@ def main() -> None:
         detector=YoloDetectorManager(),
         reid_memory=InMemoryReID(),
         door_analytics=PolygonDoorAnalytics(exterior, interior),
-        embedder=dummy_embedder,
+        embedder=OsnetEmbedder(),
         on_event=print_event,
     )
     app.run()

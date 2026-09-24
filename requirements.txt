@@ -1,9 +1,23 @@
 numpy
 opencv-python
 pytest
-ultralytics
+tensorboard
+
+# VC-REID (embedder OSNet vía torchreid)
 torch
 torchvision
+scipy
+h5py
+yacs
+future
+imageio
+chardet
+gdown
+# torchreid NO se instala por pip (su setup.py falla en Python >= 3.13):
+#   git clone https://github.com/KaiyangZhou/deep-person-reid.git third_party/deep-person-reid
+# Pesos OSNet (Market1501/MSMT17) en models/, ver README
+
 # Añadir según módulo:
+# ultralytics        # VC-DETECT (YOLOv8)
 # norfair            # VC-DETECT (tracking) — alternativa: implementación propia BYTE
-# torch, torchvision # VC-REID (embeddings)
+

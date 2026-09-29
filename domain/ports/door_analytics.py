@@ -10,7 +10,8 @@ class DoorAnalytics(ABC):
 
     update() se llama con la posición actual (center del bbox) de un
     person_id ya resuelto por ReIDMemory. Devuelve un Event si el
-    historial de esa persona implica un cruce (ENTRÓ/SALIÓ/FALSA_ALARMA),
+    historial de esa persona implica un cruce
+    (EventType.PERSON_ENTERED / PERSON_EXITED / FALSE_ALARM),
     o None si aún no hay evento que emitir.
     """
 

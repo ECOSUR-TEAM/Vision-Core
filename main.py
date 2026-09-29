@@ -5,15 +5,12 @@ from domain.entities import Event, Polygon
 from infrastructure.video.rtsp_video_source import RtspVideoSource
 from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 from infrastructure.reid.memory_reid import InMemoryReID
+from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 
 
-def dummy_embedder(crop):
-    raise NotImplementedError("Embedder de ReID pendiente (VC-REID)")
-
-
 def print_event(event: Event) -> None:
-    print(event)
+    print(event.to_json())
 
 
 def main() -> None:
@@ -27,7 +24,7 @@ def main() -> None:
         detector=YoloDetectorManager(),
         reid_memory=InMemoryReID(),
         door_analytics=PolygonDoorAnalytics(exterior, interior),
-        embedder=dummy_embedder,
+        embedder=TorchvisionEmbeddingExtractor(),
         on_event=print_event,
     )
     app.run()

@@ -50,6 +50,7 @@ class YoloDetectorManager(DetectorManager):
         self._model = YOLO(model_path)
         self._tracks: dict[int, _Track] = {}
         self._next_track_id = 1
+        self._lost_ids: list[int] = []
 
     def process(self, frame: np.ndarray) -> list[Detection]:
         result = self._model.predict(frame, verbose=False)[0]
@@ -70,6 +71,10 @@ class YoloDetectorManager(DetectorManager):
             )
         self._assign_tracks(detections)
         return detections
+
+    def pop_lost_track_ids(self) -> list[int]:
+        lost, self._lost_ids = self._lost_ids, []
+        return lost
 
     def _assign_tracks(self, detections: list[Detection]) -> None:
         boxes = [
@@ -103,6 +108,7 @@ class YoloDetectorManager(DetectorManager):
                 self._tracks[track_id].missed += 1
                 if self._tracks[track_id].missed > MAX_MISSED_FRAMES:
                     del self._tracks[track_id]
+                    self._lost_ids.append(track_id)
 
         for index, detection in enumerate(detections):
             if index not in matched_detections:

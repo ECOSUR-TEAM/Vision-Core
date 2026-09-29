@@ -3,7 +3,7 @@
 ## Quickstart
 
 ```bash
-git clone <repo>
+git clone https://github.com/ECOSUR-TEAM/Vision-Core
 cd vision-core
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
@@ -16,11 +16,18 @@ pytest
 domain/           entidades + ports (contratos), sin dependencias externas
 application/      VisionCoreApp: orquesta el pipeline usando solo los ports
 infrastructure/   implementaciones concretas (una carpeta por módulo/dueño)
+main.py           entrypoint
 tests/            un espejo de domain/ y application/
 ```
 
 Regla: nada en `infrastructure/` importa de otra carpeta de `infrastructure/`.
 Todo pasa por los ports en `domain/ports/`.
+
+El orquestador (`application/vision_core_app.py`) mantiene el mapeo
+`track_id local -> person_id` y, cuando `DetectorManager.pop_lost_track_ids()`
+reporta que un track expiró, llama `ReIDMemory.mark_lost(...)` con su último
+embedding. Sin esto, el TTL/similitud coseno de ReIDMemory nunca se dispara
+en el pipeline real — ver `infrastructure/detection/README.md`.
 
 ## Módulos y dueños (Sprint 1)
 
@@ -34,13 +41,10 @@ Todo pasa por los ports en `domain/ports/`.
 Cada quien trabaja solo en su carpeta → branch `feature/<módulo>` → PR revisado
 por alguien que no sea el dueño.
 
-## Pendiente por módulo (`TODO` en el código)
+## Embedder de ReID
 
-- **DetectorManager** (`infrastructure/detection/yolo_detector_manager.py`): cargar YOLOv8, filtrar
-  clase "person" (confidence > 0.5), tracking con ByteTrack/Norfair.
-- **ReIDMemory** (`infrastructure/reid/memory_reid.py`): embeddings (ResNet/MobileNet), buffer TTL 60s,
-  similitud coseno > 0.85.
-- **DoorAnalytics** (`infrastructure/door/polygon_door_analytics.py`): point-in-polygon, historial de
-  posiciones, clasificación ENTRÓ/SALIÓ/FALSA_ALARMA.
+`infrastructure/reid/embedder.py` → `TorchvisionEmbeddingExtractor`
+(ResNet50 o MobileNetV3-Small de torchvision, sin repos externos ni pesos
+aparte). Es el único embedder soportado; no se usa OSNet/torchreid.
 
 Cada módulo documenta su propio README corto dentro de su carpeta al cerrarlo.

@@ -15,12 +15,6 @@ from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 def benchmark_video(
     video_path: str, detector: DetectorManager, seconds: float = 30.0
 ) -> dict:
-    """Measure at least 30s of constant-frame-rate video, including cold inference.
-
-    Model construction is excluded. process_fps includes the entire process()
-    call; pipeline_fps also includes decoding. No display, skipping or resizing.
-    Use a fresh detector for each run so tracking starts with the first frame.
-    """
     if not math.isfinite(seconds) or seconds < 30:
         raise ValueError("El benchmark requiere al menos 30 segundos de video")
     capture = cv2.VideoCapture(video_path)

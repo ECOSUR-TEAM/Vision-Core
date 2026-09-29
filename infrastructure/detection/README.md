@@ -9,12 +9,30 @@ constante y asigna IDs locales crecientes. Conserva las trayectorias durante
 30 frames sin detección; no devuelve cajas predichas durante esas ausencias.
 Una instancia nueva inicia un seguimiento independiente.
 
+## `pop_lost_track_ids()`
+
+Cuando un track supera `MAX_MISSED_FRAMES` sin volver a detectarse, su
+`track_id` se elimina internamente y queda en un buffer de "recién perdidos".
+`pop_lost_track_ids()` devuelve y **vacía** ese buffer.
+
+Esto existe porque `VisionCoreApp` necesita saber exactamente cuándo un
+`track_id` deja de existir para avisarle a `ReIDMemory.mark_lost(...)` antes
+de que ese número se reutilice para otra persona. El orquestador llama
+`process()` y luego `pop_lost_track_ids()` en cada frame — nunca al revés,
+y nunca se debe usar un `track_id` reportado aquí como si siguiera activo.
+
+Si implementas otro `DetectorManager` (ByteTrack/Norfair reales), tu
+implementación debe llevar su propio registro de qué IDs locales caducaron
+desde la última llamada y exponerlo igual: no es opcional, es parte del port
+(`domain/ports/detector_manager.py`).
+
 No requiere dependencias adicionales. No implementa ReID ni el algoritmo
 ByteTrack completo: movimientos bruscos, cambios de cámara y solapamientos
 ambiguos pueden cambiar los IDs.
 
-Pruebas: `pytest tests/infrastructure/test_yolo_detector_manager.py`.
-Cubren filtros, movimiento, cruces, orden variable, ausencias y expiración.
+Pruebas: `pytest tests/infrastructure/detection/test_yolo_detector_manager.py`.
+Cubren filtros, movimiento, cruces, orden variable, ausencias, expiración y
+que `pop_lost_track_ids()` reporte cada id perdido exactamente una vez.
 Para validar un video real, usa una única instancia durante todo el video y
 comprueba los IDs devueltos junto a cada caja; las pruebas usan salidas YOLO
 simuladas y no sustituyen esa validación visual.

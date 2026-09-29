@@ -44,25 +44,17 @@ def test_zone_for_and_history():
     assert door._zone_for((1.0, 1.0)) == "exterior"
     assert door._zone_for((5.0, 5.0)) == "interior"
 
-    person_id = "person-1"
-def test_zone_for_and_history():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
-
-    assert door._zone_for((-1.0, -1.0)) == "fuera"
-    assert door._zone_for((1.0, 1.0)) == "exterior"
-    assert door._zone_for((5.0, 5.0)) == "interior"
-
     points_sequence = [
         (-1.0, -1.0),  # fuera
         (1.0, 1.0),    # exterior
         (5.0, 5.0),    # interior
-        (3.0, 3.0),    # vértice / borde
+        (3.0, 3.0),    # vertice / borde
         (15.0, 15.0),  # fuera
     ]
 
     person_id = "person-1"
     for pt in points_sequence:
-        door.update(person_id, pt)  # ya no afirmamos nada sobre el evento aquí
+        door.update(person_id, pt)  # no afirmamos nada sobre el evento aqui
 
     history = door._history[person_id]
     assert len(history) == 5

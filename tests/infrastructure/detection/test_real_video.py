@@ -47,6 +47,9 @@ def test_process_on_real_video():
             previous_ids = ids
             return detections
 
+        def pop_lost_track_ids(self):
+            return detector.pop_lost_track_ids()
+
     report = benchmark_video(video, CheckedDetector(), seconds=30)
     assert report["video_seconds"] >= 30
     assert report["frames"] > 0
@@ -69,6 +72,9 @@ def test_benchmark_rejects_short_video(tmp_path):
 
     class EmptyDetector(DetectorManager):
         def process(self, frame):
+            return []
+
+        def pop_lost_track_ids(self):
             return []
 
     with pytest.raises(ValueError, match="Video insuficiente"):

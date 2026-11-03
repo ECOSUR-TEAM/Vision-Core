@@ -1,34 +1,35 @@
+import logging
 import os
 
 from application.vision_core_app import VisionCoreApp
-from domain.entities import Event, Polygon
+from domain.entities import Event
 from infrastructure.video.rtsp_video_source import RtspVideoSource
 from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 from infrastructure.reid.memory_reid import InMemoryReID
+from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-
-
-def dummy_embedder(crop):
-    raise NotImplementedError("Embedder de ReID pendiente (VC-REID)")
+from infrastructure.door.zone_config import load_zones
 
 
 def print_event(event: Event) -> None:
-    print(event)
+    print(event.to_json())
 
 
 def main() -> None:
-    rtsp_url = os.getenv("VISION_CORE_RTSP_URL", "rtsp://frigate:8554/stream")
+    logging.basicConfig(level=logging.INFO)
+    video_source = RtspVideoSource.from_env()
 
-    exterior = Polygon(name="exterior", points=((0, 0), (100, 0), (100, 100), (0, 100)))
-    interior = Polygon(name="interior", points=((100, 0), (200, 0), (200, 100), (100, 100)))
+    zones = load_zones(os.environ["VISION_CORE_ZONES_FILE"])
 
     app = VisionCoreApp(
-        video_source=RtspVideoSource(rtsp_url),
+        video_source=video_source,
         detector=YoloDetectorManager(),
         reid_memory=InMemoryReID(),
-        door_analytics=PolygonDoorAnalytics(exterior, interior),
-        embedder=dummy_embedder,
+        door_analytics=PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door,
+            confirmation_frames=int(os.getenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "3"))),
+        embedder=TorchvisionEmbeddingExtractor.from_env(),
         on_event=print_event,
+        expected_frame_size=(zones.width, zones.height),
     )
     app.run()
 

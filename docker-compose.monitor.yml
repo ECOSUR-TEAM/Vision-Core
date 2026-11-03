@@ -1,0 +1,8 @@
+# Add to the base Compose (and webcam override for a local camera).
+services:
+  vision-core:
+    environment:
+      VISION_CORE_MONITOR_DEMO_ZONES: ${VISION_CORE_MONITOR_DEMO_ZONES:-0}
+    command: ["python", "-m", "infrastructure.monitor", "--host", "0.0.0.0", "--zones", "${VISION_CORE_ZONES_FILE:-config/zones.json}"]
+    ports:
+      - "127.0.0.1:8080:8080"

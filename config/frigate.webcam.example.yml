@@ -1,0 +1,25 @@
+# Copiar a config/frigate-local/config.yml antes de iniciar.
+mqtt:
+  enabled: false
+go2rtc:
+  streams:
+    entrada:
+      - "ffmpeg:device?video=0&video_size=640x480&framerate=15#video=h264"
+cameras:
+  entrada:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/entrada
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      enabled: false
+      width: 640
+      height: 480
+      fps: 5
+record:
+  enabled: false
+snapshots:
+  enabled: false

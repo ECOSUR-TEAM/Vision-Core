@@ -3,5 +3,9 @@ __pycache__/
 .venv/
 venv/
 *.pt
+*.pth
 .pytest_cache/
 .env
+third_party/
+bus.jpg
+config/frigate-local/

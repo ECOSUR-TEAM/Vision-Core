@@ -12,7 +12,7 @@ class VideoSource(ABC):
 
     @abstractmethod
     def read_frame(self) -> Optional[np.ndarray]:
-        """Devuelve el siguiente frame (BGR) o None si no hay más."""
+        """Devuelve BGR o None al terminar. Puede lanzar ConnectionError si falla la fuente."""
         ...
 
     @abstractmethod

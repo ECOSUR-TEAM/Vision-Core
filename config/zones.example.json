@@ -1,0 +1,7 @@
+{
+  "_note": "EJEMPLO SINTÉTICO: reemplazar con coordenadas del frame de la sala",
+  "frame_size": [640, 480],
+  "door": [[290, 120], [350, 120], [350, 420], [290, 420]],
+  "exterior": [[0, 0], [320, 0], [320, 479], [0, 479]],
+  "interior": [[320, 0], [639, 0], [639, 479], [320, 479]]
+}

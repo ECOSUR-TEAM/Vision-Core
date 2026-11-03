@@ -4,7 +4,8 @@ Pipeline de analítica de personas: **cámara → Frigate/go2rtc → RTSP → YO
 tracking → embeddings y ReID → zonas → eventos JSON**. La ejecución no usa navegador
 ni Internet Explorer. Frigate entrega video; Vision Core hace su propia detección.
 
-La integración se probó con capturas simuladas y video sintético con modelos reales.
+La integración se probó con capturas simuladas, video sintético con modelos reales
+y lectura RTSP real de la webcam mediante Frigate local.
 La calibración y aceptación con la Vivotek de la sala quedan pendientes hasta tener
 la cámara. No se conoce aún su modelo ni su ruta RTSP.
 
@@ -57,6 +58,34 @@ de ejemplo; no representa condiciones reales de la sala. YOLO usa `yolov8n.pt` y
 el extractor descarga sus pesos torchvision si no están en caché: el primer uso
 requiere red. Prepara los pesos previamente para un despliegue sin internet.
 El archivo JSONL incluye detecciones, tracks, identidades resueltas, eventos y métricas.
+
+## Prueba con la cámara de la laptop
+
+El servicio local está definido en `docker-compose.webcam.yml`: **webcam →
+Frigate/go2rtc → RTSP → Vision Core**. Sigue la [preparación y prueba local](docs/frigate.md#prueba-local-con-la-webcam-linux).
+La interfaz queda en http://127.0.0.1:15000 y el stream para Python en
+`rtsp://127.0.0.1:28554/entrada`. `.env.example` usa esta URL local.
+
+Prueba real del 2026-11-03: 100 frames H.264, 640 × 480, 15 FPS declarados,
+sin reconexiones. Esto valida el transporte; falta calibrar zonas y evaluar
+la analítica con la cámara definitiva.
+
+## Ver detección de personas en vivo
+
+Con Frigate local funcionando y `.env` exportado:
+
+```bash
+python -m infrastructure.monitor --demo-zones --port 8080
+```
+
+Abre **http://127.0.0.1:8080**: panel claro con video anotado, cajas de personas,
+IDs de tracking/ReID, zonas, FPS y eventos. Este comando ejecuta el pipeline;
+no hace falta iniciar `main.py` simultáneamente. Las zonas de demostración de
+640 × 480 permiten probar cruces izquierda/derecha y no equivalen a una calibración.
+Los IDs son temporales; no identifican nombres ni rostros.
+
+Consulta [el monitor en vivo](docs/monitor.md) para Docker, zonas reales, APIs,
+acceso desde la red y diagnóstico. La interfaz propia de Frigate sigue en 15000.
 
 ## Frigate y ejecución con cámara
 
@@ -117,6 +146,7 @@ proceso termina con error; no hay supervisor ni reinicio automático.
 | `OPENCV_FFMPEG_CAPTURE_OPTIONS` | Sin valor propio en código | Ejemplo: `'rtsp_transport;tcp'`; global al proceso |
 | `VISION_CORE_ZONES_FILE` | Obligatoria en `main.py` | Ruta al JSON de calibración |
 | `VISION_CORE_ZONE_CONFIRMATION_FRAMES` | `3` | Observaciones consecutivas para confirmar zona en `main.py` |
+| `VISION_CORE_MONITOR_DEMO_ZONES` | `0` | Solo monitor: `1` activa zonas de demostración 640 × 480 |
 | `VISION_CORE_EMBEDDING_MODEL` | `mobilenet_v3_small` | También admite `resnet50` |
 | `VISION_CORE_EMBEDDING_DEVICE` | CUDA si está disponible; si no CPU | `cpu`, `cuda`, `cuda:0`; CUDA explícita falla si no está disponible |
 | `DETECTION_TEST_VIDEO` | Ausente | Video local para prueba optativa de detección real (≥30 s, personas visibles) |
@@ -144,7 +174,9 @@ docker compose logs -f vision-core
 docker compose down
 ```
 
-El Compose incluido levanta **solo Vision Core**, no Frigate. Usa una IP del
+El Compose base levanta **solo Vision Core**. El complemento
+`docker-compose.webcam.yml` añade Frigate con la webcam para pruebas locales.
+Para el Frigate remoto usa únicamente el Compose base. Usa una IP del
 servidor Frigate accesible desde el contenedor; `localhost` señala al propio
 contenedor. El código se monta en `/app`, por eso `config/zones.json` funciona
 como ruta relativa. Este Compose no configura GPU: usa CPU o prepara explícitamente

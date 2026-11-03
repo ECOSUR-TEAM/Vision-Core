@@ -34,6 +34,7 @@ class ResolvedTrack:
     person_id: str
     bbox: BBox
     confidence: float
+    track_id: int | None = None
 
 
 class EventType(str, Enum):

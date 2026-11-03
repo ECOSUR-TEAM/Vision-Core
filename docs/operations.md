@@ -17,6 +17,20 @@ La evidencia disponible y sus condiciones están en
 [el informe de evaluación](../reports/room-evaluation.md). No extrapolar una demo
 sintética corta a aforo máximo ni a latencia real.
 
+## Frigate local con webcam
+
+Consulta [la guía de prueba y migración](frigate.md). La webcam debe aparecer
+como dispositivo V4L2 en el host Linux y estar disponible para Docker. En una VM
+hay que pasar el dispositivo al host que ejecuta Docker.
+
+- Si un puerto está ocupado, revisa `ss -ltn`: el ejemplo publica 15000 (web) y
+  28554 (RTSP), ambos en loopback; ajusta Compose y la URL de `.env` juntos.
+- Si la cámara está ocupada, cierra el proceso que la usa antes de iniciar Frigate.
+- Si no hay frames, comprueba dispositivo, formatos y FPS con FFmpeg; edita
+  `config/frigate-local/config.yml` y reinicia el servicio local.
+- Para liberar la cámara usa `docker compose -f docker-compose.yml -f docker-compose.webcam.yml down`.
+- La configuración local persiste fuera de Git; el video temporal está en tmpfs.
+
 ## Diagnóstico
 
 | Síntoma | Comprobación / acción |
@@ -33,6 +47,14 @@ sintética corta a aforo máximo ni a latencia real.
 | No hay eventos | Confirmar zonas del centro del bbox y al menos 3 observaciones consecutivas en origen y destino. |
 | Eventos repetidos cerca del borde | Revisar calibración y ruido; aumentar confirmación solo tras medir el retraso adicional. |
 | Archivo de salida ya existe | Elegir nombre nuevo; los comandos de captura/demo/registro evitan sobrescribir. |
+
+## Monitor web
+
+La analítica en vivo se ve en http://127.0.0.1:8080 al ejecutar
+`python -m infrastructure.monitor --demo-zones`. Consulta [la guía](monitor.md).
+Si el panel muestra error, revisa stream, pesos y resolución de zonas, y reinicia
+el monitor. Si 8080 está ocupado, usa `--port 8081`. El monitor no muestra mensajes
+nativos de error ni URLs RTSP en HTTP para evitar exponer credenciales.
 
 ## Límites funcionales
 

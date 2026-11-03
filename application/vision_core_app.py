@@ -1,9 +1,10 @@
 import logging
 import math
+import time
 from typing import Callable
 import numpy as np
 
-from domain.entities import Event
+from domain.entities import Event, ResolvedTrack
 from domain.ports import VideoSource, DetectorManager, ReIDMemory, DoorAnalytics
 
 
@@ -29,8 +30,10 @@ class VisionCoreApp:
         embedder: Callable[[np.ndarray], np.ndarray],
         on_event: Callable[[Event], None],
         expected_frame_size: tuple[int, int] | None = None,
+        on_frame: Callable[[np.ndarray, tuple[ResolvedTrack, ...], float], None] | None = None,
     ) -> None:
         self._expected_frame_size = expected_frame_size
+        self._on_frame = on_frame
         self._video = video_source
         self._detector = detector
         self._reid = reid_memory
@@ -40,10 +43,10 @@ class VisionCoreApp:
         self._person_by_track: dict[int, str] = {}
         self._last_embedding_by_track: dict[int, np.ndarray] = {}
 
-    def run(self) -> None:
+    def run(self, stop_requested: Callable[[], bool] = lambda: False) -> None:
         try:
             self._video.open()
-            while True:
+            while not stop_requested():
                 frame = self._video.read_frame()
                 if frame is None:
                     break
@@ -59,6 +62,8 @@ class VisionCoreApp:
             self._video.close()
 
     def _process_frame(self, frame: np.ndarray) -> None:
+        started = time.perf_counter()
+        resolved = []
         if self._expected_frame_size is not None and (frame.shape[1], frame.shape[0]) != self._expected_frame_size:
             raise ValueError("La resolución del stream no coincide con la calibración de zonas")
         detections = self._detector.process(frame)
@@ -84,7 +89,10 @@ class VisionCoreApp:
             person_id = self._reid.resolve(det.track_id, embedding, det.bbox)
             self._person_by_track[det.track_id] = person_id
             self._last_embedding_by_track[det.track_id] = embedding.copy()
+            resolved.append(ResolvedTrack(person_id, det.bbox, det.confidence, det.track_id))
 
             event = self._door.update(person_id, det.bbox.center)
             if event is not None:
                 self._on_event(event)
+        if self._on_frame is not None:
+            self._on_frame(frame, tuple(resolved), (time.perf_counter() - started) * 1000)

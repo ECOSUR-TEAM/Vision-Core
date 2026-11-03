@@ -8,3 +8,4 @@ venv/
 .env
 third_party/
 bus.jpg
+config/frigate-local/

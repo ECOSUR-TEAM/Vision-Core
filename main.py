@@ -1,4 +1,4 @@
-import os
+import logging
 
 from application.vision_core_app import VisionCoreApp
 from domain.entities import Event, Polygon
@@ -17,13 +17,14 @@ def print_event(event: Event) -> None:
 
 
 def main() -> None:
-    rtsp_url = os.getenv("VISION_CORE_RTSP_URL", "rtsp://frigate:8554/stream")
+    logging.basicConfig(level=logging.INFO)
+    video_source = RtspVideoSource.from_env()
 
     exterior = Polygon(name="exterior", points=((0, 0), (100, 0), (100, 100), (0, 100)))
     interior = Polygon(name="interior", points=((100, 0), (200, 0), (200, 100), (100, 100)))
 
     app = VisionCoreApp(
-        video_source=RtspVideoSource(rtsp_url),
+        video_source=video_source,
         detector=YoloDetectorManager(),
         reid_memory=InMemoryReID(),
         door_analytics=PolygonDoorAnalytics(exterior, interior),

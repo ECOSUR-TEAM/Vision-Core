@@ -32,8 +32,8 @@ class VisionCoreApp:
         self._on_event = on_event
 
     def run(self) -> None:
-        self._video.open()
         try:
+            self._video.open()
             while True:
                 frame = self._video.read_frame()
                 if frame is None:

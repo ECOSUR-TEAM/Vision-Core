@@ -55,4 +55,6 @@ class InMemoryReID(ReIDMemory):
         return person_id
 
     def mark_lost(self, person_id: str, embedding: np.ndarray) -> None:
-        self._lost[person_id] = (embedding, time.time())
+        self._active = {track: person for track, person in self._active.items()
+                        if person != person_id}
+        self._lost[person_id] = (embedding.copy(), time.time())

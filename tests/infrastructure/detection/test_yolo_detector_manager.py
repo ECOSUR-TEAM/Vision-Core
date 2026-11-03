@@ -131,3 +131,138 @@ def test_model_loaded_once_and_predict_settings(monkeypatch):
     manager.process(frame)
     loader.assert_called_once_with('weights.pt')
     assert model.predict.call_args.kwargs == dict(verbose=False, classes=[0], conf=0.5)
+
+
+@pytest.mark.parametrize('first,second,expected', [
+    ([0, 0, 10, 10], [0, 0, 10, 10], 1.0),
+    ([0, 0, 10, 10], [10, 0, 20, 10], 0.0),
+    ([0, 0, 10, 10], [5, 0, 15, 10], 1 / 3),
+    ([0, 0, 10, 10], [2, 2, 8, 8], 0.36),
+    ([0, 0, 0, 0], [0, 0, 0, 0], 0.0),
+])
+def test_iou_geometry(first, second, expected):
+    from infrastructure.detection.yolo_detector_manager import _iou
+    assert _iou(np.array(first), np.array(second)) == pytest.approx(expected)
+    assert _iou(np.array(second), np.array(first)) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize('width,retained', [(30, True), (29, False)])
+def test_iou_association_boundary(detector, width, retained):
+    first = box(0)
+    first.xyxy = np.array([[0, 0, 100, 40]])
+    track_id = detector([first])[0].track_id
+    second = box(0)
+    second.xyxy = np.array([[0, 0, width, 40]])
+    # Contained box: intersection / union = width / 100, exactly 0.30 or 0.29.
+    assert (detector([second])[0].track_id == track_id) is retained
+
+
+def test_movement_turn_stop_and_partial_occlusion(detector):
+    track_id = None
+    for x, y, width in [(20, 10, 20), (23, 12, 20), (26, 14, 20),
+                         (26, 14, 20), (24, 12, 20), (22, 10, 16),
+                         (20, 10, 20)]:
+        candidate = box(x)
+        candidate.xyxy = np.array([[x, y, x + width, y + 40]])
+        current = detector([candidate])[0].track_id
+        if track_id is None:
+            track_id = current
+        assert current == track_id
+        assert detector.manager.pop_lost_track_ids() == []
+
+
+@pytest.mark.parametrize('absent', [1, 29, 30])
+def test_occlusion_preserves_id_through_30_frames(detector, absent):
+    track_id = detector([box(10)])[0].track_id
+    for _ in range(absent):
+        assert detector([]) == []
+        assert detector.manager.pop_lost_track_ids() == []
+    assert detector([box(10)])[0].track_id == track_id
+    # Successful association resets the counter, not just pauses it.
+    for _ in range(30):
+        detector([])
+    assert detector.manager.pop_lost_track_ids() == []
+    assert detector([box(10)])[0].track_id == track_id
+
+
+def test_moving_occlusion_uses_elapsed_frames(detector):
+    track_id = detector([box(10)])[0].track_id
+    assert detector([box(12)])[0].track_id == track_id
+    for _ in range(30):
+        assert detector([]) == []
+    # Last observed x=12, velocity=2, 31 frame intervals until reappearance.
+    assert detector([box(74)])[0].track_id == track_id
+
+
+def test_expiry_at_31_and_new_id_on_return(detector):
+    old = detector([box(10)])[0].track_id
+    for _ in range(30):
+        detector([])
+    assert detector.manager.pop_lost_track_ids() == []
+    detector([])
+    assert detector.manager.pop_lost_track_ids() == [old]
+    assert detector.manager.pop_lost_track_ids() == []
+    assert detector([box(10)])[0].track_id != old
+    assert detector.manager.pop_lost_track_ids() == []
+
+
+def test_lost_buffer_accumulates_without_duplicates(detector):
+    first, second = detector([box(10), box(100)])
+    for _ in range(10):
+        detector([box(100)])
+    for _ in range(31):
+        detector([])
+    assert detector.manager.pop_lost_track_ids() == [first.track_id, second.track_id]
+    for _ in range(40):
+        detector([])
+    assert detector.manager.pop_lost_track_ids() == []
+
+
+def test_competing_detections_use_track_only_once(detector):
+    old = detector([box(20)])[0].track_id
+    weaker, strongest = detector([box(25), box(20)])
+    assert strongest.track_id == old
+    assert weaker.track_id != old
+
+
+def test_occluded_person_does_not_expire_visible_person(detector):
+    hidden, visible = detector([box(10), box(100)])
+    for _ in range(31):
+        detections = detector([box(100)])
+        assert [d.track_id for d in detections] == [visible.track_id]
+    assert detector.manager.pop_lost_track_ids() == [hidden.track_id]
+
+
+def test_reappearance_outside_prediction_gets_new_local_id(detector):
+    old = detector([box(10)])[0].track_id
+    detector([])
+    assert detector([box(100)])[0].track_id != old
+    # A short absence alone does not establish identity without spatial overlap.
+    assert detector.manager.pop_lost_track_ids() == []
+
+
+def test_real_tracker_reports_loss_to_pipeline_once(detector):
+    from unittest.mock import Mock
+    from application.vision_core_app import VisionCoreApp
+
+    reid = Mock()
+    reid.resolve.return_value = 'person-1'
+    door = Mock()
+    door.update.return_value = None
+    frame = np.zeros((80, 160, 3), dtype=np.uint8)
+    app = VisionCoreApp(Mock(), detector.manager, reid, door,
+                        lambda crop: np.ones(4), lambda event: None)
+    # Feed simulated YOLO outputs through the real tracker and application.
+    model = detector.manager._model
+    model.boxes = [box(10)]
+    app._process_frame(frame)
+    model.boxes = []
+    for _ in range(30):
+        app._process_frame(frame)
+    reid.mark_lost.assert_not_called()
+    app._process_frame(frame)
+    for _ in range(5):
+        app._process_frame(frame)
+    reid.mark_lost.assert_called_once()
+    assert reid.mark_lost.call_args.args[0] == 'person-1'
+    np.testing.assert_array_equal(reid.mark_lost.call_args.args[1], np.ones(4))

@@ -16,8 +16,7 @@ Cuando un track supera `MAX_MISSED_FRAMES` sin volver a detectarse, su
 `pop_lost_track_ids()` devuelve y **vacía** ese buffer.
 
 Esto existe porque `VisionCoreApp` necesita saber exactamente cuándo un
-`track_id` deja de existir para avisarle a `ReIDMemory.mark_lost(...)` antes
-de que ese número se reutilice para otra persona. El orquestador llama
+`track_id` deja de existir para avisarle a `ReIDMemory.mark_lost(...)` al caducar el track. Los IDs crecen y no se reutilizan dentro de una instancia. El orquestador llama
 `process()` y luego `pop_lost_track_ids()` en cada frame — nunca al revés,
 y nunca se debe usar un `track_id` reportado aquí como si siguiera activo.
 
@@ -80,3 +79,35 @@ multimedia y pesos se descargan explícitamente, nunca durante pytest.
 
 Validación con video y pesos locales: **8 tests passed**, sin tests omitidos
 (suite completa, incluyendo integración real y rechazo de video corto).
+
+
+## Validación de continuidad y ausencias
+
+Las pruebas deterministas pasan detecciones YOLO simuladas por el tracker real:
+movimiento horizontal/vertical, giro, pausa, oclusión parcial, reaparición tras
+1/29/30 frames, predicción con velocidad, asociaciones competidoras y pérdida
+independiente de una persona mientras otra sigue visible.
+
+- IoU usa intersección/unión y compara la detección con la caja predicha. Se
+  comprobó geometría, simetría y el umbral: 0.30 asocia; 0.29 no asocia.
+- Una detección y un track participan como máximo en una asociación por frame.
+- Hasta 30 frames consecutivos sin asociación se conserva el track. Si reaparece
+  con IoU suficiente después de esas 30 ausencias, conserva el ID y reinicia el
+  contador. En el frame ausente 31 caduca y una aparición posterior recibe otro ID.
+- Son frames procesados, no segundos ni frames de la cámara que no llegaron al
+  pipeline. Sin llamadas a `process()`, el contador no avanza.
+- `pop_lost_track_ids()` acumula las bajas hasta su lectura y vacía el buffer.
+  También se verifica que el pipeline avise a ReID exactamente una vez al caducar.
+
+Ejecutar: `python -m pytest -q`. Estas pruebas no acreditan continuidad visual
+real en la sala. La asociación espacial puede fallar si la persona reaparece
+lejos de la predicción, cambia de dirección oculta o se solapa ambiguamente con
+otra. No se modifica el algoritmo para prometer identidad en esos casos.
+
+Para la aceptación con Frigate, grabar una secuencia con una persona caminando,
+girando y deteniéndose; después dos personas cruzándose y una ocultándose tras
+un objeto. Revisar cajas e IDs frame a frame. Repetir ausencias de 29, 30 y 31
+frames procesados, registrar el ID antes/después y el reporte de pérdidas.
+Mantener una misma instancia del detector durante toda la secuencia. Los cambios
+de identidad deben revisarse contra las personas visibles, no solo contando
+IDs repetidos entre frames.

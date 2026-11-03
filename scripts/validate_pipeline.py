@@ -2,6 +2,9 @@
 import argparse
 import json
 import time
+import platform
+import numpy as np
+import torch
 from dataclasses import asdict
 from pathlib import Path
 
@@ -16,16 +19,38 @@ from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from infrastructure.door.zone_config import load_zones
 
 
+class MeasuredApp(VisionCoreApp):
+    def __init__(self, *args, output, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.output = output
+        self.durations = []
+
+    def _process_frame(self, frame):
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        start = time.perf_counter()
+        super()._process_frame(frame)
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        elapsed = time.perf_counter() - start
+        self.durations.append(elapsed)
+        self.output.write(json.dumps({'kind': 'resolved', 'frame': self._video.frames,
+            'persons': self._person_by_track, 'processing_ms': elapsed * 1000}) + '\n')
+
+
 class LimitedSource(VideoSource):
     def __init__(self, source, limit):
         self.source, self.limit, self.frames = source, limit, 0
+        self.read_seconds = []
     def open(self):
         self.source.open()
     def read_frame(self):
         if self.frames >= self.limit:
             return None
+        start = time.perf_counter()
         frame = self.source.read_frame()
         if frame is not None:
+            self.read_seconds.append(time.perf_counter() - start)
             self.frames += 1
         return frame
     def close(self):
@@ -66,18 +91,28 @@ def main():
             detector = RecordedDetector(YoloDetectorManager(args.model), output)
             def emit(event):
                 output.write(json.dumps({'kind': 'event', 'frame': source.frames, **event.to_dict()}) + '\n')
-            app = VisionCoreApp(source, detector, InMemoryReID(),
+            app = MeasuredApp(source, detector, InMemoryReID(),
                 PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door),
                 TorchvisionEmbeddingExtractor.from_env(), emit,
-                expected_frame_size=(zones.width, zones.height))
+                expected_frame_size=(zones.width, zones.height), output=output)
+            run_start = time.perf_counter()
             app.run()
+            run_seconds = time.perf_counter() - run_start
         except Exception as error:
             output.write(json.dumps({'kind': 'summary', 'status': 'failed',
                                     'error_type': type(error).__name__, 'frames': source.frames}) + '\n')
             raise
         output.write(json.dumps({'kind': 'summary', 'status': 'completed',
                                 'frames': source.frames, 'seconds': time.perf_counter()-start,
-                                'reconnections': getattr(source.source, 'reconnections', 0)}) + '\n')
+                                'reconnections': getattr(source.source, 'reconnections', 0),
+                                'processing_fps': source.frames / sum(app.durations) if app.durations else None,
+                                'pipeline_fps': source.frames / run_seconds,
+                                'processing_ms': {key: float(np.percentile(app.durations, percentile))*1000
+                                    for key, percentile in [('p50',50),('p95',95),('p99',99)]} if app.durations else None,
+                                'mean_read_ms': float(np.mean(source.read_seconds))*1000 if source.read_seconds else None,
+                                'capture_to_event_latency_ms': None,
+                                'environment': {'platform': platform.platform(), 'torch': torch.__version__,
+                                    'cuda_available': torch.cuda.is_available(), 'model': args.model}}) + '\n')
 
 
 if __name__ == '__main__':

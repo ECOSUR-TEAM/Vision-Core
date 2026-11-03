@@ -1,0 +1,28 @@
+{
+  "kind": "summary",
+  "status": "completed",
+  "frames": 35,
+  "seconds": 6.486466162000397,
+  "reconnections": 0,
+  "processing_fps": 15.891198849369612,
+  "pipeline_fps": 5.550825577253797,
+  "processing_ms": {
+    "p50": 59.49065700042411,
+    "p95": 69.70287940039269,
+    "p99": 131.8926109003402
+  },
+  "mean_read_ms": 5.137142800049332,
+  "capture_to_event_latency_ms": null,
+  "environment": {
+    "platform": "Linux-7.0.0-42-generic-x86_64-desconocido-with-glibc2.43",
+    "torch": "2.14.0+cu130",
+    "cuda_available": false,
+    "model": "yolov8n.pt"
+  },
+  "scenario": "synthetic translation of packaged bus.jpg; not conference-room footage",
+  "annotation_metrics": "not measured: no manual ground truth",
+  "events": [
+    "PERSON_ENTERED",
+    "PERSON_EXITED"
+  ]
+}

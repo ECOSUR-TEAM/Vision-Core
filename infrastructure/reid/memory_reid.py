@@ -17,16 +17,16 @@ class InMemoryReID(ReIDMemory):
         self._lost: dict[str, tuple[np.ndarray, float]] = {}
 
     def resolve(self, track_id: int, embedding: np.ndarray, bbox: BBox) -> str:
-        if track_id in self._active:
-            return self._active[track_id]
-
-        now = time.time()
+        now = time.monotonic()
 
         self._lost = {
             person_id: (stored_embedding, timestamp)
             for person_id, (stored_embedding, timestamp) in self._lost.items()
             if now - timestamp < TTL_SECONDS
         }
+
+        if track_id in self._active:
+            return self._active[track_id]
 
         best_person_id = None
         best_similarity = -1.0

@@ -88,3 +88,55 @@ def test_run_calls_mark_lost_when_track_is_dropped():
     app.run()
 
     assert reid.lost_calls == ["person-1"]
+
+
+import pytest
+from infrastructure.reid import memory_reid
+from infrastructure.reid.memory_reid import InMemoryReID
+
+
+@pytest.mark.parametrize('elapsed,recovered', [(59.999, True), (60, False), (61, False)])
+def test_pipeline_reappearance_ttl_and_cleanup(monkeypatch, elapsed, recovered):
+    now = [100.]
+    monkeypatch.setattr(memory_reid.time, 'monotonic', lambda: now[0])
+    first = Detection(BBox(0, 0, 10, 10), 0, 0.9, 1)
+    returned = Detection(BBox(0, 0, 10, 10), 0, 0.9, 2)
+    detector = FakeDetector([[first], [first], [], [returned]], [[], [], [1, 1, 999], []])
+    memory = InMemoryReID()
+    # The latest embedding differs from the first, so matching proves it was retained.
+    embeddings = iter([np.array([0., 1.]), np.array([1., 0.]), np.array([1., 0.])])
+    app = VisionCoreApp(FakeVideoSource([]), detector, memory, FakeDoor(),
+                        lambda crop: next(embeddings), lambda event: None)
+    frame = np.zeros((20, 20, 3), dtype=np.uint8)
+    app._process_frame(frame)
+    original = app._person_by_track[1]
+    app._process_frame(frame)
+    now[0] = 200.  # TTL starts at expiry, not the first observation.
+    app._process_frame(frame)
+    assert app._person_by_track == {}
+    assert app._last_embedding_by_track == {}
+    assert memory._active == {}
+    np.testing.assert_array_equal(memory._lost[original][0], [1., 0.])
+    assert memory._lost[original][1] == 200.
+    now[0] += elapsed
+    app._process_frame(frame)
+    assert (app._person_by_track[2] == original) == recovered
+    assert original not in memory._lost
+    assert set(memory._active) == {2}
+
+
+def test_loss_processed_before_reappearance_in_same_frame():
+    first = Detection(BBox(0, 0, 10, 10), 0, 0.9, 1)
+    returned = Detection(BBox(0, 0, 10, 10), 0, 0.9, 2)
+    detector = FakeDetector([[first], [returned]], [[], [1]])
+    memory = InMemoryReID()
+    app = VisionCoreApp(FakeVideoSource([]), detector, memory, FakeDoor(),
+                        lambda crop: np.array([1., 0.]), lambda event: None)
+    frame = np.zeros((20, 20, 3), dtype=np.uint8)
+    app._process_frame(frame)
+    original = app._person_by_track[1]
+    app._process_frame(frame)
+    assert app._person_by_track == {2: original}
+    assert set(app._last_embedding_by_track) == {2}
+    assert memory._active == {2: original}
+    assert memory._lost == {}

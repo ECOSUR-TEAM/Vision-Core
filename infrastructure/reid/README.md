@@ -37,3 +37,31 @@ Las pruebas de contrato verifican canales, dtype, formato, normalización, entra
 inválidas y aplanado ResNet. Las pruebas reales ejecutan ambos modelos en CPU/CUDA
 cuando hay pesos locales y hardware disponible; en otro caso se omiten
 explícitamente. Nunca descargan pesos durante pytest.
+
+## Tracks expirados y TTL
+
+Después de `detector.process(frame)`, el pipeline consulta `pop_lost_track_ids()`
+y procesa las bajas antes de resolver las detecciones actuales. Así un track que
+reaparece con un ID local nuevo en ese mismo frame puede recuperar su `person_id`.
+Para cada baja recupera el último embedding observado, llama a `mark_lost` y
+elimina sus dos mappings locales. IDs desconocidos o duplicados no generan otra
+notificación. El embedding se copia para evitar cambios por reutilización del array.
+
+`InMemoryReID.mark_lost` elimina los mappings activos de esa persona y almacena
+una copia del embedding con tiempo monotónico. El TTL de 60 segundos empieza al
+expirar el track, no en su primer frame ausente. La tolerancia del tracker de
+30 frames y este TTL son dos etapas distintas.
+
+Una reaparición recupera el ID solo si ocurre antes de los 60 segundos y la mejor
+similitud coseno es estrictamente mayor a 0.85. A los 60 segundos exactos la entrada
+ya está caducada. Al recuperarla se retira de la memoria de perdidos para que no
+se asigne simultáneamente a otro track. Las entradas caducadas se purgan en
+`resolve` y `mark_lost`; no hay un hilo de limpieza cuando no se procesa actividad.
+
+Las pruebas usan reloj controlado y comprueban reaparición a 59.999, 60 y 61
+segundos, último embedding, limpieza de mappings, IDs duplicados/desconocidos,
+reaparición en el mismo frame y similitud insuficiente. Ejecutar:
+
+```bash
+python -m pytest tests/application/test_vision_core_app.py tests/infrastructure/reid/test_memory_reid.py -q
+```

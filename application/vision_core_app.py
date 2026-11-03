@@ -1,8 +1,13 @@
-from typing import Callable, Optional
+import logging
+import math
+from typing import Callable
 import numpy as np
 
 from domain.entities import Event
 from domain.ports import VideoSource, DetectorManager, ReIDMemory, DoorAnalytics
+
+
+logger = logging.getLogger(__name__)
 
 
 class VisionCoreApp:
@@ -41,7 +46,14 @@ class VisionCoreApp:
                 if frame is None:
                     break
                 self._process_frame(frame)
-        finally:
+        except BaseException:
+            # Preserve the original failure even when resource cleanup also fails.
+            try:
+                self._video.close()
+            except BaseException as close_error:
+                logger.error("Falló el cierre de video (%s)", type(close_error).__name__)
+            raise
+        else:
             self._video.close()
 
     def _process_frame(self, frame: np.ndarray) -> None:
@@ -53,10 +65,17 @@ class VisionCoreApp:
                 self._reid.mark_lost(person_id, embedding)
 
         for det in detections:
-            crop = frame[
-                int(det.bbox.y1):int(det.bbox.y2),
-                int(det.bbox.x1):int(det.bbox.x2),
-            ]
+            coordinates = (det.bbox.x1, det.bbox.y1, det.bbox.x2, det.bbox.y2)
+            if not all(math.isfinite(value) for value in coordinates):
+                raise ValueError("El detector devolvió coordenadas no finitas")
+            if det.bbox.x2 <= det.bbox.x1 or det.bbox.y2 <= det.bbox.y1:
+                raise ValueError("El detector devolvió una caja sin área")
+            height, width = frame.shape[:2]
+            x1, y1 = max(0, math.floor(det.bbox.x1)), max(0, math.floor(det.bbox.y1))
+            x2, y2 = min(width, math.ceil(det.bbox.x2)), min(height, math.ceil(det.bbox.y2))
+            if x2 <= x1 or y2 <= y1:
+                raise ValueError("La caja del detector está fuera del frame")
+            crop = frame[y1:y2, x1:x2]
             embedding = self._embed(crop)
             person_id = self._reid.resolve(det.track_id, embedding, det.bbox)
             self._person_by_track[det.track_id] = person_id

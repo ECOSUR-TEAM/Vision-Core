@@ -15,3 +15,11 @@ class DetectorManager(ABC):
     @abstractmethod
     def process(self, frame: np.ndarray) -> list[Detection]:
         ...
+
+    @abstractmethod
+    def pop_lost_track_ids(self) -> list[int]:
+        """track_id locales descartados definitivamente desde la última
+        llamada (superaron el máximo de frames perdidos). El llamador
+        debe usarlos para avisar a ReIDMemory (mark_lost) antes de que
+        el id se reutilice para otra persona. Vacía el buffer interno."""
+        ...

@@ -18,5 +18,5 @@ class ReIDMemory(ABC):
 
     @abstractmethod
     def mark_lost(self, person_id: str, embedding: np.ndarray) -> None:
-        """Se llama cuando un track deja de verse; arranca su TTL (ej. 60s)."""
+        """Se llama al expirar el track; elimina su mapping activo e inicia el TTL."""
         ...

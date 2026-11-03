@@ -45,7 +45,14 @@ class VisionCoreApp:
             self._video.close()
 
     def _process_frame(self, frame: np.ndarray) -> None:
-        for det in self._detector.process(frame):
+        detections = self._detector.process(frame)
+        for track_id in self._detector.pop_lost_track_ids():
+            person_id = self._person_by_track.pop(track_id, None)
+            embedding = self._last_embedding_by_track.pop(track_id, None)
+            if person_id is not None and embedding is not None:
+                self._reid.mark_lost(person_id, embedding)
+
+        for det in detections:
             crop = frame[
                 int(det.bbox.y1):int(det.bbox.y2),
                 int(det.bbox.x1):int(det.bbox.x2),
@@ -53,14 +60,8 @@ class VisionCoreApp:
             embedding = self._embed(crop)
             person_id = self._reid.resolve(det.track_id, embedding, det.bbox)
             self._person_by_track[det.track_id] = person_id
-            self._last_embedding_by_track[det.track_id] = embedding
+            self._last_embedding_by_track[det.track_id] = embedding.copy()
 
             event = self._door.update(person_id, det.bbox.center)
             if event is not None:
                 self._on_event(event)
-
-        for track_id in self._detector.pop_lost_track_ids():
-            person_id = self._person_by_track.pop(track_id, None)
-            embedding = self._last_embedding_by_track.pop(track_id, None)
-            if person_id is not None and embedding is not None:
-                self._reid.mark_lost(person_id, embedding)

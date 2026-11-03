@@ -28,7 +28,9 @@ class VisionCoreApp:
         door_analytics: DoorAnalytics,
         embedder: Callable[[np.ndarray], np.ndarray],
         on_event: Callable[[Event], None],
+        expected_frame_size: tuple[int, int] | None = None,
     ) -> None:
+        self._expected_frame_size = expected_frame_size
         self._video = video_source
         self._detector = detector
         self._reid = reid_memory
@@ -57,6 +59,8 @@ class VisionCoreApp:
             self._video.close()
 
     def _process_frame(self, frame: np.ndarray) -> None:
+        if self._expected_frame_size is not None and (frame.shape[1], frame.shape[0]) != self._expected_frame_size:
+            raise ValueError("La resolución del stream no coincide con la calibración de zonas")
         detections = self._detector.process(frame)
         for track_id in self._detector.pop_lost_track_ids():
             person_id = self._person_by_track.pop(track_id, None)

@@ -122,3 +122,35 @@ python -m infrastructure.video.check_stream --frames 300 --transport tcp --detec
 Las pruebas automatizadas cubren carga única, opciones de inferencia, clase,
 umbral estricto, formato del frame y cajas inválidas/fuera de límites.
 La prueba de video real requiere `DETECTION_TEST_VIDEO` y `DETECTION_TEST_MODEL`.
+
+## Calibrar puerta y zonas con la cámara
+
+No hay una imagen real de la sala incluida. `config/zones.example.json` contiene
+coordenadas sintéticas y no constituye una calibración válida de la cámara.
+
+1. Con `VISION_CORE_RTSP_URL` configurada, captura sin navegador:
+   `python -m infrastructure.video.capture_reference referencia.png`.
+2. Abre el PNG a resolución original en un editor que muestre coordenadas del
+   cursor. Copia `config/zones.example.json` a `config/zones.json`. Escribe en
+   `frame_size` el ancho y alto mostrados por la captura.
+3. Marca los vértices de `door` (puerta), `exterior` e `interior` en orden alrededor
+   de cada contorno. No repitas el primer punto al final. El origen es la esquina
+   superior izquierda; x crece a la derecha e y hacia abajo. Los puntos deben
+   quedar dentro de la imagen y los contornos no deben cruzarse consigo mismos.
+4. Revisa la superposición:
+   `python -m infrastructure.door.check_zones referencia.png config/zones.json zonas.png`.
+   Exterior: azul; interior: verde; puerta: rojo. Los vértices están numerados.
+5. Configura `VISION_CORE_ZONES_FILE=config/zones.json` en el entorno o `.env`.
+   `main.py` exige esta configuración y verifica la resolución durante la lectura;
+   cambiar resolución, encuadre o posición de cámara requiere recalibrar.
+
+Los bordes y vértices pertenecen al polígono. Si interior y exterior comparten
+un borde o se solapan, interior tiene prioridad; evita solapamientos de área no
+intencionales. Se prueban puntos dentro, fuera, en cada borde y vértice, contornos
+cóncavos, orientación inversa y configuraciones inválidas.
+
+La puerta queda configurada y dibujada como región de referencia. Los eventos
+actuales siguen usando las transiciones exterior/interior del centro del bbox;
+no se exige cruzar el polígono de puerta para emitirlos. Esa regla corresponde a
+la analítica de trayectorias y debe acordarse antes de modificar los eventos.
+No confundas estas zonas del centro de la persona con polígonos medidos en el suelo.

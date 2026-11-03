@@ -1,5 +1,7 @@
 from typing import Optional
 
+from .zone_config import validate_polygon, on_segment
+
 from domain.entities import Event, Polygon
 from domain.ports import DoorAnalytics
 
@@ -13,11 +15,15 @@ class PolygonDoorAnalytics(DoorAnalytics):
     FALSE_ALARM).
     """
 
-    def __init__(self, exterior_zone: Polygon, interior_zone: Polygon) -> None:
+    def __init__(self, exterior_zone: Polygon, interior_zone: Polygon, door_zone: Polygon | None = None) -> None:
         if exterior_zone is None or interior_zone is None:
             raise ValueError("exterior_zone e interior_zone son obligatorios")
         if len(exterior_zone.points) < 3 or len(interior_zone.points) < 3:
             raise ValueError("un polígono necesita al menos 3 puntos")
+        for polygon in (exterior_zone, interior_zone, door_zone):
+            if polygon is not None:
+                validate_polygon(polygon)
+        self._door = door_zone
         self._exterior = exterior_zone
         self._interior = interior_zone
         self._history: dict[str, list[tuple[tuple[float, float], str]]] = {}
@@ -28,6 +34,8 @@ class PolygonDoorAnalytics(DoorAnalytics):
         x, y = point
         inside = False
         pts = polygon.points
+        if any(on_segment(a, b, point) for a, b in zip(pts, pts[1:] + pts[:1])):
+            return True
         n = len(pts)
         p1x, p1y = pts[0]
         for i in range(1, n + 1):

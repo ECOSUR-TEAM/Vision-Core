@@ -62,7 +62,8 @@ al ndarray decodificado.
 export VISION_CORE_RTSP_URL='rtsp://IP_FRIGATE:8554/NOMBRE_STREAM'
 export VISION_CORE_RECONNECT_ATTEMPTS=5
 export VISION_CORE_RECONNECT_DELAY_SECONDS=2
-export VISION_CORE_TIMEOUT_MS=5000
+export VISION_CORE_OPEN_TIMEOUT_MS=5000
+export VISION_CORE_READ_TIMEOUT_MS=5000
 python -m infrastructure.video.check_stream --frames 300 --transport tcp
 ```
 
@@ -78,9 +79,7 @@ el tiempo bloqueado en `read()` con latencia de extremo a extremo.
 solicitado; no se presenta como una inspección de paquetes. Un ffprobe ausente o
 fallido deja estado `incomplete` y salida 1, aunque los frames sean válidos.
 
-Para probar inferencia real, añade `--detector`. Actualmente
-`YoloDetectorManager.process()` lanza `NotImplementedError`; por tanto, esa prueba
-fallará hasta completar VC-DETECT. Sin esa opción, el informe indica
+Para probar inferencia real, añade `--detector`. `YoloDetectorManager` carga los pesos locales `yolov8n.pt` y ejecuta inferencia. Sin esa opción, el informe indica
 `detector_status: not_tested`. Las pruebas automatizadas comprueban el contrato
 con un detector simulado, no certifican inferencia YOLO.
 
@@ -98,3 +97,28 @@ Pruebas sin cámara: `python -m pytest -q`. Cubren formatos inválidos, cambio d
 resolución, caída temporal, indisponibilidad persistente, consumo por el contrato
 del detector y liberación ante errores. Códec real, FPS reales, latencia y
 recuperación física siguen pendientes hasta disponer de Frigate.
+
+
+## Frames de Frigate → detecciones de personas
+
+El pipeline pasa cada frame al detector existente, que carga YOLO una sola vez.
+La entrada es BGR `uint8`, H×W×3; Ultralytics realiza su propio preprocesamiento.
+La inferencia recibe `classes=[0]` y `conf=0.5`. El adaptador vuelve a filtrar
+estrictamente `confidence > 0.5`: una detección con confianza exactamente 0.5
+se descarta. El umbral está definido en `CONFIDENCE_THRESHOLD`.
+
+Cada resultado se convierte en `Detection` con `BBox` xyxy en píxeles del frame
+original, confianza, clase 0 y el ID del tracker existente. Se recortan coordenadas
+fuera del frame y se descartan cajas no finitas, invertidas o sin área; no se
+normalizan las coordenadas al intervalo 0–1 ni se reescalan por segunda vez.
+Referencia: [contrato de predicción de Ultralytics](https://docs.ultralytics.com/modes/predict/).
+
+Para probar Frigate y YOLO sin ejecutar ReID:
+
+```bash
+python -m infrastructure.video.check_stream --frames 300 --transport tcp --detector
+```
+
+Las pruebas automatizadas cubren carga única, opciones de inferencia, clase,
+umbral estricto, formato del frame y cajas inválidas/fuera de límites.
+La prueba de video real requiere `DETECTION_TEST_VIDEO` y `DETECTION_TEST_MODEL`.

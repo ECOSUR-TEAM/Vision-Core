@@ -22,7 +22,7 @@ def box(x, confidence=0.9, class_id=0):
 @pytest.fixture
 def detector(monkeypatch):
     model = SimpleNamespace(boxes=[])
-    model.predict = lambda frame, verbose: [SimpleNamespace(boxes=model.boxes)]
+    model.predict = lambda frame, **kwargs: [SimpleNamespace(boxes=model.boxes)]
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))
     manager = YoloDetectorManager()
 

@@ -34,8 +34,8 @@ class VisionCoreApp:
         self._last_embedding_by_track: dict[int, np.ndarray] = {}
 
     def run(self) -> None:
-        self._video.open()
         try:
+            self._video.open()
             while True:
                 frame = self._video.read_frame()
                 if frame is None:

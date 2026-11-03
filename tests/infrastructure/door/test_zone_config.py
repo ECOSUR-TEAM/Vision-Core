@@ -17,7 +17,7 @@ def test_boundaries(point, expected):
 
 def test_shared_edge_prefers_interior():
     zones = load_zones('config/zones.example.json')
-    analytics = PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door)
+    analytics = PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door, confirmation_frames=1)
     assert analytics._zone_for((320, 200)) == 'interior'
     assert analytics._point_in_polygon((320, 200), zones.door)
 

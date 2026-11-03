@@ -13,8 +13,8 @@ def test_diferentes_poligonos_no_interfieren():
     p2_ext = Polygon(name="ext2", points=((0, 0), (50, 0), (50, 50), (0, 50)))
     p2_int = Polygon(name="int2", points=((50, 0), (100, 0), (100, 50), (50, 50)))
 
-    door1 = PolygonDoorAnalytics(p1_ext, p1_int)
-    door2 = PolygonDoorAnalytics(p2_ext, p2_int)
+    door1 = PolygonDoorAnalytics(p1_ext, p1_int, confirmation_frames=1)
+    door2 = PolygonDoorAnalytics(p2_ext, p2_int, confirmation_frames=1)
 
     assert door1._exterior != door2._exterior
     assert door1._interior != door2._interior
@@ -23,22 +23,22 @@ def test_diferentes_poligonos_no_interfieren():
 def test_init_validation_none():
     valid_poly = Polygon(name="ext", points=((0, 0), (10, 0), (10, 10)))
     with pytest.raises(ValueError, match="exterior_zone e interior_zone son obligatorios"):
-        PolygonDoorAnalytics(None, valid_poly)
+        PolygonDoorAnalytics(None, valid_poly, confirmation_frames=1)
     with pytest.raises(ValueError, match="exterior_zone e interior_zone son obligatorios"):
-        PolygonDoorAnalytics(valid_poly, None)
+        PolygonDoorAnalytics(valid_poly, None, confirmation_frames=1)
 
 
 def test_init_validation_points_count():
     invalid_poly = Polygon(name="ext", points=((0, 0), (10, 0)))
     valid_poly = Polygon(name="int", points=((0, 0), (10, 0), (10, 10)))
     with pytest.raises(ValueError, match="un polígono necesita al menos 3 puntos"):
-        PolygonDoorAnalytics(invalid_poly, valid_poly)
+        PolygonDoorAnalytics(invalid_poly, valid_poly, confirmation_frames=1)
     with pytest.raises(ValueError, match="un polígono necesita al menos 3 puntos"):
-        PolygonDoorAnalytics(valid_poly, invalid_poly)
+        PolygonDoorAnalytics(valid_poly, invalid_poly, confirmation_frames=1)
 
 
 def test_zone_for_and_history():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
 
     assert door._zone_for((-1.0, -1.0)) == "fuera"
     assert door._zone_for((1.0, 1.0)) == "exterior"
@@ -58,16 +58,16 @@ def test_zone_for_and_history():
 
     history = door._history[person_id]
     assert len(history) == 5
-    assert history[0] == ((-1.0, -1.0), "fuera")
-    assert history[1] == ((1.0, 1.0), "exterior")
-    assert history[2] == ((5.0, 5.0), "interior")
+    assert history[0][:2] == ((-1.0, -1.0), "fuera")
+    assert history[1][:2] == ((1.0, 1.0), "exterior")
+    assert history[2][:2] == ((5.0, 5.0), "interior")
     assert history[3][0] == (3.0, 3.0)
     assert history[3][1] in ("interior", "exterior")
-    assert history[4] == ((15.0, 15.0), "fuera")
+    assert history[4][:2] == ((15.0, 15.0), "fuera")
 
 
 def test_evento_person_entered():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
     door.update("p1", (1.0, 1.0))      # exterior
     event = door.update("p1", (5.0, 5.0))  # interior
     assert event is not None
@@ -76,7 +76,7 @@ def test_evento_person_entered():
 
 
 def test_evento_person_exited():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
     door.update("p1", (5.0, 5.0))      # interior
     event = door.update("p1", (1.0, 1.0))  # exterior
     assert event is not None
@@ -85,7 +85,7 @@ def test_evento_person_exited():
 
 
 def test_evento_false_alarm():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
     door.update("p1", (1.0, 1.0))       # exterior
     event = door.update("p1", (15.0, 15.0))  # fuera
     assert event is not None
@@ -94,14 +94,14 @@ def test_evento_false_alarm():
 
 
 def test_no_evento_en_zona_repetida():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
     door.update("p1", (1.0, 1.0))
     event = door.update("p1", (1.5, 1.5))  # sigue en exterior
     assert event is None
 
 
 def test_evento_solo_se_emite_una_vez():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
     door.update("p1", (1.0, 1.0))       # exterior
     primer_evento = door.update("p1", (5.0, 5.0))  # interior -> ENTERED
     segundo_evento = door.update("p1", (5.5, 5.5)) # sigue interior

@@ -85,6 +85,7 @@ def test_video_to_real_reid_and_zones_with_reappearance():
     door = PolygonDoorAnalytics(
         Polygon('out', ((0, 0), (20, 0), (20, 40), (0, 40))),
         Polygon('in', ((20, 0), (40, 0), (40, 40), (20, 40))),
+        confirmation_frames=1,
     )
     events = []
     app = VisionCoreApp(source, detector, reid, door, embedder, events.append)

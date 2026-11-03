@@ -154,3 +154,43 @@ actuales siguen usando las transiciones exterior/interior del centro del bbox;
 no se exige cruzar el polígono de puerta para emitirlos. Esa regla corresponde a
 la analítica de trayectorias y debe acordarse antes de modificar los eventos.
 No confundas estas zonas del centro de la persona con polígonos medidos en el suelo.
+
+## Eventos de zonas y ruido
+
+`DoorAnalytics.update(person_id, position)` confirma una zona después de **3
+observaciones consecutivas de esa persona**. Esto también se aplica a su zona
+inicial: no se emite un cruce sin un origen confirmado. Se configura desde
+`VISION_CORE_ZONE_CONFIRMATION_FRAMES` (entero positivo; `1` habilita transiciones
+inmediatas para pruebas o comparación). Las pruebas anteriores de transiciones
+usan explícitamente ese modo; las nuevas pruebas de ruido usan el valor 3.
+
+| Transición confirmada | Evento |
+|---|---|
+| exterior → interior | `PERSON_ENTERED` |
+| interior → exterior | `PERSON_EXITED` |
+| exterior → fuera | `FALSE_ALARM` |
+
+Las demás transiciones y la permanencia en una zona no producen eventos.
+`FALSE_ALARM` conserva el significado del contrato actual: cualquier transición
+exterior→fuera confirmada, incluso después de una salida previa.
+
+Cada evento contiene el `person_id`, timestamp Unix en segundos del instante de
+confirmación y metadata con origen, destino, posición y número de observaciones
+requeridas. El timestamp es de procesamiento, no el de captura de la cámara.
+
+`PolygonDoorAnalytics.get_history(person_id)` devuelve una instantánea inmutable
+con posición, zona observada y timestamp, incluidas observaciones aún no confirmadas.
+Conserva las últimas 300 por persona (`history_limit` configurable en constructor).
+El estado es independiente por persona; no hay persistencia en disco ni expiración
+automática de personas en esta analítica.
+
+Si la detección vuelve a la zona confirmada o cambia de candidata, se reinicia la
+confirmación. Esto evita eventos por oscilaciones breves del centro del bbox sobre
+el borde y permite nuevos cruces reales posteriores. No elimina ruido que dure
+3 observaciones o más. Las ausencias sin llamadas a `update()` no avanzan ni
+reinician el contador; el umbral no equivale a una duración fija en segundos.
+
+Pruebas: `python -m pytest tests/infrastructure/door -q`. Cubren los tres eventos,
+identidades independientes, timestamps, historial acotado, puntos no finitos,
+ruido alrededor del borde y entrada/salida/entrada sin bloquear cruces legítimos.
+La efectividad del umbral en la sala debe validarse con el video real.

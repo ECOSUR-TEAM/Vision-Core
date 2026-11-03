@@ -1,9 +1,18 @@
-from typing import Optional
+import math
+import time
+from collections import deque
+from typing import Optional, NamedTuple
 
 from .zone_config import validate_polygon, on_segment
 
 from domain.entities import Event, Polygon
 from domain.ports import DoorAnalytics
+
+
+class ZoneObservation(NamedTuple):
+    position: tuple[float, float]
+    zone: str
+    timestamp: float
 
 
 class PolygonDoorAnalytics(DoorAnalytics):
@@ -15,7 +24,7 @@ class PolygonDoorAnalytics(DoorAnalytics):
     FALSE_ALARM).
     """
 
-    def __init__(self, exterior_zone: Polygon, interior_zone: Polygon, door_zone: Polygon | None = None) -> None:
+    def __init__(self, exterior_zone: Polygon, interior_zone: Polygon, door_zone: Polygon | None = None, *, confirmation_frames: int = 3, history_limit: int = 300) -> None:
         if exterior_zone is None or interior_zone is None:
             raise ValueError("exterior_zone e interior_zone son obligatorios")
         if len(exterior_zone.points) < 3 or len(interior_zone.points) < 3:
@@ -23,10 +32,17 @@ class PolygonDoorAnalytics(DoorAnalytics):
         for polygon in (exterior_zone, interior_zone, door_zone):
             if polygon is not None:
                 validate_polygon(polygon)
+        if type(confirmation_frames) is not int or confirmation_frames < 1:
+            raise ValueError("confirmation_frames debe ser un entero positivo")
+        if type(history_limit) is not int or history_limit < 1:
+            raise ValueError("history_limit debe ser un entero positivo")
+        self._confirmation_frames = confirmation_frames
+        self._history_limit = history_limit
+        self._pending: dict[str, tuple[str, int]] = {}
         self._door = door_zone
         self._exterior = exterior_zone
         self._interior = interior_zone
-        self._history: dict[str, list[tuple[tuple[float, float], str]]] = {}
+        self._history: dict[str, deque[ZoneObservation]] = {}
         self._last_zone: dict[str, str] = {}
 
     @staticmethod
@@ -57,22 +73,37 @@ class PolygonDoorAnalytics(DoorAnalytics):
             return "exterior"
         return "fuera"
 
+    def get_history(self, person_id: str) -> tuple[ZoneObservation, ...]:
+        """Immutable snapshot of recent observations, including unconfirmed noise."""
+        return tuple(self._history.get(person_id, ()))
+
     def update(self, person_id: str, position: tuple[float, float]) -> Optional[Event]:
+        if len(position) != 2 or not all(math.isfinite(value) for value in position):
+            raise ValueError("La posición debe tener dos coordenadas finitas")
+        position = tuple(position)
         zone = self._zone_for(position)
-        self._history.setdefault(person_id, []).append((position, zone))
-
+        timestamp = time.time()
+        self._history.setdefault(person_id, deque(maxlen=self._history_limit)).append(
+            ZoneObservation(position, zone, timestamp))
         previous_zone = self._last_zone.get(person_id)
-
         if zone == previous_zone:
+            self._pending.pop(person_id, None)
             return None
-
-        event = None
-        if previous_zone == "exterior" and zone == "interior":
-            event = Event(event="PERSON_ENTERED", person_id=person_id)
-        elif previous_zone == "interior" and zone == "exterior":
-            event = Event(event="PERSON_EXITED", person_id=person_id)
-        elif previous_zone == "exterior" and zone == "fuera":
-            event = Event(event="FALSE_ALARM", person_id=person_id)
-
+        pending_zone, count = self._pending.get(person_id, (zone, 0))
+        count = count + 1 if pending_zone == zone else 1
+        self._pending[person_id] = (zone, count)
+        if count < self._confirmation_frames:
+            return None
+        self._pending.pop(person_id, None)
         self._last_zone[person_id] = zone
-        return event
+        event_type = {
+            ("exterior", "interior"): "PERSON_ENTERED",
+            ("interior", "exterior"): "PERSON_EXITED",
+            ("exterior", "fuera"): "FALSE_ALARM",
+        }.get((previous_zone, zone))
+        if event_type is None:
+            return None
+        return Event(event=event_type, person_id=person_id, timestamp=timestamp,
+                     metadata={"from_zone": previous_zone, "to_zone": zone,
+                               "position": position,
+                               "confirmation_frames": self._confirmation_frames})

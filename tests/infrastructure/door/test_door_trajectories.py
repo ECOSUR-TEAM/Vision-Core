@@ -15,7 +15,7 @@ def _run_trayectoria(door, person_id, puntos):
 
 
 def test_trayectoria_person_entered():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
     trayectoria = [
         (15.0, 15.0),
         (8.0, 8.0),
@@ -30,7 +30,7 @@ def test_trayectoria_person_entered():
 
 
 def test_trayectoria_person_exited():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
     trayectoria = [
         (5.0, 5.0),
         (5.5, 5.5),
@@ -44,7 +44,7 @@ def test_trayectoria_person_exited():
 
 
 def test_trayectoria_false_alarm():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
     trayectoria = [
         (15.0, 15.0),
         (1.0, 1.0),

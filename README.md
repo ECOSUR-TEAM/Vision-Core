@@ -49,77 +49,52 @@ aparte). Es el único embedder soportado; no se usa OSNet/torchreid.
 
 Cada módulo documenta su propio README corto dentro de su carpeta al cerrarlo.
 
-## Video RTSP desde Frigate
+## Validación de la ingesta (sin navegador)
 
-El recorrido es cámara → Frigate/go2rtc → `RtspVideoSource` → frames BGR del
-pipeline. No depende de la interfaz web antigua ni de Internet Explorer.
-Frigate debe estar instalado y tener configurado un stream go2rtc accesible:
-este repositorio no instala Frigate ni descubre la ruta RTSP de la cámara.
-
-1. Copia `.env.example` a `.env`.
-2. Cambia `VISION_CORE_RTSP_URL` a `rtsp://IP_DE_FRIGATE:8554/NOMBRE_DEL_STREAM`.
-   El nombre debe coincidir exactamente con el configurado en go2rtc.
-   Si Frigate protege el restream, usa sus credenciales en
-   `rtsp://usuario:contraseña@IP_DE_FRIGATE:8554/NOMBRE_DEL_STREAM`
-   (codifica los caracteres especiales del usuario y contraseña como URL).
-3. Ejecuta `docker compose up --build`, o carga las variables para ejecución local:
+El diagnóstico consulta el códec, formato comprimido, resolución y FPS declarados
+con `ffprobe` (instalar FFmpeg en el equipo que ejecuta la prueba). Luego consume
+frames con OpenCV/FFmpeg, exige H×W×3, `uint8` y resolución constante. El decoder
+se configura para entregar BGR: el orden de canales no puede deducirse solo de los
+valores de un ndarray. El formato `pix_fmt` de ffprobe corresponde al stream, no
+al ndarray decodificado.
 
 ```bash
-set -a
-source .env
-set +a
-python main.py
+export VISION_CORE_RTSP_URL='rtsp://IP_FRIGATE:8554/NOMBRE_STREAM'
+export VISION_CORE_RECONNECT_ATTEMPTS=5
+export VISION_CORE_RECONNECT_DELAY_SECONDS=2
+export VISION_CORE_TIMEOUT_MS=5000
+python -m infrastructure.video.check_stream --frames 300 --transport tcp
 ```
 
-Para `source .env`, coloca entre comillas simples el valor de
-`OPENCV_FFMPEG_CAPTURE_OPTIONS='rtsp_transport;tcp'` y cualquier URL que contenga
-caracteres especiales. Docker Compose admite esas mismas comillas.
+El comando imprime JSON con apertura, duración media/p95/máxima de lectura,
+intervalo entre frames, FPS efectivos de consumo y reconexiones. Los FPS incluyen
+las pausas y, si se habilita, el procesamiento. No son necesariamente los FPS de
+captura. La latencia cámara→detector queda como `null`: requiere timestamps de
+captura y relojes sincronizados, o una prueba visual con reloj. No se confunde
+el tiempo bloqueado en `read()` con latencia de extremo a extremo.
 
-El puerto TCP 8554 debe ser accesible desde Vision Core. Si ambos servicios están
-en contenedores, usa la IP del servidor Frigate o un nombre DNS de una red Docker
-compartida; `localhost` dentro de Vision Core identifica su propio contenedor.
-Consulta la [documentación oficial del restream de Frigate](https://docs.frigate.video/configuration/restream/).
+`--transport tcp` fuerza TCP tanto en ffprobe como en OpenCV; puede repetirse con
+`--transport udp`. Una lectura exitosa verifica recepción con el transporte
+solicitado; no se presenta como una inspección de paquetes. Un ffprobe ausente o
+fallido deja estado `incomplete` y salida 1, aunque los frames sean válidos.
 
-Si Frigate ya entrega video, solo cambia su IP y el nombre del stream. Si aún falta
-conectar la Vivotek a Frigate, se necesitan la ruta RTSP, el puerto y las credenciales
-correspondientes al modelo. También se puede usar una URL RTSP directa de la cámara;
-no se presupone una ruta universal para Vivotek.
+Para probar inferencia real, añade `--detector`. Actualmente
+`YoloDetectorManager.process()` lanza `NotImplementedError`; por tanto, esa prueba
+fallará hasta completar VC-DETECT. Sin esa opción, el informe indica
+`detector_status: not_tested`. Las pruebas automatizadas comprueban el contrato
+con un detector simulado, no certifican inferencia YOLO.
 
-| Variable | Valor inicial | Función |
-|---|---|---|
-| `VISION_CORE_RTSP_URL` | Obligatoria | URL del restream o cámara |
-| `VISION_CORE_OPEN_TIMEOUT_MS` | `5000` | Tiempo máximo por apertura |
-| `VISION_CORE_READ_TIMEOUT_MS` | `5000` | Tiempo máximo por lectura |
-| `VISION_CORE_RECONNECT_ATTEMPTS` | `5` | Reintentos después del fallo; `0` los desactiva |
-| `VISION_CORE_RECONNECT_DELAY_SECONDS` | `2` | Pausa entre reintentos |
-| `OPENCV_FFMPEG_CAPTURE_OPTIONS` | `rtsp_transport;tcp` en el ejemplo | Transporte FFmpeg, global al proceso |
+### Interrupción temporal real
 
-Se requiere OpenCV con backend FFmpeg y soporte de timeouts. Un fallo de lectura
-reabre la conexión y busca un frame válido. Al agotar los reintentos se lanza
-`ConnectionError`; no se confunde un corte de red con el fin normal de un video.
-`close()` es idempotente y el pipeline lo ejecuta incluso si falla la apertura.
-Los mensajes propios omiten la URL; los diagnósticos nativos de FFmpeg pueden
-mostrar información del endpoint, por lo que no deben compartirse sin revisión.
+En un entorno de pruebas, ejecuta el diagnóstico con suficientes frames
+(`--frames 3000`) y desconecta temporalmente el stream de prueba en Frigate.
+Restáuralo antes de agotar los reintentos. Comprueba que se reciben frames otra vez,
+que `reconnections` aumenta y observa el máximo de lectura. Repite dejando la
+fuente desconectada para comprobar salida 1 y `ConnectionError`. El tiempo total
+incluye los timeouts por intento además de las pausas. Usa un stream de pruebas
+para no interrumpir otras grabaciones.
 
-### Comprobar solo la ingesta
-
-Después de cargar las variables, este comando recibe un frame sin ejecutar YOLO
-ni el embedder ReID (este último sigue pendiente en `main.py`):
-
-```bash
-python - <<'PY'
-from infrastructure.video.rtsp_video_source import RtspVideoSource
-video = RtspVideoSource.from_env()
-try:
-    video.open()
-    frame = video.read_frame()
-    print('Frame BGR recibido:', frame.shape)
-finally:
-    video.close()
-PY
-```
-
-Pruebas sin cámara: `python -m pytest -q`. Usan capturas simuladas para comprobar
-apertura, timeouts enviados al backend, recuperación, agotamiento y liberación.
-La conectividad, autenticación y decodificación reales quedan pendientes hasta
-disponer de Frigate y la cámara.
+Pruebas sin cámara: `python -m pytest -q`. Cubren formatos inválidos, cambio de
+resolución, caída temporal, indisponibilidad persistente, consumo por el contrato
+del detector y liberación ante errores. Códec real, FPS reales, latencia y
+recuperación física siguen pendientes hasta disponer de Frigate.

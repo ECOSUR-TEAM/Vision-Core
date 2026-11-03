@@ -17,7 +17,7 @@ def _run_trayectoria(door, person_id, puntos):
 
 
 def test_trayectoria_person_entered():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
 
     # Persona camina desde fuera, pasa por exterior, y llega a interior
     trayectoria = [
@@ -36,7 +36,7 @@ def test_trayectoria_person_entered():
 
 
 def test_trayectoria_person_exited():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
 
     # Persona empieza adentro y sale hacia el exterior
     trayectoria = [
@@ -54,7 +54,7 @@ def test_trayectoria_person_exited():
 
 
 def test_trayectoria_false_alarm():
-    door = PolygonDoorAnalytics(ext_poly, int_poly)
+    door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
 
     # Persona toca la zona exterior pero nunca llega a interior, y se retira
     trayectoria = [

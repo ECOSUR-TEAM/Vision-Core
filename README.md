@@ -1,243 +1,197 @@
 # Vision Core
 
-## Quickstart
+Pipeline de analítica de personas: **cámara → Frigate/go2rtc → RTSP → YOLOv8 y
+tracking → embeddings y ReID → zonas → eventos JSON**. La ejecución no usa navegador
+ni Internet Explorer. Frigate entrega video; Vision Core hace su propia detección.
+
+La integración se probó con capturas simuladas y video sintético con modelos reales.
+La calibración y aceptación con la Vivotek de la sala quedan pendientes hasta tener
+la cámara. No se conoce aún su modelo ni su ruta RTSP.
+
+## Instalación local (Linux, Bash)
+
+El proyecto declara Python ≥3.10; para una instalación nueva usa Python 3.11 o
+posterior compatible con las versiones de PyTorch/torchvision instaladas. El
+Dockerfile utiliza Python 3.11. CPU es suficiente para las pruebas; GPU es opcional.
 
 ```bash
-git clone https://github.com/ECOSUR-TEAM/Vision-Core
+git clone https://github.com/ECOSUR-TEAM/Vision-Core vision-core
 cd vision-core
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-pytest
+sudo apt-get update
+sudo apt-get install -y python3-venv ffmpeg libgl1 libglib2.0-0
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip check
+python -m pytest -q
 ```
 
-## Arquitectura
+Si ya tienes el repositorio, comienza en su carpeta. `ffprobe` viene con FFmpeg y
+se necesita para inspeccionar códec/transporte. OpenCV utiliza su backend FFmpeg
+para decodificar; `ffprobe` por sí solo no garantiza ese backend.
 
-```
-domain/           entidades + ports (contratos), sin dependencias externas
-application/      VisionCoreApp: orquesta el pipeline usando solo los ports
-infrastructure/   implementaciones concretas (una carpeta por módulo/dueño)
-main.py           entrypoint
-tests/            un espejo de domain/ y application/
-```
-
-Regla: nada en `infrastructure/` importa de otra carpeta de `infrastructure/`.
-Todo pasa por los ports en `domain/ports/`.
-
-El orquestador (`application/vision_core_app.py`) mantiene el mapeo
-`track_id local -> person_id` y, cuando `DetectorManager.pop_lost_track_ids()`
-reporta que un track expiró, llama `ReIDMemory.mark_lost(...)` con su último
-embedding. Sin esto, el TTL/similitud coseno de ReIDMemory nunca se dispara
-en el pipeline real — ver `infrastructure/detection/README.md`.
-
-## Módulos y dueños (Sprint 1)
-
-| Carpeta | Port | Epic | Dueño(s) |
-|---|---|---|---|
-| `infrastructure/detection/` | `DetectorManager` | VC-DETECT | Carlos, Ameth |
-| `infrastructure/reid/` | `ReIDMemory` | VC-REID | Briyan |
-| `infrastructure/door/` | `DoorAnalytics` | VC-DOORLOGIC | Melissa |
-| `application/vision_core_app.py` | — | VC-APP | Fabricio |
-
-Cada quien trabaja solo en su carpeta → branch `feature/<módulo>` → PR revisado
-por alguien que no sea el dueño.
-
-## Embedder de ReID
-
-`infrastructure/reid/embedder.py` → `TorchvisionEmbeddingExtractor`
-(ResNet50 o MobileNetV3-Small de torchvision, sin repos externos ni pesos
-aparte). Es el único embedder soportado; no se usa OSNet/torchreid.
-
-Cada módulo documenta su propio README corto dentro de su carpeta al cerrarlo.
-
-## Validación de la ingesta (sin navegador)
-
-El diagnóstico consulta el códec, formato comprimido, resolución y FPS declarados
-con `ffprobe` (instalar FFmpeg en el equipo que ejecuta la prueba). Luego consume
-frames con OpenCV/FFmpeg, exige H×W×3, `uint8` y resolución constante. El decoder
-se configura para entregar BGR: el orden de canales no puede deducirse solo de los
-valores de un ndarray. El formato `pix_fmt` de ffprobe corresponde al stream, no
-al ndarray decodificado.
+Para CUDA, instala la pareja torch/torchvision adecuada al driver siguiendo el
+[selector oficial de PyTorch](https://pytorch.org/get-started/locally/), antes de
+instalar el resto de requirements. Comprueba el entorno:
 
 ```bash
-export VISION_CORE_RTSP_URL='rtsp://IP_FRIGATE:8554/NOMBRE_STREAM'
-export VISION_CORE_RECONNECT_ATTEMPTS=5
-export VISION_CORE_RECONNECT_DELAY_SECONDS=2
-export VISION_CORE_OPEN_TIMEOUT_MS=5000
-export VISION_CORE_READ_TIMEOUT_MS=5000
-python -m infrastructure.video.check_stream --frames 300 --transport tcp
+python -c "import torch, torchvision, cv2; print(torch.__version__, torchvision.__version__, cv2.__version__); print('CUDA disponible:', torch.cuda.is_available())"
 ```
 
-El comando imprime JSON con apertura, duración media/p95/máxima de lectura,
-intervalo entre frames, FPS efectivos de consumo y reconexiones. Los FPS incluyen
-las pausas y, si se habilita, el procesamiento. No son necesariamente los FPS de
-captura. La latencia cámara→detector queda como `null`: requiere timestamps de
-captura y relojes sincronizados, o una prueba visual con reloj. No se confunde
-el tiempo bloqueado en `read()` con latencia de extremo a extremo.
+`requirements.txt` no fija versiones. Conserva `python -m pip freeze` con cada
+medición para reproducirla. No se requiere OSNet, torchreid ni `third_party/`.
 
-`--transport tcp` fuerza TCP tanto en ffprobe como en OpenCV; puede repetirse con
-`--transport udp`. Una lectura exitosa verifica recepción con el transporte
-solicitado; no se presenta como una inspección de paquetes. Un ffprobe ausente o
-fallido deja estado `incomplete` y salida 1, aunque los frames sean válidos.
-
-Para probar inferencia real, añade `--detector`. `YoloDetectorManager` carga los pesos locales `yolov8n.pt` y ejecuta inferencia. Sin esa opción, el informe indica
-`detector_status: not_tested`. Las pruebas automatizadas comprueban el contrato
-con un detector simulado, no certifican inferencia YOLO.
-
-### Interrupción temporal real
-
-En un entorno de pruebas, ejecuta el diagnóstico con suficientes frames
-(`--frames 3000`) y desconecta temporalmente el stream de prueba en Frigate.
-Restáuralo antes de agotar los reintentos. Comprueba que se reciben frames otra vez,
-que `reconnections` aumenta y observa el máximo de lectura. Repite dejando la
-fuente desconectada para comprobar salida 1 y `ConnectionError`. El tiempo total
-incluye los timeouts por intento además de las pausas. Usa un stream de pruebas
-para no interrumpir otras grabaciones.
-
-Pruebas sin cámara: `python -m pytest -q`. Cubren formatos inválidos, cambio de
-resolución, caída temporal, indisponibilidad persistente, consumo por el contrato
-del detector y liberación ante errores. Códec real, FPS reales, latencia y
-recuperación física siguen pendientes hasta disponer de Frigate.
-
-
-## Frames de Frigate → detecciones de personas
-
-El pipeline pasa cada frame al detector existente, que carga YOLO una sola vez.
-La entrada es BGR `uint8`, H×W×3; Ultralytics realiza su propio preprocesamiento.
-La inferencia recibe `classes=[0]` y `conf=0.5`. El adaptador vuelve a filtrar
-estrictamente `confidence > 0.5`: una detección con confianza exactamente 0.5
-se descarta. El umbral está definido en `CONFIDENCE_THRESHOLD`.
-
-Cada resultado se convierte en `Detection` con `BBox` xyxy en píxeles del frame
-original, confianza, clase 0 y el ID del tracker existente. Se recortan coordenadas
-fuera del frame y se descartan cajas no finitas, invertidas o sin área; no se
-normalizan las coordenadas al intervalo 0–1 ni se reescalan por segunda vez.
-Referencia: [contrato de predicción de Ultralytics](https://docs.ultralytics.com/modes/predict/).
-
-Para probar Frigate y YOLO sin ejecutar ReID:
+## Primera prueba sin cámara
 
 ```bash
-python -m infrastructure.video.check_stream --frames 300 --transport tcp --detector
-```
-
-Las pruebas automatizadas cubren carga única, opciones de inferencia, clase,
-umbral estricto, formato del frame y cajas inválidas/fuera de límites.
-La prueba de video real requiere `DETECTION_TEST_VIDEO` y `DETECTION_TEST_MODEL`.
-
-## Calibrar puerta y zonas con la cámara
-
-No hay una imagen real de la sala incluida. `config/zones.example.json` contiene
-coordenadas sintéticas y no constituye una calibración válida de la cámara.
-
-1. Con `VISION_CORE_RTSP_URL` configurada, captura sin navegador:
-   `python -m infrastructure.video.capture_reference referencia.png`.
-2. Abre el PNG a resolución original en un editor que muestre coordenadas del
-   cursor. Copia `config/zones.example.json` a `config/zones.json`. Escribe en
-   `frame_size` el ancho y alto mostrados por la captura.
-3. Marca los vértices de `door` (puerta), `exterior` e `interior` en orden alrededor
-   de cada contorno. No repitas el primer punto al final. El origen es la esquina
-   superior izquierda; x crece a la derecha e y hacia abajo. Los puntos deben
-   quedar dentro de la imagen y los contornos no deben cruzarse consigo mismos.
-4. Revisa la superposición:
-   `python -m infrastructure.door.check_zones referencia.png config/zones.json zonas.png`.
-   Exterior: azul; interior: verde; puerta: rojo. Los vértices están numerados.
-5. Configura `VISION_CORE_ZONES_FILE=config/zones.json` en el entorno o `.env`.
-   `main.py` exige esta configuración y verifica la resolución durante la lectura;
-   cambiar resolución, encuadre o posición de cámara requiere recalibrar.
-
-Los bordes y vértices pertenecen al polígono. Si interior y exterior comparten
-un borde o se solapan, interior tiene prioridad; evita solapamientos de área no
-intencionales. Se prueban puntos dentro, fuera, en cada borde y vértice, contornos
-cóncavos, orientación inversa y configuraciones inválidas.
-
-La puerta queda configurada y dibujada como región de referencia. Los eventos
-actuales siguen usando las transiciones exterior/interior del centro del bbox;
-no se exige cruzar el polígono de puerta para emitirlos. Esa regla corresponde a
-la analítica de trayectorias y debe acordarse antes de modificar los eventos.
-No confundas estas zonas del centro de la persona con polígonos medidos en el suelo.
-
-## Eventos de zonas y ruido
-
-`DoorAnalytics.update(person_id, position)` confirma una zona después de **3
-observaciones consecutivas de esa persona**. Esto también se aplica a su zona
-inicial: no se emite un cruce sin un origen confirmado. Se configura desde
-`VISION_CORE_ZONE_CONFIRMATION_FRAMES` (entero positivo; `1` habilita transiciones
-inmediatas para pruebas o comparación). Las pruebas anteriores de transiciones
-usan explícitamente ese modo; las nuevas pruebas de ruido usan el valor 3.
-
-| Transición confirmada | Evento |
-|---|---|
-| exterior → interior | `PERSON_ENTERED` |
-| interior → exterior | `PERSON_EXITED` |
-| exterior → fuera | `FALSE_ALARM` |
-
-Las demás transiciones y la permanencia en una zona no producen eventos.
-`FALSE_ALARM` conserva el significado del contrato actual: cualquier transición
-exterior→fuera confirmada, incluso después de una salida previa.
-
-Cada evento contiene el `person_id`, timestamp Unix en segundos del instante de
-confirmación y metadata con origen, destino, posición y número de observaciones
-requeridas. El timestamp es de procesamiento, no el de captura de la cámara.
-
-`PolygonDoorAnalytics.get_history(person_id)` devuelve una instantánea inmutable
-con posición, zona observada y timestamp, incluidas observaciones aún no confirmadas.
-Conserva las últimas 300 por persona (`history_limit` configurable en constructor).
-El estado es independiente por persona; no hay persistencia en disco ni expiración
-automática de personas en esta analítica.
-
-Si la detección vuelve a la zona confirmada o cambia de candidata, se reinicia la
-confirmación. Esto evita eventos por oscilaciones breves del centro del bbox sobre
-el borde y permite nuevos cruces reales posteriores. No elimina ruido que dure
-3 observaciones o más. Las ausencias sin llamadas a `update()` no avanzan ni
-reinician el contador; el umbral no equivale a una duración fija en segundos.
-
-Pruebas: `python -m pytest tests/infrastructure/door -q`. Cubren los tres eventos,
-identidades independientes, timestamps, historial acotado, puntos no finitos,
-ruido alrededor del borde y entrada/salida/entrada sin bloquear cruces legítimos.
-La efectividad del umbral en la sala debe validarse con el video real.
-
-## Validación de extremo a extremo
-
-Ejecutar toda la suite: `python -m pytest -q`. Las pruebas de
-`tests/integration/test_controlled_pipeline.py` generan videos MJPEG locales y
-usan detecciones YOLO programadas con tracker, ReID, zonas y aplicación reales.
-El extractor se sustituye por un embedding fijo: esas pruebas verifican la
-conexión y las transiciones, no la precisión visual. Cubren una/dos personas,
-oclusiones breves, entrada/salida y fallos RTSP temporales/permanentes con captura
-simulada. Las pruebas de módulos cubren FALSE_ALARM, TTL y expiración de tracks.
-
-### Modelos reales sobre un video sintético reproducible
-
-```bash
-python -m scripts.create_pipeline_sample /tmp/mi-prueba-vision
+python -m scripts.create_pipeline_sample /tmp/vision-core-demo
 VISION_CORE_EMBEDDING_DEVICE=cpu python -m scripts.validate_pipeline \
-  --video /tmp/mi-prueba-vision/sample.avi \
-  --zones /tmp/mi-prueba-vision/zones.json \
-  --output /tmp/mi-prueba-vision/result.jsonl
+  --video /tmp/vision-core-demo/sample.avi \
+  --zones /tmp/vision-core-demo/zones.json \
+  --output /tmp/vision-core-demo/result.jsonl
 ```
 
-El generador desplaza la imagen `bus.jpg` incluida en Ultralytics. No representa
-movimiento natural, oclusiones reales ni una grabación de la sala. En la ejecución
-local del 2026-11-03, YOLOv8n y el extractor torchvision reales procesaron 35 frames,
-detectaron hasta 3 personas y produjeron 1 PERSON_ENTERED y 1 PERSON_EXITED.
-El tiempo total fue 6.21 s, incluyendo inicialización; no es un benchmark estable.
+Usa un directorio nuevo y un archivo de salida nuevo. La demo desplaza una imagen
+de ejemplo; no representa condiciones reales de la sala. YOLO usa `yolov8n.pt` y
+el extractor descarga sus pesos torchvision si no están en caché: el primer uso
+requiere red. Prepara los pesos previamente para un despliegue sin internet.
+El archivo JSONL incluye detecciones, tracks, identidades resueltas, eventos y métricas.
 
-### Grabación o Frigate
+## Frigate y ejecución con cámara
 
-Para una grabación propia sustituye `--video` y `--zones` con su calibración.
-Para Frigate omite `--video` y exporta `VISION_CORE_RTSP_URL`. `--frames` limita
-la prueba (300 por defecto). El runner usa modelos reales, TTL real de reloj y
-confirmación de zona de 3 observaciones. La reproducción de archivos corre a la
-velocidad de procesamiento, no al FPS original: no mide TTL del tiempo del video.
+1. Configura el restream siguiendo [la guía de Frigate](docs/frigate.md).
+2. Copia el ejemplo y edita los valores de tu entorno:
 
-El JSONL registra detecciones y tracks por frame, pérdidas, eventos con identidad
-y un resumen de finalización/reconexiones. `completed` significa que la ejecución
-terminó sin errores, no que los eventos coincidan con anotaciones humanas. Un
-archivo corrupto puede terminar como EOF: revisar el número de frames obtenido.
+```bash
+cp .env.example .env
+# Editar .env antes de continuar; no publicar credenciales.
+set -a
+source .env
+set +a
+python -m infrastructure.video.check_stream --frames 100 --transport tcp
+```
 
-Para aceptación en la sala, grabar una persona entrando/saliendo, luego varias,
-un acercamiento y retirada (FALSE_ALARM), oclusiones y reaparición. Anotar eventos
-esperados e identidad por frame y compararlos con el JSONL. En un stream de prueba,
-interrumpir y restaurar la conexión antes de agotar reintentos; verificar que
-continúa y aumenta `reconnections`. Repetir una interrupción larga y comprobar
-salida fallida y liberación de la fuente. La validación física de red y exactitud
-visual queda pendiente hasta contar con ese stream o grabación.
+Python no carga `.env` automáticamente: `source` exporta sus valores. Docker
+Compose sí carga el archivo mediante `env_file`. Mantén las comillas en valores
+con `;`, `&`, `#` u otros caracteres especiales.
+
+3. Captura una imagen y calibra los polígonos:
+
+```bash
+python -m infrastructure.video.capture_reference referencia.png
+cp config/zones.example.json config/zones.json
+# Editar frame_size, door, exterior e interior usando referencia.png.
+python -m infrastructure.door.check_zones referencia.png config/zones.json zonas.png
+```
+
+El ejemplo contiene coordenadas sintéticas. La [guía de calibración](docs/validation.md#calibrar-puerta-y-zonas-con-la-cámara)
+explica los ejes, bordes y prioridades. No cambies resolución ni encuadre después
+de calibrar. La aplicación falla si el tamaño del frame difiere de `frame_size`.
+
+4. Con `.env` cargado y zonas revisadas:
+
+```bash
+python main.py
+```
+
+Los eventos se imprimen como JSON en stdout; los diagnósticos de bibliotecas pueden
+compartir esa salida. Para un registro estructurado de pruebas usa el runner:
+
+```bash
+python -m scripts.validate_pipeline --zones config/zones.json --frames 3000 --output sala.jsonl
+```
+
+Omitir `--video` selecciona RTSP. Ctrl+C cierra el stream. Tras agotar reintentos el
+proceso termina con error; no hay supervisor ni reinicio automático.
+
+## Variables de entorno
+
+| Variable | Predeterminado | Uso |
+|---|---|---|
+| `VISION_CORE_RTSP_URL` | Obligatoria para RTSP | `rtsp://HOST_FRIGATE:8554/NOMBRE_STREAM` |
+| `VISION_CORE_OPEN_TIMEOUT_MS` | `5000` | Timeout positivo por apertura |
+| `VISION_CORE_READ_TIMEOUT_MS` | `5000` | Timeout positivo por lectura |
+| `VISION_CORE_RECONNECT_ATTEMPTS` | `5` | Reintentos; `0` los desactiva |
+| `VISION_CORE_RECONNECT_DELAY_SECONDS` | `2` | Espera no negativa entre reintentos |
+| `OPENCV_FFMPEG_CAPTURE_OPTIONS` | Sin valor propio en código | Ejemplo: `'rtsp_transport;tcp'`; global al proceso |
+| `VISION_CORE_ZONES_FILE` | Obligatoria en `main.py` | Ruta al JSON de calibración |
+| `VISION_CORE_ZONE_CONFIRMATION_FRAMES` | `3` | Observaciones consecutivas para confirmar zona en `main.py` |
+| `VISION_CORE_EMBEDDING_MODEL` | `mobilenet_v3_small` | También admite `resnet50` |
+| `VISION_CORE_EMBEDDING_DEVICE` | CUDA si está disponible; si no CPU | `cpu`, `cuda`, `cuda:0`; CUDA explícita falla si no está disponible |
+| `DETECTION_TEST_VIDEO` | Ausente | Video local para prueba optativa de detección real (≥30 s, personas visibles) |
+| `DETECTION_TEST_MODEL` | Ausente | Pesos locales para esa prueba optativa |
+
+El runner recibe zonas por `--zones` y pesos YOLO por `--model`; usa confirmación de
+3 observaciones y no lee `VISION_CORE_ZONE_CONFIRMATION_FRAMES`. `check_stream`
+fija transporte con `--transport`, sustituyendo las opciones FFmpeg del proceso.
+`main.py` usa `yolov8n.pt`; no hay variable de modelo YOLO ni de dispositivo YOLO.
+La variable del extractor solo controla el extractor.
+
+Parámetros de código, no variables: confianza de persona **>0.5**, IoU mínimo
+**0.3**, expiración tras **31** frames ausentes (tolera 30), TTL ReID **60 s** desde
+la pérdida, similitud coseno **>0.85**, historial de zonas **300** observaciones por
+persona. El TTL usa tiempo monotónico; los eventos llevan timestamp Unix.
+
+## Docker
+
+Después de crear `.env` y calibrar `config/zones.json`:
+
+```bash
+docker compose up --build
+docker compose logs -f vision-core
+# En otra terminal, para detener:
+docker compose down
+```
+
+El Compose incluido levanta **solo Vision Core**, no Frigate. Usa una IP del
+servidor Frigate accesible desde el contenedor; `localhost` señala al propio
+contenedor. El código se monta en `/app`, por eso `config/zones.json` funciona
+como ruta relativa. Este Compose no configura GPU: usa CPU o prepara explícitamente
+el runtime NVIDIA antes de solicitar CUDA. La imagen actual no instala el ejecutable
+`ffprobe`; ejecuta el diagnóstico de códec en el host con FFmpeg instalado.
+Los pesos torchvision descargados dentro del contenedor no tienen volumen de caché
+persistente configurado. La construcción Docker no se ha certificado en esta sesión.
+
+## Módulos y responsabilidades
+
+| Componente | Responsabilidad |
+|---|---|
+| `domain/entities.py` | Bounding boxes, detecciones, polígonos y eventos |
+| `domain/ports/` | Contratos de video, detector/tracker, ReID y zonas |
+| `infrastructure/video/` | RTSP con reconexión, reproducción de archivos, validación BGR y captura de referencia |
+| `infrastructure/detection/` | YOLOv8, personas clase COCO 0, cajas en píxeles y tracking local por movimiento/IoU |
+| `infrastructure/reid/` | Recortes BGR→RGB, embeddings L2 y recuperación temporal de `person_id` |
+| `infrastructure/door/` | Validación de polígonos, zona por centro del bbox, confirmación e historial |
+| `application/vision_core_app.py` | Orquestación, notificación de pérdidas, mappings, eventos y cierre |
+| `main.py` | Construcción e inyección de las implementaciones concretas |
+| `scripts/` | Demo sintética, ejecución medida y evaluación contra anotaciones |
+
+La aplicación depende de los ports, no de infraestructura. Los adaptadores no
+importan otras carpetas de infraestructura; los puntos de composición conectan
+los módulos. Dueños originales: detección Carlos/Ameth, ReID Briyan, zonas Melissa,
+orquestación Fabricio.
+
+## Pruebas y documentación de referencia
+
+```bash
+python -m pytest -q
+python -m pytest tests/integration tests/application -q
+DETECTION_TEST_VIDEO=/ruta/video.avi DETECTION_TEST_MODEL=/ruta/yolov8n.pt python -m pytest tests/infrastructure/detection/test_real_video.py -q
+python -m scripts.evaluate_room sala.jsonl anotaciones.json
+```
+
+Los tests no descargan pesos. Se omiten pruebas reales cuando falta video, pesos
+locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unitarias,
+escenas controladas y pruebas reales optativas. Consulta:
+
+- [Calibración, stream, eventos y pruebas](docs/validation.md).
+- [Orquestación y cierre](application/README.md).
+- [Detección y tracking](infrastructure/detection/README.md).
+- [Embeddings y TTL](infrastructure/reid/README.md).
+- [Resultados, anotaciones y evaluación pendiente de la sala](reports/room-evaluation.md).
+- [Hardware y problemas conocidos](docs/operations.md).
+
+Con la cámara disponible: confirmar modelo/ruta RTSP, capturar referencia, calibrar
+zonas y ejecutar la evaluación de la sala. No hay aún cifras certificadas de precisión,
+latencia de captura, capacidad máxima ni continuidad de identidades en esa cámara.

@@ -35,3 +35,15 @@ Pruebas: `python -m pytest tests/application -q`. Incluyen recorrido con fuente 
 detecciones simuladas, ReID y zonas reales, reaparición con identidad persistente,
 recortes fraccionarios, independencia de infraestructura y errores en cada etapa.
 No sustituyen una prueba con Frigate y la cámara física.
+
+## Observador del monitor
+
+`VisionCoreApp` acepta `on_frame(frame, tracks, processing_ms)` opcional. Entrega
+una tupla de `ResolvedTrack` de las personas detectadas en ese frame, con ID de
+persona, `track_id`, caja y confianza. No incluye tracks retenidos sin detección.
+Se llama después de procesar ReID, zonas y eventos, también para frames vacíos.
+El observador debe tratar el frame como solo lectura; si falla, el pipeline cierra
+la fuente y propaga el error. `run(stop_requested=...)` permite detener el bucle
+entre frames. El comportamiento de los consumidores existentes se conserva.
+
+El [monitor HTTP](../docs/monitor.md) conecta este observador a una vista en vivo.

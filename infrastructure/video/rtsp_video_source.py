@@ -17,37 +17,6 @@ logger = logging.getLogger(__name__)
 class RtspVideoSource(VideoSource):
     """FFmpeg decode to BGR uint8 with bounded reconnection attempts."""
 
-    def __init__(self, rtsp_url: str, *, attempts=5, delay=2.0, timeout_ms=5000):
-        if urlsplit(rtsp_url).scheme not in ('rtsp', 'rtsps') or not urlsplit(rtsp_url).hostname:
-            raise ValueError('Se requiere una URL RTSP válida')
-        if attempts < 0 or not np.isfinite(delay) or delay < 0 or timeout_ms <= 0:
-            raise ValueError('Parámetros de reconexión inválidos')
-        self._url = rtsp_url
-        self._attempts, self._delay, self._timeout = attempts, delay, timeout_ms
-        self._cap = None
-        self.reconnections = 0
-
-    @classmethod
-    def from_env(cls):
-        return cls(os.environ['VISION_CORE_RTSP_URL'],
-                   attempts=int(os.getenv('VISION_CORE_RECONNECT_ATTEMPTS', '5')),
-                   delay=float(os.getenv('VISION_CORE_RECONNECT_DELAY_SECONDS', '2')),
-                   timeout_ms=int(os.getenv('VISION_CORE_TIMEOUT_MS', '5000')))
-
-    def _connect(self):
-        self.close()
-        self._cap = cv2.VideoCapture()
-        try:
-            if self._cap.open(self._url, cv2.CAP_FFMPEG, [
-                cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, self._timeout,
-                cv2.CAP_PROP_READ_TIMEOUT_MSEC, self._timeout,
-            ]) and self._cap.isOpened():
-                if not self._cap.set(cv2.CAP_PROP_CONVERT_RGB, 1):
-                    raise RuntimeError('El backend no permite asegurar salida BGR')
-                return True
-        except cv2.error:
-            pass
-
     """Single-consumer source. Exhausted retries raise ConnectionError, not EOF."""
 
     def __init__(self, rtsp_url: str, *, open_timeout_ms: int = 5000,
@@ -72,6 +41,7 @@ class RtspVideoSource(VideoSource):
         self._attempts = reconnect_attempts
         self._delay = reconnect_delay_seconds
         self._cap: Optional[cv2.VideoCapture] = None
+        self.reconnections = 0
 
     @classmethod
     def from_env(cls) -> "RtspVideoSource":
@@ -97,6 +67,8 @@ class RtspVideoSource(VideoSource):
                 cv2.CAP_PROP_READ_TIMEOUT_MSEC, self._read_timeout,
             ])
             if opened and self._cap.isOpened():
+                if not self._cap.set(cv2.CAP_PROP_CONVERT_RGB, 1):
+                    raise RuntimeError("El backend no permite asegurar salida BGR")
                 return True
         except cv2.error:
             pass  # Native errors may contain credentials; do not log their text.

@@ -53,14 +53,29 @@ class YoloDetectorManager(DetectorManager):
         self._lost_ids: list[int] = []
 
     def process(self, frame: np.ndarray) -> list[Detection]:
-        result = self._model.predict(frame, verbose=False)[0]
+        if (not isinstance(frame, np.ndarray) or frame.dtype != np.uint8
+                or frame.ndim != 3 or frame.shape[2] != 3
+                or min(frame.shape[:2]) <= 0):
+            raise ValueError("YOLO requiere un frame BGR uint8 de forma H x W x 3")
+        height, width = frame.shape[:2]
+        result = self._model.predict(
+            np.ascontiguousarray(frame), verbose=False,
+            classes=[PERSON_CLASS_ID], conf=CONFIDENCE_THRESHOLD,
+        )[0]
         detections: list[Detection] = []
         for box in result.boxes:
             class_id = int(box.cls[0])
             confidence = float(box.conf[0])
-            if class_id != PERSON_CLASS_ID or not confidence > CONFIDENCE_THRESHOLD:
+            if class_id != PERSON_CLASS_ID or not CONFIDENCE_THRESHOLD < confidence <= 1.0:
                 continue
-            x1, y1, x2, y2 = box.xyxy[0].tolist()
+            coordinates = np.asarray(box.xyxy[0].tolist(), dtype=float)
+            if coordinates.shape != (4,) or not np.isfinite(coordinates).all():
+                continue
+            x1, y1, x2, y2 = coordinates.tolist()
+            x1, x2 = max(0.0, min(x1, width)), max(0.0, min(x2, width))
+            y1, y2 = max(0.0, min(y1, height)), max(0.0, min(y2, height))
+            if x2 <= x1 or y2 <= y1:
+                continue
             detections.append(
                 Detection(
                     bbox=BBox(x1=x1, y1=y1, x2=x2, y2=y2),

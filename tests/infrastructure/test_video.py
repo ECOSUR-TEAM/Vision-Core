@@ -26,7 +26,7 @@ def test_temporary_outage(monkeypatch):
     offline.open.return_value = False
     recovered.read.return_value = (True, FRAME)
     monkeypatch.setattr(cv2, 'VideoCapture', Mock(side_effect=[first, offline, recovered]))
-    source = RtspVideoSource('rtsp://frigate:8554/entrada', delay=0)
+    source = RtspVideoSource('rtsp://frigate:8554/entrada', reconnect_delay_seconds=0)
     source.open()
     assert source.read_frame() is FRAME
     assert source.reconnections == 1
@@ -40,7 +40,7 @@ def test_permanent_outage(monkeypatch):
     cap = Mock()
     cap.open.return_value = False
     monkeypatch.setattr(cv2, 'VideoCapture', lambda: cap)
-    source = RtspVideoSource('rtsp://frigate:8554/entrada', attempts=2, delay=0)
+    source = RtspVideoSource('rtsp://frigate:8554/entrada', reconnect_attempts=2, reconnect_delay_seconds=0)
     with pytest.raises(ConnectionError):
         source.open()
     assert cap.release.call_count == 3

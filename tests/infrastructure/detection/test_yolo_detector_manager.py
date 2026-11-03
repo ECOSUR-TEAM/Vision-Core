@@ -22,7 +22,7 @@ def box(x, confidence=0.9, class_id=0):
 @pytest.fixture
 def detector(monkeypatch):
     model = SimpleNamespace(boxes=[])
-    model.predict = lambda frame, verbose: [SimpleNamespace(boxes=model.boxes)]
+    model.predict = lambda frame, **kwargs: [SimpleNamespace(boxes=model.boxes)]
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))
     manager = YoloDetectorManager()
 
@@ -88,3 +88,46 @@ def test_pop_lost_track_ids_reports_expired_tracks_once(detector):
     lost = detector.manager.pop_lost_track_ids()
     assert lost == [track_id]
     assert detector.manager.pop_lost_track_ids() == []
+
+
+def test_boxes_clipped_to_original_frame(detector):
+    candidate = box(0)
+    candidate.xyxy = np.array([[-5, -10, 180, 100]])
+    bbox = detector([candidate])[0].bbox
+    assert (bbox.x1, bbox.y1, bbox.x2, bbox.y2) == (0, 0, 160, 80)
+
+
+@pytest.mark.parametrize('coords', [[5, 2, 5, 9], [10, 5, 1, 9], [200, 0, 220, 40], [0, 0, float('nan'), 10]])
+def test_invalid_boxes_discarded(detector, coords):
+    candidate = box(0)
+    candidate.xyxy = np.array([coords])
+    assert detector([candidate]) == []
+
+
+@pytest.mark.parametrize('confidence', [0.49, 0.5, float('nan'), float('inf'), 1.1])
+def test_invalid_or_low_confidence(detector, confidence):
+    assert detector([box(0, confidence)]) == []
+
+
+def test_above_threshold(detector):
+    assert len(detector([box(0, 0.5001)])) == 1
+
+
+@pytest.mark.parametrize('frame', [None, np.zeros((10, 10, 3)), np.zeros((10, 10), dtype=np.uint8)])
+def test_invalid_frame(detector, frame):
+    with pytest.raises(ValueError):
+        detector.manager.process(frame)
+
+
+def test_model_loaded_once_and_predict_settings(monkeypatch):
+    from unittest.mock import Mock
+    model = Mock()
+    model.predict.return_value = [SimpleNamespace(boxes=[])]
+    loader = Mock(return_value=model)
+    monkeypatch.setitem(sys.modules, 'ultralytics', SimpleNamespace(YOLO=loader))
+    manager = YoloDetectorManager('weights.pt')
+    frame = np.zeros((48, 64, 3), dtype=np.uint8)
+    manager.process(frame)
+    manager.process(frame)
+    loader.assert_called_once_with('weights.pt')
+    assert model.predict.call_args.kwargs == dict(verbose=False, classes=[0], conf=0.5)

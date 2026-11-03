@@ -25,7 +25,7 @@ def main() -> None:
         detector=YoloDetectorManager(),
         reid_memory=InMemoryReID(),
         door_analytics=PolygonDoorAnalytics(exterior, interior),
-        embedder=TorchvisionEmbeddingExtractor(),
+        embedder=TorchvisionEmbeddingExtractor.from_env(),
         on_event=print_event,
     )
     app.run()

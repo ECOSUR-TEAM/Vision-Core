@@ -1,0 +1,22 @@
+# Copy to config/frigate-camera-local/config.yml. The URL stays in .env.
+mqtt:
+  enabled: false
+go2rtc:
+  streams:
+    entrada:
+      - "{FRIGATE_CAMERA_RTSP_URL}"
+cameras:
+  entrada:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/entrada
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      enabled: false
+      fps: 5
+record:
+  enabled: false
+snapshots:
+  enabled: false

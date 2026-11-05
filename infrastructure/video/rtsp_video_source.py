@@ -21,7 +21,7 @@ class RtspVideoSource(VideoSource):
 
     def __init__(self, rtsp_url: str, *, open_timeout_ms: int = 5000,
                  read_timeout_ms: int = 5000, reconnect_attempts: int = 5,
-                 reconnect_delay_seconds: float = 2.0) -> None:
+                 reconnect_delay_seconds: float = 2.0, decoder_threads: int = 1) -> None:
         try:
             parsed = urlsplit(rtsp_url)
             valid = parsed.scheme in {"rtsp", "rtsps"} and parsed.hostname and parsed.port != 0
@@ -33,6 +33,8 @@ class RtspVideoSource(VideoSource):
             raise ValueError("Los timeouts deben ser positivos")
         if reconnect_attempts < 0:
             raise ValueError("Los reintentos no pueden ser negativos")
+        if type(decoder_threads) is not int or decoder_threads < 0:
+            raise ValueError("Los hilos de decodificación deben ser un entero no negativo")
         if not math.isfinite(reconnect_delay_seconds) or reconnect_delay_seconds < 0:
             raise ValueError("La espera debe ser finita y no negativa")
         self._url = rtsp_url
@@ -40,6 +42,7 @@ class RtspVideoSource(VideoSource):
         self._read_timeout = read_timeout_ms
         self._attempts = reconnect_attempts
         self._delay = reconnect_delay_seconds
+        self._decoder_threads = decoder_threads
         self._cap: Optional[cv2.VideoCapture] = None
         self.reconnections = 0
 
@@ -55,6 +58,7 @@ class RtspVideoSource(VideoSource):
             read_timeout_ms=int(os.getenv("VISION_CORE_READ_TIMEOUT_MS", "5000")),
             reconnect_attempts=int(os.getenv("VISION_CORE_RECONNECT_ATTEMPTS", "5")),
             reconnect_delay_seconds=float(os.getenv("VISION_CORE_RECONNECT_DELAY_SECONDS", "2")),
+            decoder_threads=int(os.getenv("VISION_CORE_DECODER_THREADS", "1")),
         )
 
     def _connect(self) -> bool:
@@ -65,6 +69,8 @@ class RtspVideoSource(VideoSource):
             opened = self._cap.open(self._url, cv2.CAP_FFMPEG, [
                 cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, self._open_timeout,
                 cv2.CAP_PROP_READ_TIMEOUT_MSEC, self._read_timeout,
+                # Frame-threaded H.264 decoding can hold many frames before output.
+                cv2.CAP_PROP_N_THREADS, self._decoder_threads,
             ])
             if opened and self._cap.isOpened():
                 if not self._cap.set(cv2.CAP_PROP_CONVERT_RGB, 1):

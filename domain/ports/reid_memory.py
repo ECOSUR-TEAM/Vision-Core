@@ -9,8 +9,11 @@ class ReIDMemory(ABC):
 
     resolve(): dado un track_id local + su embedding visual, devuelve un
     person_id persistente (UUID nuevo, o uno recuperado de la memoria si
-    similitud coseno > 0.85 contra un id retirado recientemente).
+    similitud visual suficiente contra una persona ausente).
     """
+
+    def begin_frame(self, visible_track_ids: set[int]) -> None:
+        """Reserve retained local tracks before resolving new detections."""
 
     @abstractmethod
     def resolve(self, track_id: int, embedding: np.ndarray, bbox: BBox) -> str:
@@ -18,5 +21,5 @@ class ReIDMemory(ABC):
 
     @abstractmethod
     def mark_lost(self, person_id: str, embedding: np.ndarray) -> None:
-        """Se llama al expirar el track; elimina su mapping activo e inicia el TTL."""
+        """Se llama al dejar de verse; elimina el mapping activo e inicia el TTL."""
         ...

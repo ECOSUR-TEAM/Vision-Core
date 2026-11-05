@@ -91,7 +91,7 @@ def main():
             detector = RecordedDetector(YoloDetectorManager(args.model), output)
             def emit(event):
                 output.write(json.dumps({'kind': 'event', 'frame': source.frames, **event.to_dict()}) + '\n')
-            app = MeasuredApp(source, detector, InMemoryReID(),
+            app = MeasuredApp(source, detector, InMemoryReID.from_env(),
                 PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door),
                 TorchvisionEmbeddingExtractor.from_env(), emit,
                 expected_frame_size=(zones.width, zones.height), output=output)

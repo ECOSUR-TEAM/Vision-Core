@@ -7,7 +7,7 @@ ni Internet Explorer. Frigate entrega video; Vision Core hace su propia detecci�
 La integración se probó con capturas simuladas, video sintético con modelos reales
 y lectura RTSP real de la webcam mediante Frigate local.
 La calibración y aceptación con la Vivotek de la sala quedan pendientes hasta tener
-la cámara. No se conoce aún su modelo ni su ruta RTSP.
+la cámara. Se identificó como Vivotek FD8134 y se comprobó su ruta `/live.sdp`.
 
 ## Instalación local (Linux, Bash)
 
@@ -59,6 +59,13 @@ el extractor descarga sus pesos torchvision si no están en caché: el primer us
 requiere red. Prepara los pesos previamente para un despliegue sin internet.
 El archivo JSONL incluye detecciones, tracks, identidades resueltas, eventos y métricas.
 
+## Cámara Vivotek por Ethernet
+
+La FD8134 conectada directamente a la laptop utiliza DHCP del perfil
+`vision-core-camera` y video a través de Frigate. Consulta [la conexión Ethernet](docs/ethernet-camera.md)
+para iniciar el servicio, resolver el acceso desde Docker y usar el monitor
+`--uncalibrated` hasta definir las zonas reales.
+
 ## Prueba con la cámara de la laptop
 
 El servicio local está definido en `docker-compose.webcam.yml`: **webcam →
@@ -78,8 +85,8 @@ Con Frigate local funcionando y `.env` exportado:
 python -m infrastructure.monitor --demo-zones --port 8080
 ```
 
-Abre **http://127.0.0.1:8080**: panel claro con video anotado, cajas de personas,
-IDs de tracking/ReID, zonas, FPS y eventos. Este comando ejecuta el pipeline;
+Abre **http://127.0.0.1:8080**: panel claro centrado en el video, con recuadros,
+etiquetas «Persona 1» y un conteo de personas visibles. Este comando ejecuta el pipeline;
 no hace falta iniciar `main.py` simultáneamente. Las zonas de demostración de
 640 × 480 permiten probar cruces izquierda/derecha y no equivalen a una calibración.
 Los IDs son temporales; no identifican nombres ni rostros.
@@ -140,6 +147,7 @@ proceso termina con error; no hay supervisor ni reinicio automático.
 |---|---|---|
 | `VISION_CORE_RTSP_URL` | Obligatoria para RTSP | `rtsp://HOST_FRIGATE:8554/NOMBRE_STREAM` |
 | `VISION_CORE_OPEN_TIMEOUT_MS` | `5000` | Timeout positivo por apertura |
+| `VISION_CORE_DECODER_THREADS` | `1` | Hilos de decodificación; `0` usa selección automática y puede añadir retraso |
 | `VISION_CORE_READ_TIMEOUT_MS` | `5000` | Timeout positivo por lectura |
 | `VISION_CORE_RECONNECT_ATTEMPTS` | `5` | Reintentos; `0` los desactiva |
 | `VISION_CORE_RECONNECT_DELAY_SECONDS` | `2` | Espera no negativa entre reintentos |
@@ -147,6 +155,8 @@ proceso termina con error; no hay supervisor ni reinicio automático.
 | `VISION_CORE_ZONES_FILE` | Obligatoria en `main.py` | Ruta al JSON de calibración |
 | `VISION_CORE_ZONE_CONFIRMATION_FRAMES` | `3` | Observaciones consecutivas para confirmar zona en `main.py` |
 | `VISION_CORE_MONITOR_DEMO_ZONES` | `0` | Solo monitor: `1` activa zonas de demostración 640 × 480 |
+| `VISION_CORE_REID_TTL_SECONDS` | `0` | Memoria durante esta ejecución; un valor positivo limita la ausencia en segundos |
+| `VISION_CORE_REID_THRESHOLD` | `0.85` | Similitud mínima para recuperar una identidad ausente |
 | `VISION_CORE_EMBEDDING_MODEL` | `mobilenet_v3_small` | También admite `resnet50` |
 | `VISION_CORE_EMBEDDING_DEVICE` | CUDA si está disponible; si no CPU | `cpu`, `cuda`, `cuda:0`; CUDA explícita falla si no está disponible |
 | `DETECTION_TEST_VIDEO` | Ausente | Video local para prueba optativa de detección real (≥30 s, personas visibles) |
@@ -159,9 +169,8 @@ fija transporte con `--transport`, sustituyendo las opciones FFmpeg del proceso.
 La variable del extractor solo controla el extractor.
 
 Parámetros de código, no variables: confianza de persona **>0.5**, IoU mínimo
-**0.3**, expiración tras **31** frames ausentes (tolera 30), TTL ReID **60 s** desde
-la pérdida, similitud coseno **>0.85**, historial de zonas **300** observaciones por
-persona. El TTL usa tiempo monotónico; los eventos llevan timestamp Unix.
+**0.3**, expiración tras **31** frames ausentes (tolera 30), memoria ReID durante la sesión por defecto, similitud coseno **>0.85**, historial de zonas **300** observaciones por
+persona. El TTL opcional usa tiempo monotónico; los eventos llevan timestamp Unix.
 
 ## Docker
 

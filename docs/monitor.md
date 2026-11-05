@@ -4,6 +4,17 @@ El monitor ejecuta el pipeline real de Vision Core y publica una interfaz web
 local en **http://127.0.0.1:8080**. Frigate sigue proporcionando el video; las cajas,
 IDs, embeddings, zonas y eventos proceden de Vision Core.
 
+## Arranque principal
+
+```bash
+docker compose up
+```
+
+El monitor y Frigate se inician juntos. No hace falta iniciar Python ni ejecutar
+comandos adicionales de red. [Arranque, parada y preparación inicial](startup.md).
+Los comandos Python que siguen son alternativas para desarrollo; no se ejecutan
+junto con el monitor Docker en el mismo puerto.
+
 ## Iniciar con la webcam
 
 Desde la raíz, con Frigate local iniciado según [la guía de Frigate](frigate.md):
@@ -63,27 +74,14 @@ en el panel; corrige la configuración y reinicia el monitor.
 
 ## Docker
 
-El complemento `docker-compose.monitor.yml` cambia el comando de `vision-core`
-y publica su puerto 8080 en loopback. Para webcam con zonas de demostración:
+El archivo principal `docker-compose.yml` ejecuta el monitor y sus dependencias.
+Para dejarlo en segundo plano: `docker compose up -d`; para detenerlo:
+`docker compose down`. Al actualizar código: `docker compose up --build`.
 
-```bash
-VISION_CORE_MONITOR_DEMO_ZONES=1 docker compose \
-  -f docker-compose.yml -f docker-compose.webcam.yml -f docker-compose.monitor.yml \
-  up -d --build
-```
-
-Para un Frigate remoto y zonas calibradas, configura `.env` con su URL accesible
-**desde Docker** y `VISION_CORE_ZONES_FILE=config/zones.json`:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.monitor.yml up -d --build
-```
-
-No añadas el complemento de webcam al conectarte al Frigate remoto: sobrescribe
-la URL RTSP con el servicio local. Para detener el conjunto usa los mismos `-f`
-y `down`. Detén el monitor Python antes de iniciar el de Docker si ambos usan 8080.
-Los pesos YOLO y torchvision deben estar disponibles; el primer inicio puede
-requerir descarga. La construcción de la imagen no se verificó en esta sesión.
+Después de calibrar, configura `VISION_CORE_MONITOR_UNCALIBRATED=0` y la ruta
+`VISION_CORE_ZONES_FILE` en `.env`. Hasta entonces el monitor acepta la resolución
+nativa sin generar cruces de sala. La imagen utiliza CPU y un volumen de caché
+para pesos. Los reinicios del proceso borran la memoria temporal de identidades.
 
 ## Implementación y acceso
 

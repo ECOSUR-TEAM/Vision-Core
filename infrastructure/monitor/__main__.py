@@ -15,6 +15,7 @@ def main():
     parser.add_argument('--port', type=int, default=8080)
     parser.add_argument('--zones', default=os.getenv('VISION_CORE_ZONES_FILE'))
     parser.add_argument('--uncalibrated', action='store_true',
+                        default=os.getenv('VISION_CORE_MONITOR_UNCALIBRATED', '0') == '1',
                         help='Detectar y recordar personas sin inventar zonas ni cruces')
     parser.add_argument('--demo-zones', action='store_true',
                         default=os.getenv('VISION_CORE_MONITOR_DEMO_ZONES', '0') == '1',
@@ -32,6 +33,7 @@ def main():
     state = MonitorState(demo=args.demo_zones or args.uncalibrated)
     server = make_server(args.host, args.port, state)
     stop = threading.Event()
+    failed = threading.Event()
 
     def pipeline():
         source = None
@@ -64,6 +66,9 @@ def main():
             kind = type(error).__name__
             state.set_status('error', kind)
             logging.error('Pipeline detenido (%s). Revisa stream, zonas y pesos locales.', kind)
+            if os.getenv('VISION_CORE_MONITOR_EXIT_ON_ERROR', '0') == '1':
+                failed.set()
+                server.shutdown()
         finally:
             if source is not None:
                 source.close()
@@ -82,6 +87,8 @@ def main():
         stop.set()
         server.server_close()
         worker.join(timeout=2)
+    if failed.is_set():
+        raise SystemExit(1)
 
 
 if __name__ == '__main__':

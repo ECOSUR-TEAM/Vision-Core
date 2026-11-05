@@ -30,22 +30,22 @@ producir transiciones: estos eventos no representan una puerta real calibrada.
 
 ## Qué muestra
 
-- Video con cajas, confianza de detección, ID corto de persona, track local y
-  polígonos. El punto dentro de la caja indica la posición usada para las zonas.
-- Lista de personas visibles y zona observada. El ID completo está en JSON y en
-  el título del ID de la lista; el ID corto se usa para facilitar la lectura.
-- FPS del pipeline y tiempo de detección, embeddings/ReID y zonas. No son medidas
-  de latencia desde la cámara. La interfaz consulta resultados aproximadamente
-  cada 100 ms, por lo que su refresco puede ser menor que los FPS de análisis.
-- Entradas/salidas acumuladas durante esta ejecución y los últimos 100 eventos.
-  Los contadores no son un aforo: la escena puede comenzar con personas dentro.
-- Estados de inicio, video sin actualizar, error y desconexión. Tras cinco segundos
-  sin resultados nuevos, el panel deja de presentar las personas como actuales.
+- Video como elemento principal, con recuadros y etiquetas «Persona 1», «Persona 2».
+  El número se conserva si ReID recupera a la misma persona después de perderla.
+- Cantidad de personas visibles y una lista sencilla. Con zonas calibradas también
+  indica si están dentro, fuera o fuera de las zonas marcadas.
+- Avisos claros cuando la imagen se detiene o se pierde la conexión. Si el navegador
+  no recibe una imagen nueva en 2,5 segundos, deja de mostrar el conteo como actual.
+
+El panel no muestra FPS, porcentajes, identificadores técnicos, tiempos ni tablas
+ de eventos. Estos datos siguen disponibles en `/api/state`. En modo demostración
+se ocultan los polígonos y aparece «Calibración pendiente»; los eventos de ejemplo
+siguen calculándose internamente pero no se presentan como movimientos reales.
 
 Los IDs distinguen personas durante la sesión; no son reconocimiento facial ni
 identidades nominales. ReID intenta recuperar IDs perdidos mediante similitud de
-embeddings, con el TTL existente de 60 segundos desde que el tracker declara la
-pérdida. No garantiza continuidad ante oclusiones, cruces o cambios de apariencia.
+embeddings, durante esta ejecución de forma predeterminada
+(`VISION_CORE_REID_TTL_SECONDS=0`). No garantiza continuidad ante oclusiones, cruces o cambios de apariencia.
 
 ## Zonas reales y Frigate remoto
 
@@ -97,11 +97,29 @@ una inferencia adicional por navegador. La API expone:
 | `/` | Panel claro, sin recursos web externos |
 | `/api/state` | Estado, personas, métricas y eventos recientes JSON |
 | `/api/frame` | Último JPEG anotado; 503 mientras no haya frames |
+| `/api/frame?after=N` | Espera hasta 1 s por una imagen posterior a N; 204 si aún no llega. Incluye `X-Frame-Sequence`. |
 
 Un hilo posee la captura RTSP y conserva únicamente el frame más reciente. Si
 la inferencia tarda, reemplaza los frames intermedios en lugar de crear una cola
 creciente. El contador de descartados incluye ese reemplazo, no pérdida de red.
 Las reconexiones siguen la política del adaptador RTSP existente.
+
+El decodificador usa un solo hilo (`VISION_CORE_DECODER_THREADS=1`) para evitar
+la cola de salida que puede introducir la decodificación H.264 multihilo. Se puede
+usar `0` para volver a selección automática, por ejemplo para evaluar rendimiento
+con resoluciones mayores. Esta opción requiere OpenCV con `CAP_PROP_N_THREADS`.
+Referencia: [propiedades oficiales de OpenCV](https://docs.opencv.org/4.13.0/d4/d15/group__videoio__flags__base.html).
+
+La imagen se solicita inmediatamente después de mostrar la anterior; si no hay
+una nueva, el servidor espera y la entrega al publicarse. No hay una pausa fija
+entre imágenes ni una cola por navegador. La consulta de personas/estado ocurre
+cada 500 ms por separado y no bloquea el video. Si el servidor se reinicia, el
+cliente reinicia también su número de secuencia.
+
+No se promete latencia cero. El sensor, codificador de Frigate, red, inferencia y
+pantalla aún añaden tiempo. Para medir el retraso absoluto, apunta la cámara a un
+reloj con milisegundos y compara ese reloj con la imagen del panel en una misma
+captura. Los FPS y la edad de publicación del JPEG no miden ese retraso total.
 
 El monitor conserva imágenes y eventos solo en memoria. Está pensado para pruebas
 locales, sin autenticación. El bind predeterminado es `127.0.0.1`; `--host 0.0.0.0`
@@ -119,3 +137,32 @@ Chromium automatizado comprobó frames actualizados, datos reales, diseño claro
 escritorio de 1440 px y móvil simulado de 390 px sin desbordamiento horizontal,
 estados de datos antiguos, desconexión y recuperación, sin errores JavaScript.
 No se probó en teléfono físico. Suite Python: 168 pasaron, 4 omitidos.
+
+
+2026-11-04: comparación simultánea de la decodificación automática y de un hilo
+sobre el mismo restream de webcam. Se emparejaron 159 frames por SHA-256 de sus
+píxeles BGR. La versión automática entregó esas mismas imágenes una mediana de
+996 ms más tarde (mínimo 986 ms, máximo 1804 ms). Es una comparación entre
+configuraciones; no mide latencia absoluta sensor→pantalla. Suite: 171 pasaron,
+4 omitidos. Se mantienen las zonas de ejemplo sin calibración real.
+
+La interfaz simplificada se verificó en Firefox con video real: 30 imágenes nuevas
+recibidas en 2 segundos, sin errores JavaScript. Se comprobaron anchos de 390,
+768 y 1440 px sin desbordamiento, recuperación tras interrumpir el video y
+actualización de imágenes independiente de una consulta de datos retrasada.
+La prueba de 15 imágenes/s verifica fluidez, no latencia absoluta.
+
+
+## Cámara Ethernet sin calibración
+
+Para usar la resolución nativa de una cámara nueva, sin polígonos de ejemplo:
+
+```bash
+python -m infrastructure.monitor --uncalibrated --port 8080
+```
+
+Este modo admite 1280 × 800 de la Vivotek FD8134 y otras resoluciones. Detecta y
+recuerda personas pero no genera entradas/salidas hasta que haya zonas reales.
+El texto «Calibración pendiente» sigue visible. Al volver a ver a alguien, la
+etiqueta se conserva si el tracker o la memoria recuperan su identidad.
+Consulta [la memoria de sesión](../infrastructure/reid/README.md).

@@ -48,6 +48,14 @@ hay que pasar el dispositivo al host que ejecuta Docker.
 | Eventos repetidos cerca del borde | Revisar calibración y ruido; aumentar confirmación solo tras medir el retraso adicional. |
 | Archivo de salida ya existe | Elegir nombre nuevo; los comandos de captura/demo/registro evitan sobrescribir. |
 
+## Retraso del video
+
+El adaptador RTSP usa `VISION_CORE_DECODER_THREADS=1` para reducir el búfer de
+salida de OpenCV. El monitor consume la imagen más reciente y el navegador espera
+la siguiente sin pausas de sondeo. Si persiste retraso, compara con el restream
+original y revisa codificador/cámara/red. Evita atribuir la latencia total a los
+FPS: consulta la [prueba de latencia](monitor.md#implementación-y-acceso).
+
 ## Monitor web
 
 La analítica en vivo se ve en http://127.0.0.1:8080 al ejecutar

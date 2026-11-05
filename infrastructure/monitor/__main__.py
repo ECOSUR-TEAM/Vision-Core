@@ -14,18 +14,22 @@ def main():
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--port', type=int, default=8080)
     parser.add_argument('--zones', default=os.getenv('VISION_CORE_ZONES_FILE'))
+    parser.add_argument('--uncalibrated', action='store_true',
+                        help='Detectar y recordar personas sin inventar zonas ni cruces')
     parser.add_argument('--demo-zones', action='store_true',
                         default=os.getenv('VISION_CORE_MONITOR_DEMO_ZONES', '0') == '1',
                         help='Zonas ilustrativas de 640 × 480 para webcam')
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error('Puerto inválido')
-    if args.demo_zones:
+    if args.uncalibrated:
+        args.zones = None
+    elif args.demo_zones:
         args.zones = str(Path(__file__).resolve().parents[2] / 'config/zones.example.json')
     elif not args.zones:
         parser.error('Indica --zones o --demo-zones')
     logging.basicConfig(level=logging.INFO)
-    state = MonitorState(demo=args.demo_zones)
+    state = MonitorState(demo=args.demo_zones or args.uncalibrated)
     server = make_server(args.host, args.port, state)
     stop = threading.Event()
 
@@ -41,14 +45,16 @@ def main():
             from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
             from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
             from infrastructure.door.zone_config import load_zones
+            from infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
 
-            zones = load_zones(args.zones)
-            analytics = PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door,
+            zones = load_zones(args.zones) if args.zones else None
+            analytics = (PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door,
                 confirmation_frames=int(os.getenv('VISION_CORE_ZONE_CONFIRMATION_FRAMES', '3')))
+                if zones else UncalibratedAnalytics())
             source = LatestFrameSource(RtspVideoSource.from_env())
-            app = VisionCoreApp(source, YoloDetectorManager(), InMemoryReID(), analytics,
+            app = VisionCoreApp(source, YoloDetectorManager(), InMemoryReID.from_env(), analytics,
                 TorchvisionEmbeddingExtractor.from_env(), state.event,
-                expected_frame_size=(zones.width, zones.height),
+                expected_frame_size=(zones.width, zones.height) if zones else None,
                 on_frame=lambda frame, tracks, ms: state.publish(
                     frame, tracks, ms, zones, analytics, source.dropped_frames))
             app.run(stop.is_set)

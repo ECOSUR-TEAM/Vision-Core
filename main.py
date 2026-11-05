@@ -24,7 +24,7 @@ def main() -> None:
     app = VisionCoreApp(
         video_source=video_source,
         detector=YoloDetectorManager(),
-        reid_memory=InMemoryReID(),
+        reid_memory=InMemoryReID.from_env(),
         door_analytics=PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door,
             confirmation_frames=int(os.getenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "3"))),
         embedder=TorchvisionEmbeddingExtractor.from_env(),

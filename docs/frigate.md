@@ -4,6 +4,12 @@ Vision Core consume el restream RTSP de Frigate/go2rtc. Las credenciales y la
 conexión a la cámara pertenecen a Frigate; no hace falta cambiar el adaptador
 Python al pasar de la webcam al servidor de la sala.
 
+## Cámara Ethernet conectada a la laptop
+
+Para la Vivotek FD8134, usa [la guía Ethernet](ethernet-camera.md) y el complemento
+`docker-compose.camera.yml`, en lugar del complemento de webcam. La ruta comprobada
+es `/live.sdp`, pero la IP depende de la concesión DHCP de la laptop.
+
 ## Prueba local con la webcam (Linux)
 
 Incluimos `docker-compose.webcam.yml` como complemento del Compose base. Usa
@@ -142,7 +148,8 @@ Vision Core; pueden ser distintas de las de la cámara o del acceso web a Frigat
 Codifica caracteres reservados del usuario/contraseña como URL. No guardes claves
 reales en ejemplos versionados. `.env` está ignorado por Git.
 
-La Vivotek antigua requiere identificar modelo, puerto, credenciales y ruta RTSP.
+La Vivotek local se identificó como FD8134 y se comprobó `/live.sdp` en el puerto
+554. En otras cámaras confirma modelo, puerto, credenciales y ruta RTSP.
 Que funcione su interfaz en Internet Explorer no confirma esa ruta ni el códec.
 No se automatiza la búsqueda ni se supone una ruta universal. Una vez funcionando
 Frigate, Vision Core no necesita acceder a esa interfaz web.

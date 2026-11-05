@@ -1,54 +1,366 @@
 <!doctype html>
 <html lang="es">
+
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Vision Core · Monitor en vivo</title>
-<style>
-:root{color-scheme:light;--bg:#f4f5f0;--panel:#fff;--line:#d3ddd5;--text:#1d3027;--muted:#53695b;--accent:#23633f;--warn:#875c13}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",sans-serif;font-size:16px;line-height:1.45;font-kerning:normal;text-rendering:optimizeLegibility}main{max-width:1480px;margin:auto;padding:28px clamp(16px,3vw,48px)}header{display:flex;justify-content:space-between;align-items:center;gap:24px;border-bottom:1px solid var(--line);padding-bottom:24px}h1{font-size:24px;margin:0;font-weight:650}h2{font-size:18px;margin:0 0 16px}p{max-width:70ch;margin:8px 0;color:var(--muted)}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:0 0 6px}.status{display:flex;align-items:center;gap:10px;color:var(--warn)}.dot{width:9px;height:9px;border-radius:50%;background:currentColor}.status.live{color:var(--accent)}.notice{padding:12px 16px;background:#fff2d5;border-left:3px solid var(--warn);color:#725017;margin:24px 0}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:24px 0}.metric{border-left:1px solid var(--line);padding-left:18px}.metric:first-child{border:0;padding:0}.value{display:block;font-size:32px;line-height:1.2;font-variant-numeric:tabular-nums}.label{font-size:14px;color:var(--muted)}.workspace{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);gap:24px}.viewer{background:#080d0a;position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;overflow:hidden}#video{display:block;width:100%;height:100%;object-fit:contain}.offline #video{opacity:.25}.overlay{position:absolute;inset:auto 20px 20px;padding:12px 16px;background:#f4f5f0f2;color:var(--text);border:1px solid var(--line)}.overlay[hidden]{display:none}.caption{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);padding:12px 0}.panel{background:var(--panel);padding:22px;min-width:0}.people{list-style:none;margin:0;padding:0}.person{padding:14px 0;border-top:1px solid var(--line)}.person strong{display:block;color:var(--accent);font-family:ui-monospace,monospace;font-size:16px}.person span{color:var(--muted);font-size:14px}.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted)}.legend span:before{content:"";display:inline-block;width:8px;height:8px;background:var(--color);margin-right:7px}.events{margin-top:24px}.event-head{display:flex;justify-content:space-between;gap:16px;align-items:baseline}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:14px;text-align:left;font-variant-numeric:tabular-nums}th{font-weight:500;color:var(--muted);border-bottom:1px solid var(--line)}td,th{padding:12px 14px 12px 0;white-space:nowrap}td:last-child{color:var(--muted)}.empty{color:var(--muted);padding:20px 0}.footer{font-size:13px;margin-top:24px;max-width:90ch}a{color:var(--accent);text-underline-offset:3px}a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}@media(max-width:850px){.workspace{grid-template-columns:1fr}.metrics{gap:12px}.value{font-size:26px}.panel{padding:18px}header{align-items:flex-start}.caption{flex-wrap:wrap}}@media(max-width:480px){.metrics{grid-template-columns:1fr 1fr;row-gap:22px}.metric:nth-child(3){border:0;padding:0}header{flex-direction:column;gap:12px}.event-head{display:block}}
-</style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Vision Core · Cámara en vivo</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f5f6f2;
+            --panel: #fff;
+            --line: #dce3dc;
+            --text: #20352b;
+            --muted: #5a6c60;
+            --accent: #286444;
+            --soft: #edf5ee;
+            --warn: #805b20
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", sans-serif;
+            font-size: 16px;
+            line-height: 1.45;
+            font-kerning: normal
+        }
+
+        main {
+            max-width: 1500px;
+            margin: auto;
+            padding: 28px clamp(16px, 3vw, 48px)
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            padding-bottom: 24px
+        }
+
+        .brand {
+            font-size: 14px;
+            color: var(--muted);
+            margin: 0 0 4px
+        }
+
+        h1 {
+            font-size: clamp(24px, 3vw, 30px);
+            font-weight: 600;
+            margin: 0
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0
+        }
+
+        p {
+            max-width: 65ch;
+            margin: 8px 0;
+            color: var(--muted)
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--line);
+            border-radius: 30px;
+            padding: 8px 14px;
+            color: var(--warn);
+            font-size: 14px;
+            white-space: nowrap;
+            background: var(--panel)
+        }
+
+        .status.live {
+            color: var(--accent);
+            background: var(--soft)
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 270px;
+            gap: 24px;
+            align-items: start
+        }
+
+        .video-card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden
+        }
+
+        .viewer {
+            width: 100%;
+            background: #17201b;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 4/3;
+            max-height: 73vh
+        }
+
+        #video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain
+        }
+
+        .offline #video {
+            opacity: .2
+        }
+
+        .overlay {
+            position: absolute;
+            inset: auto 20px 20px;
+            padding: 16px;
+            background: #ffffffed;
+            border-radius: 8px;
+            color: var(--text);
+            max-width: 60ch
+        }
+
+        .overlay[hidden] {
+            display: none
+        }
+
+        .caption {
+            padding: 14px 18px;
+            font-size: 14px;
+            color: var(--muted);
+            margin: 0
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 22px
+        }
+
+        .count {
+            font-size: 48px;
+            font-weight: 500;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+            display: block;
+            margin: 20px 0 4px
+        }
+
+        .hint {
+            font-size: 14px
+        }
+
+        .people {
+            list-style: none;
+            margin: 20px 0 0;
+            padding: 0
+        }
+
+        .person {
+            border-top: 1px solid var(--line);
+            padding: 14px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px
+        }
+
+        .person strong {
+            font-size: 16px;
+            font-weight: 600
+        }
+
+        .person span {
+            font-size: 14px;
+            color: var(--muted)
+        }
+
+        .empty {
+            margin-top: 18px;
+            font-size: 14px;
+            color: var(--muted)
+        }
+
+        .note {
+            font-size: 14px;
+            margin: 18px 4px 0;
+            max-width: 65ch
+        }
+
+        .note strong {
+            font-weight: 600;
+            color: var(--text)
+        }
+
+        .privacy {
+            font-size: 13px;
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px solid var(--line)
+        }
+
+        @media(max-width:850px) {
+            .workspace {
+                grid-template-columns: minmax(0, 1fr) 230px;
+                gap: 16px
+            }
+
+            .panel {
+                padding: 18px
+            }
+        }
+
+        @media(max-width:650px) {
+            main {
+                padding-top: 20px
+            }
+
+            .workspace {
+                grid-template-columns: 1fr
+            }
+
+            .viewer {
+                max-height: none
+            }
+
+            .panel {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 0 16px
+            }
+
+            .count {
+                grid-column: 2;
+                grid-row: 1/3;
+                font-size: 38px;
+                margin: 0
+            }
+
+            .people,
+            .empty,
+            .privacy {
+                grid-column: 1/-1
+            }
+
+            .people {
+                margin-top: 12px
+            }
+
+            .privacy {
+                margin-top: 12px
+            }
+
+            .status {
+                padding: 7px 10px;
+                font-size: 13px
+            }
+
+            header {
+                gap: 12px;
+                align-items: flex-start
+            }
+
+            .overlay {
+                inset: auto 12px 12px;
+                font-size: 14px;
+                padding: 12px
+            }
+        }
+    </style>
 </head>
-<body><main>
-<header><div><p class="eyebrow">Analítica de personas</p><h1>Vision Core <span style="color:var(--muted);font-weight:400">/ Monitor</span></h1></div><div id="status" class="status" role="status"><span class="dot"></span><span id="statusText">Iniciando modelos…</span></div></header>
-<div id="notice" class="notice" hidden>Zonas de demostración: izquierda = exterior, derecha = interior. Cruza de un lado al otro para probar eventos. No representan una puerta calibrada.</div>
-<section class="metrics" aria-label="Métricas en vivo">
-<div class="metric"><span class="value" id="visible">—</span><span class="label">Personas visibles</span></div>
-<div class="metric"><span class="value" id="fps">—</span><span class="label">FPS de análisis</span></div>
-<div class="metric"><span class="value" id="processing">—</span><span class="label">Inferencia y analítica · ms</span></div>
-<div class="metric"><span class="value"><span id="entered">0</span> / <span id="exited">0</span></span><span class="label">Entradas / salidas de sesión</span></div>
-</section>
-<div class="workspace"><section aria-label="Video anotado">
-<div class="viewer offline" id="viewer"><img id="video" alt="Video de Frigate con cajas de personas, IDs y polígonos de zonas"><div id="overlay" class="overlay">Preparando detector, ReID y conexión de video…</div></div>
-<div class="caption"><span>Frigate → YOLO → tracking → ReID → zonas</span><span id="frameInfo">Esperando el primer frame</span></div>
-<div class="legend"><span style="--color:#5aafdc">Exterior</span><span style="--color:#64d296">Interior</span><span style="--color:#f0c846">Puerta</span></div>
-</section><aside class="panel"><h2>Personas en escena</h2><p>El ID se conserva durante el seguimiento. ReID intenta recuperarlo tras una pérdida breve.</p><ul id="people" class="people"></ul><div id="emptyPeople" class="empty">Esperando análisis…</div><p class="footer">La confianza corresponde a la detección de persona. La zona mostrada es la observada; los eventos requieren varias observaciones consecutivas.</p></aside></div>
-<section class="panel events"><div class="event-head"><h2>Actividad de la sesión</h2><span class="label">Últimos 100 eventos · <a href="/api/state" target="_blank" rel="noopener">Ver datos JSON</a></span></div><div class="table-wrap"><table><thead><tr><th>Hora</th><th>Evento</th><th>Persona</th><th>Transición</th></tr></thead><tbody id="events"></tbody></table></div><p id="emptyEvents" class="empty">Todavía no hay cruces de zona confirmados.</p></section>
-<p class="footer">Los IDs son temporales y no identifican nombres ni rostros. Los FPS corresponden al análisis; se descartan frames intermedios para priorizar la imagen reciente. Los eventos y contadores se reinician al reiniciar el monitor.</p>
-</main>
-<script>
-const el=id=>document.getElementById(id);
-const labels={starting:'Iniciando modelos…',running:'Análisis en vivo',stale:'Sin frames recientes',error:'Análisis detenido',stopped:'Monitor detenido'};
-const eventLabels={PERSON_ENTERED:'Entrada',PERSON_EXITED:'Salida',FALSE_ALARM:'Salida sin entrada'};
-let imageUrl=null,lastFrame=-1,healthy=false;
-function textCell(row,text){const cell=document.createElement('td');cell.textContent=text;row.append(cell);}
-async function poll(){
- try{
-  const response=await fetch('/api/state',{cache:'no-store',signal:AbortSignal.timeout(5000)});
-  if(!response.ok)throw new Error('HTTP');
-  const data=await response.json();healthy=data.status==='running';
-  el('statusText').textContent=labels[data.status]||data.status;el('status').classList.toggle('live',healthy);
-  el('viewer').classList.toggle('offline',!healthy);el('overlay').hidden=healthy;
-  el('overlay').textContent=data.status==='error'?`El análisis se detuvo (${data.error}). Revisa conexión RTSP, zonas y pesos; después reinicia el monitor.`:data.status==='starting'?'Preparando detector, ReID y conexión de video…':'No se reciben resultados nuevos. La imagen puede corresponder al último frame procesado.';
-  el('notice').hidden=!data.demo_zones;
-  el('visible').textContent=healthy?data.people.length:'—';el('fps').textContent=healthy?data.fps.toFixed(1):'—';el('processing').textContent=healthy?data.processing_ms.toFixed(0):'—';
-  el('entered').textContent=data.counts.PERSON_ENTERED||0;el('exited').textContent=data.counts.PERSON_EXITED||0;
-  el('frameInfo').textContent=data.frame?`Frame ${data.frame} · ${data.dropped_frames} descartados`: 'Esperando el primer frame';
-  el('people').replaceChildren();for(const p of data.people){const li=document.createElement('li');li.className='person';const name=document.createElement('strong');name.textContent=p.person_id.slice(0,8);name.title=p.person_id;const detail=document.createElement('span');detail.textContent=`Track ${p.track_id} · ${(p.confidence*100).toFixed(0)} % · ${p.zone}`;li.append(name,detail);el('people').append(li);}
-  el('emptyPeople').hidden=data.people.length>0;el('emptyPeople').textContent=healthy?'No se detectan personas en este frame.':'Esperando análisis actualizado…';
-  el('events').replaceChildren();for(const e of data.events){const row=document.createElement('tr');textCell(row,new Date(e.timestamp*1000).toLocaleTimeString('es-MX'));textCell(row,eventLabels[e.event]||e.event);textCell(row,e.person_id.slice(0,8));textCell(row,`${e.metadata.from_zone} → ${e.metadata.to_zone}`);el('events').append(row);}el('emptyEvents').hidden=data.events.length>0;
-  if(data.frame!==lastFrame&&data.frame>0){const res=await fetch('/api/frame',{cache:'no-store',signal:AbortSignal.timeout(5000)});if(!res.ok)throw new Error('Video');const url=URL.createObjectURL(await res.blob());el('video').src=url;if(imageUrl)URL.revokeObjectURL(imageUrl);imageUrl=url;lastFrame=data.frame;}
- }catch(error){healthy=false;el('statusText').textContent='Conexión interrumpida';el('status').classList.remove('live');el('viewer').classList.add('offline');el('overlay').hidden=false;el('overlay').textContent='No se puede conectar con Vision Core. Reintentando…';el('visible').textContent='—';el('fps').textContent='—';el('processing').textContent='—';el('people').replaceChildren();el('emptyPeople').hidden=false;el('emptyPeople').textContent='Sin datos actuales';}
- finally{setTimeout(poll,100);}
-}
-poll();
-</script></body></html>
+
+<body>
+    <main>
+        <header>
+            <div>
+                <p class="brand">Vision Core</p>
+                <h1>Cámara en vivo</h1>
+            </div>
+            <div id="status" class="status" role="status"><span class="dot"></span><span id="statusText">Preparando
+                    cámara…</span></div>
+        </header>
+        <div class="workspace">
+            <section aria-label="Video de la cámara">
+                <div class="video-card">
+                    <div class="viewer offline" id="viewer"><img id="video"
+                            alt="Cámara en vivo. Los recuadros señalan a las personas detectadas.">
+                        <div id="overlay" class="overlay">Estamos preparando la cámara y la detección de personas.</div>
+                    </div>
+                    <p class="caption">Cada recuadro señala a una persona que aparece en la imagen.</p>
+                </div>
+                <p id="notice" class="note" hidden><strong>Calibración pendiente.</strong> Más adelante marcaremos la
+                    entrada, el interior y la puerta.</p>
+            </section>
+            <aside class="panel">
+                <h2>Personas visibles</h2><span class="count" id="visible">—</span>
+                <p class="hint">Detectadas en este momento</p>
+                <ul id="people" class="people"></ul>
+                <p id="emptyPeople" class="empty">Esperando la imagen…</p>
+                <p class="privacy">El número ayuda a seguir a cada persona mientras aparece en cámara. No identifica su
+                    nombre.</p>
+            </aside>
+        </div>
+    </main>
+    <script>
+        const el = id => document.getElementById(id);
+        let lastFrame = 0, lastImageAt = 0, state = null, imageUrl = null, videoFailed = false;
+        const labels = { starting: 'Preparando cámara…', running: 'En vivo', stale: 'Imagen detenida', error: 'Cámara no disponible', stopped: 'Cámara detenida' };
+        function render() {
+            const fresh = lastImageAt > 0 && performance.now() - lastImageAt < 2500;
+            const live = state?.status === 'running' && fresh && !videoFailed;
+            const status = !state ? 'Sin conexión' : state.status === 'running' && !live ? (lastImageAt ? 'stale' : 'starting') : state.status;
+            el('statusText').textContent = labels[status] || status; el('status').classList.toggle('live', live);
+            el('viewer').classList.toggle('offline', !live); el('overlay').hidden = live;
+            el('overlay').textContent = status === 'starting' ? 'Estamos preparando la cámara y la detección de personas.' : !state ? 'Se perdió la conexión. Intentaremos conectarnos de nuevo automáticamente.' : 'La imagen no se está actualizando. Estamos esperando que vuelva la cámara.';
+            el('notice').hidden = !state?.demo_zones;
+            el('visible').textContent = live ? state.people.length : '—';
+            el('people').replaceChildren();
+            if (live) for (const person of state.people) { const li = document.createElement('li'); li.className = 'person'; const name = document.createElement('strong'); name.textContent = person.display_name; const zone = document.createElement('span'); zone.textContent = state.demo_zones ? 'En cámara' : ({ interior: 'En el interior', exterior: 'En el exterior', fuera: 'Fuera de las zonas marcadas' }[person.zone] || 'En cámara'); li.append(name, zone); el('people').append(li); }
+            el('emptyPeople').hidden = live && state.people.length > 0;
+            el('emptyPeople').textContent = live ? 'No hay personas a la vista.' : 'Esperando la imagen…';
+        }
+        async function pollState() {
+            try { const response = await fetch('/api/state', { cache: 'no-store', signal: AbortSignal.timeout(3000) }); if (!response.ok) throw new Error(); state = await response.json(); if (state.frame < lastFrame) lastFrame = 0; }
+            catch { state = null; }
+            render(); setTimeout(pollState, 500);
+        }
+        async function videoLoop() {
+            while (true) {
+                try {
+                    const response = await fetch(`/api/frame?after=${lastFrame}`, { cache: 'no-store', signal: AbortSignal.timeout(3000) });
+                    if (response.status === 204) continue;
+                    if (!response.ok) throw new Error();
+                    const next = URL.createObjectURL(await response.blob());
+                    const decoded = new Image(); decoded.src = next;
+                    try { await decoded.decode(); } catch (error) { URL.revokeObjectURL(next); throw error; }
+                    el('video').src = next; if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = next;
+                    lastFrame = Number(response.headers.get('X-Frame-Sequence')); lastImageAt = performance.now(); videoFailed = false;
+                } catch { videoFailed = true; render(); await new Promise(resolve => setTimeout(resolve, 500)); }
+            }
+        }
+        pollState(); videoLoop();
+    </script>
+</body>
+
+</html>

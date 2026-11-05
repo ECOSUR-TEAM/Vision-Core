@@ -1,0 +1,21 @@
+# Use instead of docker-compose.webcam.yml for an Ethernet/IP camera.
+services:
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:stable
+    shm_size: "256mb"
+    environment:
+      FRIGATE_CAMERA_RTSP_URL: ${FRIGATE_CAMERA_RTSP_URL:?Configura la URL real de la cámara en .env}
+    ports:
+      - "127.0.0.1:15000:5000"
+      - "127.0.0.1:28554:8554"
+    volumes:
+      - ./config/frigate-camera-local:/config
+    tmpfs:
+      - /tmp/cache:size=256m
+      - /media/frigate:size=256m
+  vision-core:
+    environment:
+      VISION_CORE_RTSP_URL: rtsp://frigate:8554/entrada
+    depends_on:
+      frigate:
+        condition: service_healthy

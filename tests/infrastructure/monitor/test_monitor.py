@@ -93,3 +93,50 @@ def test_capture_failure_propagates_and_releases_source():
         source.read_frame()
     source.close()
     assert closed.is_set()
+
+
+def test_viewer_waits_for_new_image_and_skips_old_images():
+    state = MonitorState()
+    result = []
+    started = threading.Event()
+    def viewer():
+        started.set()
+        result.append(state.next_frame(0))
+    worker = threading.Thread(target=viewer)
+    worker.start()
+    assert started.wait(1)
+    with state.changed:
+        state.sequence, state.jpeg = 3, b'newest'
+        state.changed.notify_all()
+    worker.join(2)
+    assert not worker.is_alive()
+    assert result == [(b'newest', 3)]
+    # A viewer that already received the image must not display it as new.
+    assert state.next_frame(3) == (None, 3)
+
+
+def test_person_label_survives_a_change_of_track():
+    state = MonitorState(demo=True)
+    zones = load_zones('config/zones.example.json')
+    analytics = PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door)
+    frame = np.zeros((480, 640, 3), dtype=np.uint8)
+    def publish(person_id, track_id):
+        state.publish(frame, [ResolvedTrack(person_id, BBox(10, 30, 110, 200), .9, track_id)],
+                      20, zones, analytics)
+        return state.snapshot()['people'][0]['display_name']
+    assert publish('original', 1) == 'Persona 1'
+    assert publish('different', 2) == 'Persona 2'
+    assert publish('original', 3) == 'Persona 1'
+
+
+def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
+    from infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
+    analytics = UncalibratedAnalytics()
+    state = MonitorState(demo=True)
+    frame = np.zeros((800, 1280, 3), np.uint8)
+    person = ResolvedTrack('one', BBox(0, 0, 100, 200), .9, 1)
+    assert analytics.update('one', (50, 100)) is None
+    state.publish(frame, [person], 10, None, analytics)
+    assert state.snapshot()['events'] == []
+    assert state.snapshot()['people'][0]['display_name'] == 'Persona 1'
+    assert cv2.imdecode(np.frombuffer(state.jpeg, np.uint8), cv2.IMREAD_COLOR).shape == frame.shape

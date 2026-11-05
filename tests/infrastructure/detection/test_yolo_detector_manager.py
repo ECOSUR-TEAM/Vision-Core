@@ -259,7 +259,8 @@ def test_real_tracker_reports_loss_to_pipeline_once(detector):
     model.boxes = []
     for _ in range(30):
         app._process_frame(frame)
-    reid.mark_lost.assert_not_called()
+    # ReID becomes available on the first absent frame, before tracker expiry.
+    reid.mark_lost.assert_called_once()
     app._process_frame(frame)
     for _ in range(5):
         app._process_frame(frame)

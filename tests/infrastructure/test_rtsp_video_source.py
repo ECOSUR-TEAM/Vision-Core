@@ -87,3 +87,18 @@ def test_env(monkeypatch):
 def test_read_requires_open():
     with pytest.raises(RuntimeError):
         RtspVideoSource(URL).read_frame()
+
+
+def test_decoder_defaults_to_one_thread_and_allows_override(monkeypatch):
+    cap = capture()
+    video = source(monkeypatch, [cap])
+    video.open()
+    params = cap.open.call_args.args[2]
+    assert params[params.index(cv2.CAP_PROP_N_THREADS) + 1] == 1
+    video.close()
+    monkeypatch.setenv('VISION_CORE_RTSP_URL', URL)
+    monkeypatch.setenv('VISION_CORE_DECODER_THREADS', '0')
+    assert RtspVideoSource.from_env()._decoder_threads == 0
+    monkeypatch.setenv('VISION_CORE_DECODER_THREADS', '-1')
+    with pytest.raises(ValueError):
+        RtspVideoSource.from_env()

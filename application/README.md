@@ -11,7 +11,7 @@ Cada iteración:
 1. Lee un frame BGR. `None` termina la fuente; un fallo de conexión es una excepción.
 2. Ejecuta detección y tracking mediante `DetectorManager.process(frame)`.
 3. Consume `pop_lost_track_ids()`, entrega el último embedding a `mark_lost` y
-   elimina los mappings expirados antes de resolver nuevas detecciones.
+   libera los mappings de personas ausentes antes de resolver nuevas detecciones.
 4. Recorta cada persona, extrae su embedding y resuelve `track_id → person_id`.
 5. Entrega el `person_id` y el centro del bounding box a `DoorAnalytics.update`,
    conforme a su contrato. Emite únicamente eventos distintos de `None`.
@@ -47,3 +47,12 @@ la fuente y propaga el error. `run(stop_requested=...)` permite detener el bucle
 entre frames. El comportamiento de los consumidores existentes se conserva.
 
 El [monitor HTTP](../docs/monitor.md) conecta este observador a una vista en vivo.
+
+## Ausencias y reingresos
+
+La aplicación avisa a ReID en el primer frame sin una persona, aunque el tracker
+mantenga temporalmente su track. Reserva los tracks visibles antes de resolver
+nuevos candidatos. `SessionAttendance` añade a cada evento el indicador de retorno,
+visitantes únicos y ocupación calculada a partir de cruces confirmados. Reingresar
+con el mismo `person_id` no incrementa los visitantes únicos. La memoria se carga
+con `InMemoryReID.from_env()`; el control de reuniones queda pendiente.

@@ -38,30 +38,51 @@ inválidas y aplanado ResNet. Las pruebas reales ejecutan ambos modelos en CPU/C
 cuando hay pesos locales y hardware disponible; en otro caso se omiten
 explícitamente. Nunca descargan pesos durante pytest.
 
-## Tracks expirados y TTL
+## Memoria durante la sesión
 
-Después de `detector.process(frame)`, el pipeline consulta `pop_lost_track_ids()`
-y procesa las bajas antes de resolver las detecciones actuales. Así un track que
-reaparece con un ID local nuevo en ese mismo frame puede recuperar su `person_id`.
-Para cada baja recupera el último embedding observado, llama a `mark_lost` y
-elimina sus dos mappings locales. IDs desconocidos o duplicados no generan otra
-notificación. El embedding se copia para evitar cambios por reutilización del array.
+Los puntos de entrada (`main.py`, monitor y runner) construyen la memoria con
+`InMemoryReID.from_env()`. `VISION_CORE_REID_TTL_SECONDS=0` conserva las identidades
+mientras se ejecute el programa. El control explícito de inicio/fin de reunión
+queda pendiente. Detener o reiniciar el proceso vacía la memoria; no hay archivos
+de rostros ni persistencia de embeddings en disco.
 
-`InMemoryReID.mark_lost` elimina los mappings activos de esa persona y almacena
-una copia del embedding con tiempo monotónico. El TTL de 60 segundos empieza al
-expirar el track, no en su primer frame ausente. La tolerancia del tracker de
-30 frames y este TTL son dos etapas distintas.
+Puede establecerse un tiempo positivo en segundos, contado desde la primera
+observación ausente. El constructor directo conserva el valor anterior de 60 s
+para compatibilidad; los ejecutables utilizan el valor de entorno, por defecto 0.
 
-Una reaparición recupera el ID solo si ocurre antes de los 60 segundos y la mejor
-similitud coseno es estrictamente mayor a 0.85. A los 60 segundos exactos la entrada
-ya está caducada. Al recuperarla se retira de la memoria de perdidos para que no
-se asigne simultáneamente a otro track. Las entradas caducadas se purgan en
-`resolve` y `mark_lost`; no hay un hilo de limpieza cuando no se procesa actividad.
+Al dejar de verse una persona, su identidad se libera para ReID inmediatamente:
+no espera los 31 frames que necesita el tracker para eliminar su track. Si el
+tracker conserva su ID tras una oclusión, se respeta esa asociación. Antes de
+resolver nuevas detecciones se reservan los tracks visibles ya conocidos. Una
+identidad visible no puede asignarse a otra persona a la vez.
 
-Las pruebas usan reloj controlado y comprueban reaparición a 59.999, 60 y 61
-segundos, último embedding, limpieza de mappings, IDs duplicados/desconocidos,
-reaparición en el mismo frame y similitud insuficiente. Ejecutar:
+Cada identidad conserva hasta ocho apariencias diferentes normalizadas y la
+última vista al desaparecer. Así, la última imagen de espaldas no borra una vista
+frontal anterior. Una nueva detección recupera una identidad ausente cuando la
+mejor similitud supera `VISION_CORE_REID_THRESHOLD` (0.85) y aventaja al segundo
+candidato al menos 0.03. Si dos personas son demasiado parecidas, no se fusionan
+por fuerza: se crea una identidad nueva. La galería reduce fallos, pero el modelo
+sigue siendo ImageNet y no garantiza reconocer correctamente cada reingreso.
 
-```bash
-python -m pytest tests/application/test_vision_core_app.py tests/infrastructure/reid/test_memory_reid.py -q
-```
+## Personas únicas y ocupación
+
+`SessionAttendance` procesa los eventos de zonas dentro de `VisionCoreApp`.
+Cada evento incluye en `metadata`:
+
+- `unique_people_entered`: identidades distintas con entrada confirmada.
+- `people_inside`: identidades con entrada confirmada y sin salida posterior.
+- `returning_person`: una entrada de alguien registrado previamente.
+
+Ejemplo: A entra → 1 persona única y 1 dentro; A sale → 1 única y 0 dentro;
+A vuelve → 1 única y 1 dentro. El nuevo cruce sigue siendo un evento de entrada,
+pero no agrega un visitante único. Estos valores dependen de zonas calibradas y
+de una identidad correcta. No inicializan automáticamente a quienes ya estaban
+en la sala al arrancar. «Personas visibles» en el monitor solo cuenta detecciones
+actuales y no es un aforo.
+
+La modalidad `--uncalibrated` no emite eventos de zonas ni inventa ocupación.
+Para comprobar el conteo de entradas/salidas reales falta calibrar la sala.
+
+Pruebas: ausencia breve con track nuevo, retorno tras horas dentro de una sesión,
+TTL configurable, cambios de vista, candidatos ambiguos, exclusión de personas
+visibles y entrada→salida→reingreso sin aumentar visitantes únicos.

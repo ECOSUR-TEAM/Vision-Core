@@ -9,3 +9,4 @@ venv/
 third_party/
 bus.jpg
 config/frigate-local/
+config/frigate-camera-local/

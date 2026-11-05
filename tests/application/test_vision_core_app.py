@@ -140,3 +140,18 @@ def test_loss_processed_before_reappearance_in_same_frame():
     assert set(app._last_embedding_by_track) == {2}
     assert memory._active == {2: original}
     assert memory._lost == {}
+
+
+def test_reappearance_before_tracker_expiry_recovers_identity():
+    first = Detection(BBox(0, 0, 10, 10), 0, .9, 1)
+    returned = Detection(BBox(10, 0, 20, 10), 0, .9, 2)
+    memory = InMemoryReID(ttl_seconds=0)
+    snapshots = []
+    app = VisionCoreApp(FakeVideoSource([np.zeros((20, 20, 3), np.uint8)] * 3),
+                        FakeDetector([[first], [], [returned]], [[], [], []]),
+                        memory, FakeDoor(), lambda crop: np.array([1., 0.]), lambda e: None,
+                        on_frame=lambda frame, tracks, ms: snapshots.append(tracks))
+    app.run()
+    assert snapshots[0][0].person_id == snapshots[2][0].person_id
+    assert len(memory._active) == 1
+    assert set(memory._active) == {2}

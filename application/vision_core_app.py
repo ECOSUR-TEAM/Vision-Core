@@ -5,6 +5,7 @@ from typing import Callable
 import numpy as np
 
 from domain.entities import Event, ResolvedTrack
+from domain.attendance import SessionAttendance
 from domain.ports import VideoSource, DetectorManager, ReIDMemory, DoorAnalytics
 
 
@@ -40,6 +41,7 @@ class VisionCoreApp:
         self._door = door_analytics
         self._embed = embedder
         self._on_event = on_event
+        self._attendance = SessionAttendance()
         self._person_by_track: dict[int, str] = {}
         self._last_embedding_by_track: dict[int, np.ndarray] = {}
 
@@ -67,11 +69,22 @@ class VisionCoreApp:
         if self._expected_frame_size is not None and (frame.shape[1], frame.shape[0]) != self._expected_frame_size:
             raise ValueError("La resolución del stream no coincide con la calibración de zonas")
         detections = self._detector.process(frame)
-        for track_id in self._detector.pop_lost_track_ids():
+        visible_tracks = {det.track_id for det in detections}
+        absent_tracks = set(self._person_by_track) - visible_tracks
+        expired_tracks = set(self._detector.pop_lost_track_ids())
+        # Release identities as soon as they are absent, even if the motion tracker
+        # retains its local track for another 30 frames. Visible IDs stay reserved.
+        for track_id in (absent_tracks | expired_tracks) - visible_tracks:
             person_id = self._person_by_track.pop(track_id, None)
             embedding = self._last_embedding_by_track.pop(track_id, None)
             if person_id is not None and embedding is not None:
                 self._reid.mark_lost(person_id, embedding)
+
+        # Optional for legacy adapters; concrete ReID reserves still-known IDs
+        # before a new track can claim the same absent person's appearance.
+        begin_frame = getattr(self._reid, 'begin_frame', None)
+        if begin_frame is not None:
+            begin_frame(visible_tracks)
 
         for det in detections:
             coordinates = (det.bbox.x1, det.bbox.y1, det.bbox.x2, det.bbox.y2)
@@ -93,6 +106,7 @@ class VisionCoreApp:
 
             event = self._door.update(person_id, det.bbox.center)
             if event is not None:
+                event.metadata.update(self._attendance.apply(event))
                 self._on_event(event)
         if self._on_frame is not None:
             self._on_frame(frame, tuple(resolved), (time.perf_counter() - started) * 1000)

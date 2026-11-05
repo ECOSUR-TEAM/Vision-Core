@@ -140,3 +140,26 @@ def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
     assert state.snapshot()['events'] == []
     assert state.snapshot()['people'][0]['display_name'] == 'Persona 1'
     assert cv2.imdecode(np.frombuffer(state.jpeg, np.uint8), cv2.IMREAD_COLOR).shape == frame.shape
+
+
+def test_compose_mode_exits_on_pipeline_error_for_docker_restart(monkeypatch, tmp_path):
+    from infrastructure.monitor import __main__ as monitor
+    stopped = threading.Event()
+    closed = []
+    class Server:
+        def serve_forever(self, **kwargs):
+            assert stopped.wait(10), 'Pipeline did not request shutdown'
+        def shutdown(self):
+            stopped.set()
+        def server_close(self):
+            closed.append(True)
+    monkeypatch.setattr(monitor, 'make_server', lambda *args: Server())
+    monkeypatch.setattr(monitor.signal, 'signal', lambda *args: None)
+    monkeypatch.setattr('sys.argv', ['monitor', '--zones', str(tmp_path / 'missing.json')])
+    monkeypatch.setenv('VISION_CORE_MONITOR_UNCALIBRATED', '0')
+    monkeypatch.setenv('VISION_CORE_MONITOR_DEMO_ZONES', '0')
+    monkeypatch.setenv('VISION_CORE_MONITOR_EXIT_ON_ERROR', '1')
+    with pytest.raises(SystemExit) as error:
+        monitor.main()
+    assert error.value.code == 1
+    assert closed == [True]

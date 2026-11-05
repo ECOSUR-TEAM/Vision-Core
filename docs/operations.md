@@ -1,5 +1,11 @@
 # Requisitos y problemas conocidos
 
+## Arranque diario
+
+`docker compose up` inicia todo; `docker compose down` lo detiene. El perfil de
+Ethernet se activa automáticamente y el puente incluido evita la regla manual
+de firewall. Consulta [la guía de arranque](startup.md).
+
 ## Requisitos de ejecución
 
 - Equipo con Python/PyTorch/torchvision compatibles, CPU y memoria suficientes para
@@ -28,7 +34,7 @@ hay que pasar el dispositivo al host que ejecuta Docker.
 - Si la cámara está ocupada, cierra el proceso que la usa antes de iniciar Frigate.
 - Si no hay frames, comprueba dispositivo, formatos y FPS con FFmpeg; edita
   `config/frigate-local/config.yml` y reinicia el servicio local.
-- Para liberar la cámara usa `docker compose -f docker-compose.yml -f docker-compose.webcam.yml down`.
+- Para liberar la cámara usa `docker compose -f docker-compose.webcam.yml down`.
 - La configuración local persiste fuera de Git; el video temporal está en tmpfs.
 
 ## Diagnóstico
@@ -38,7 +44,7 @@ hay que pasar el dispositivo al host que ejecuta Docker.
 | Falta `VISION_CORE_RTSP_URL` o `VISION_CORE_ZONES_FILE` | Copiar y editar `.env.example`; exportar `.env` en Bash. Python no lo carga solo. |
 | No conecta o agota reintentos | Revisar host Frigate, puerto 8554, nombre go2rtc, autenticación y accesibilidad desde el contenedor. |
 | Funciona web antigua, falla RTSP | Confirmar ruta/códec del modelo Vivotek en Frigate; no usar URL HTTP de administración como video. |
-| `ffprobe` ausente / diagnóstico incompleto | Instalar FFmpeg en el host; el Dockerfile actual no incluye su ejecutable. |
+| `ffprobe` ausente / diagnóstico incompleto | Instalar FFmpeg en el host; la imagen Docker incluye FFmpeg/ffprobe. |
 | Timeout o no permite salida BGR | Confirmar build OpenCV con FFmpeg y timeouts; probar el códec real. Aumentar timeouts solo si la red lo justifica. |
 | Error de resolución | Capturar referencia nueva y recalibrar; no reescalar polígonos a ciegas. |
 | Falla carga de pesos | Verificar `yolov8n.pt`, permisos, caché Torch y red para primera descarga. |
@@ -59,7 +65,7 @@ FPS: consulta la [prueba de latencia](monitor.md#implementación-y-acceso).
 ## Monitor web
 
 La analítica en vivo se ve en http://127.0.0.1:8080 al ejecutar
-`python -m infrastructure.monitor --demo-zones`. Consulta [la guía](monitor.md).
+`docker compose up`. Consulta [la guía](monitor.md).
 Si el panel muestra error, revisa stream, pesos y resolución de zonas, y reinicia
 el monitor. Si 8080 está ocupado, usa `--port 8081`. El monitor no muestra mensajes
 nativos de error ni URLs RTSP en HTTP para evitar exponer credenciales.
@@ -86,5 +92,5 @@ real, no con el tiempo del video. EOF y algunos errores de archivo pueden parece
 revisar frames obtenidos. El tiempo de `read()` o de inferencia no mide latencia
 cámara→evento: hacen falta timestamps de captura o una prueba con reloj visible.
 
-No se probaron instalación limpia ni construcción Docker en esta tarea documental.
+El arranque principal construye imágenes CPU con Docker Compose; consulta docs/startup.md.
 Las dependencias no están fijadas; registrar versiones junto a los resultados.

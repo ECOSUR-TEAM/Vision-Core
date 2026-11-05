@@ -1,4 +1,5 @@
-# Linux: docker compose -f docker-compose.yml -f docker-compose.webcam.yml up -d frigate
+# Standalone development alternative: stop the default stack before using this file.
+name: vision-core-webcam
 services:
   frigate:
     image: ghcr.io/blakeblackshear/frigate:stable
@@ -14,8 +15,22 @@ services:
       - /tmp/cache:size=256m
       - /media/frigate:size=256m
   vision-core:
+    build:
+      context: .
+      target: runtime
+    env_file: .env
+    command: ["python", "-m", "infrastructure.monitor", "--host", "0.0.0.0", "--demo-zones"]
     environment:
       VISION_CORE_RTSP_URL: rtsp://frigate:8554/entrada
+      VISION_CORE_MONITOR_UNCALIBRATED: "0"
+      TORCH_HOME: /model-cache/torch
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./config:/app/config:ro
+      - vision-model-cache:/model-cache
     depends_on:
       frigate:
         condition: service_healthy
+volumes:
+  vision-model-cache:

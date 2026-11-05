@@ -6,13 +6,13 @@ Python al pasar de la webcam al servidor de la sala.
 
 ## Cámara Ethernet conectada a la laptop
 
-Para la Vivotek FD8134, usa [la guía Ethernet](ethernet-camera.md) y el complemento
-`docker-compose.camera.yml`, en lugar del complemento de webcam. La ruta comprobada
+Para la Vivotek FD8134, ejecuta `docker compose up`. La [guía Ethernet](ethernet-camera.md)
+y la [guía de arranque](startup.md) explican la preparación y el funcionamiento. La ruta comprobada
 es `/live.sdp`, pero la IP depende de la concesión DHCP de la laptop.
 
 ## Prueba local con la webcam (Linux)
 
-Incluimos `docker-compose.webcam.yml` como complemento del Compose base. Usa
+Incluimos `docker-compose.webcam.yml` como alternativa independiente de desarrollo. Usa
 la webcam mediante V4L2, convierte a H.264 y muestra la cámara `entrada` en Frigate.
 La detección de esa cámara, grabación, snapshots y MQTT están desactivados.
 La analítica se ejecuta en Vision Core. Configuración basada en la
@@ -31,14 +31,15 @@ no es una prueba de captura. Cierra otras aplicaciones que ocupen la webcam.
 El ejemplo usa 640 × 480 a 15 FPS; ajusta `video_size`, `framerate` y las dimensiones
 `detect` si tu cámara necesita otro modo.
 
-2. Prepara archivos locales (solo copia si aún no existen):
+2. Detén antes el conjunto principal con `docker compose down`. Prepara archivos
+locales (solo copia si aún no existen):
 
 ```bash
 cp -n .env.example .env
 mkdir -p config/frigate-local
 cp -n config/frigate.webcam.example.yml config/frigate-local/config.yml
-docker compose -f docker-compose.yml -f docker-compose.webcam.yml config --quiet
-docker compose -f docker-compose.yml -f docker-compose.webcam.yml up -d frigate
+docker compose -f docker-compose.webcam.yml config --quiet
+docker compose -f docker-compose.webcam.yml up -d frigate
 ```
 
 En `.env`, `FRIGATE_WEBCAM_DEVICE` selecciona el dispositivo del host (por defecto
@@ -72,17 +73,17 @@ Antes de ejecutar `main.py`, captura referencia y calibra zonas siguiendo
 Para ejecutar Vision Core en Docker después de calibrar:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.webcam.yml up -d --build vision-core
+docker compose -f docker-compose.webcam.yml up -d --build vision-core
 ```
 
-El complemento fija `rtsp://frigate:8554/entrada` para Vision Core dentro de Docker
+Esta alternativa fija `rtsp://frigate:8554/entrada` para Vision Core dentro de Docker
 y espera a que Frigate esté saludable. Esa comprobación no garantiza que haya
 frames: verifica siempre con `check_stream`.
 
 Para detener la prueba y liberar la webcam:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.webcam.yml down
+docker compose -f docker-compose.webcam.yml down
 ```
 
 Esto conserva `config/frigate-local/`. No se configura reinicio automático.
@@ -96,17 +97,15 @@ http://127.0.0.1:8080. No es necesario activar la detección en Frigate.
 
 ## Cambiar al Frigate de la sala
 
-1. Detén el Compose local con el comando anterior.
-2. Establece en `.env` `VISION_CORE_RTSP_URL=rtsp://HOST_FRIGATE:8554/NOMBRE_STREAM`
-   usando el restream existente y sus credenciales, si las requiere.
-3. Exporta `.env` de nuevo para Python. En Docker usa solamente
-   `docker compose up -d --build vision-core`, sin el complemento de webcam:
-   este complemento sobrescribe la URL con el Frigate local.
-4. Valida 100 frames, captura una nueva referencia y recalibra las zonas de la sala.
+En el arranque unificado, `FRIGATE_CAMERA_RTSP_URL` puede apuntar al restream del
+Frigate remoto en vez de a una cámara directa. Cambia ese valor en `.env` y
+vuelve a ejecutar `docker compose up -d`. El Frigate local conserva el nombre
+`entrada` para Vision Core. Verifica el video y recalibra las zonas si cambia
+el encuadre o la resolución.
 
-El servidor debe ser accesible desde donde se ejecute Vision Core. No uses
-`localhost` para referirte a otro servidor ni al host desde un contenedor.
-Solo cambia la configuración de conexión y la calibración; el pipeline es el mismo.
+Para desarrollo con Python fuera de Docker, `VISION_CORE_RTSP_URL` permite
+consumir directamente el servidor remoto. No confundas `localhost` dentro de
+un contenedor con la IP de otro servidor.
 
 ## Configurar el servidor remoto si aún no tiene restream
 

@@ -1,7 +1,80 @@
 services:
+  camera-bridge:
+    build:
+      context: .
+      target: camera-bridge
+    network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      FRIGATE_CAMERA_RTSP_URL: ${FRIGATE_CAMERA_RTSP_URL:?Configura la URL de la cámara en .env}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "/app/camera_bridge.py", "check"]
+      interval: 5s
+      timeout: 8s
+      retries: 12
+      start_period: 10s
+
+  frigate-config:
+    build:
+      context: .
+      target: camera-bridge
+    command: ["python", "/app/camera_bridge.py", "init-config"]
+    volumes:
+      - ./config/frigate-camera-local:/config
+      - ./config/frigate.camera.example.yml:/defaults/config.yml:ro
+
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:stable
+    entrypoint: ["python3", "/camera_bridge.py", "frigate"]
+    shm_size: "256mb"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      FRIGATE_CAMERA_RTSP_URL: ${FRIGATE_CAMERA_RTSP_URL:?Configura la URL de la cámara en .env}
+    ports:
+      - "127.0.0.1:15000:5000"
+      - "127.0.0.1:28554:8554"
+    volumes:
+      - ./config/frigate-camera-local:/config
+      - ./scripts/camera_bridge.py:/camera_bridge.py:ro
+    tmpfs:
+      - /tmp/cache:size=256m
+      - /media/frigate:size=256m
+    depends_on:
+      camera-bridge:
+        condition: service_healthy
+      frigate-config:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   vision-core:
-    build: .
+    build:
+      context: .
+      target: runtime
     env_file:
       - .env
+    environment:
+      VISION_CORE_RTSP_URL: rtsp://frigate:8554/entrada
+      VISION_CORE_MONITOR_UNCALIBRATED: ${VISION_CORE_MONITOR_UNCALIBRATED:-1}
+      VISION_CORE_MONITOR_EXIT_ON_ERROR: "1"
+      TORCH_HOME: /model-cache/torch
+    ports:
+      - "127.0.0.1:8080:8080"
     volumes:
-      - ./:/app
+      - ./config:/app/config:ro
+      - vision-model-cache:/model-cache
+    depends_on:
+      frigate:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,urllib.request; s=json.load(urllib.request.urlopen('http://127.0.0.1:8080/api/state',timeout=3)); raise SystemExit(0 if s['status']=='running' else 1)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 180s
+      retries: 4
+
+volumes:
+  vision-model-cache:

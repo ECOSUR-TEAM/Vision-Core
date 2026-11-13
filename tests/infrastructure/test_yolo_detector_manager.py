@@ -5,10 +5,8 @@ import numpy as np
 import pytest
 
 from domain.entities import Detection
-from infrastructure.detection.yolo_detector_manager import (
-    MAX_MISSED_FRAMES,
-    YoloDetectorManager,
-)
+from infrastructure.detection.motion_tracker import MAX_MISSED_FRAMES
+from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 
 
 def box(x, confidence=0.9, class_id=0):

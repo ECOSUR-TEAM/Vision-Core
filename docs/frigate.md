@@ -61,9 +61,9 @@ el puerto WebRTC para la visualización MSE de este stream H.264.
 set -a
 source .env
 set +a
-python -m infrastructure.video.check_stream --frames 100 --transport tcp
+python -m scripts.check_stream --frames 100 --transport tcp
 # Opcional: comprobar también YOLO con pesos disponibles.
-python -m infrastructure.video.check_stream --frames 100 --transport tcp --detector
+python -m scripts.check_stream --frames 100 --transport tcp --detector
 ```
 
 El puerto externo 28554 evita conflictos con otros servicios; Frigate conserva
@@ -156,8 +156,8 @@ Frigate, Vision Core no necesita acceder a esa interfaz web.
 Desde la raíz del proyecto con `.env` exportado:
 
 ```bash
-python -m infrastructure.video.check_stream --frames 100 --transport tcp
-python -m infrastructure.video.check_stream --frames 100 --transport tcp --detector
+python -m scripts.check_stream --frames 100 --transport tcp
+python -m scripts.check_stream --frames 100 --transport tcp --detector
 ```
 
 El primero inspecciona con ffprobe y lee frames; el segundo añade YOLO. El código

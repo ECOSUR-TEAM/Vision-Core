@@ -62,7 +62,7 @@ Desde la raíz del proyecto, con `requirements.txt` instalado:
 mkdir -p /tmp/vision-core-detection-assets
 curl -fL https://raw.githubusercontent.com/opencv/opencv/4.12.0/samples/data/vtest.avi -o /tmp/vision-core-detection-assets/vtest.avi
 curl -fL https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt -o /tmp/vision-core-detection-assets/yolov8n.pt
-python -m infrastructure.detection.benchmark /tmp/vision-core-detection-assets/vtest.avi --model /tmp/vision-core-detection-assets/yolov8n.pt --seconds 30 --output /tmp/vision-core-detection-assets/benchmark.json
+python -m scripts.benchmark /tmp/vision-core-detection-assets/vtest.avi --model /tmp/vision-core-detection-assets/yolov8n.pt --seconds 30 --output /tmp/vision-core-detection-assets/benchmark.json
 DETECTION_TEST_VIDEO=/tmp/vision-core-detection-assets/vtest.avi DETECTION_TEST_MODEL=/tmp/vision-core-detection-assets/yolov8n.pt pytest -q
 ```
 

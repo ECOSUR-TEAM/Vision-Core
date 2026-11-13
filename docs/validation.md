@@ -17,7 +17,7 @@ export VISION_CORE_RECONNECT_ATTEMPTS=5
 export VISION_CORE_RECONNECT_DELAY_SECONDS=2
 export VISION_CORE_OPEN_TIMEOUT_MS=5000
 export VISION_CORE_READ_TIMEOUT_MS=5000
-python -m infrastructure.video.check_stream --frames 300 --transport tcp
+python -m scripts.check_stream --frames 300 --transport tcp
 ```
 
 El comando imprime JSON con apertura, duración media/p95/máxima de lectura,
@@ -69,7 +69,7 @@ Referencia: [contrato de predicción de Ultralytics](https://docs.ultralytics.co
 Para probar Frigate y YOLO sin ejecutar ReID:
 
 ```bash
-python -m infrastructure.video.check_stream --frames 300 --transport tcp --detector
+python -m scripts.check_stream --frames 300 --transport tcp --detector
 ```
 
 Las pruebas automatizadas cubren carga única, opciones de inferencia, clase,

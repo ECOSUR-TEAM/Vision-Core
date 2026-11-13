@@ -119,7 +119,7 @@ cp .env.example .env
 set -a
 source .env
 set +a
-python -m infrastructure.video.check_stream --frames 100 --transport tcp
+python -m scripts.check_stream --frames 100 --transport tcp
 ```
 
 Python no carga `.env` automáticamente: `source` exporta sus valores. Docker
@@ -216,6 +216,11 @@ La aplicación depende de los ports, no de infraestructura. Los adaptadores no
 importan otras carpetas de infraestructura; los puntos de composición conectan
 los módulos. Dueños originales: detección Carlos/Ameth, ReID Briyan, zonas Melissa,
 orquestación Fabricio.
+
+Las herramientas de diagnóstico y benchmark viven en `scripts/`, fuera de los
+adaptadores. Ejecútalas con `python -m scripts.check_stream` y
+`python -m scripts.benchmark`; estos puntos de composición pueden cablear varios
+adaptadores sin introducir dependencias entre subcarpetas de `infrastructure/`.
 
 ## Pruebas y documentación de referencia
 

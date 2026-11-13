@@ -11,7 +11,10 @@ from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from infrastructure.door.zone_config import load_zones
 from infrastructure.monitor.server import MonitorState
 from infrastructure.video.latest_frame_source import LatestFrameSource
-from tests.application.test_vision_core_app import FakeVideoSource, FakeDetector, FakeReID, FakeDoor
+from tests.fakes.fake_detector import FakeDetector
+from tests.fakes.fake_door import FakeDoor
+from tests.fakes.fake_reid import FakeReID
+from tests.fakes.fake_video_source import FakeVideoSource
 
 
 def test_observer_receives_current_resolved_detections_and_empty_frames():

@@ -5,8 +5,9 @@ import numpy as np
 import pytest
 
 from domain.entities import Detection
+from infrastructure.detection.iou import iou
+from infrastructure.detection.motion_tracker import MAX_MISSED_FRAMES
 from infrastructure.detection.yolo_detector_manager import (
-    MAX_MISSED_FRAMES,
     YoloDetectorManager,
 )
 
@@ -141,9 +142,8 @@ def test_model_loaded_once_and_predict_settings(monkeypatch):
     ([0, 0, 0, 0], [0, 0, 0, 0], 0.0),
 ])
 def test_iou_geometry(first, second, expected):
-    from infrastructure.detection.yolo_detector_manager import _iou
-    assert _iou(np.array(first), np.array(second)) == pytest.approx(expected)
-    assert _iou(np.array(second), np.array(first)) == pytest.approx(expected)
+    assert iou(np.array(first), np.array(second)) == pytest.approx(expected)
+    assert iou(np.array(second), np.array(first)) == pytest.approx(expected)
 
 
 @pytest.mark.parametrize('width,retained', [(30, True), (29, False)])

@@ -1,51 +1,11 @@
 import numpy as np
 
 from application.vision_core_app import VisionCoreApp
-from domain.entities import BBox, Detection, Event
-
-
-class FakeVideoSource:
-    def __init__(self, frames):
-        self._frames = list(frames) + [None]
-
-    def open(self):
-        pass
-
-    def read_frame(self):
-        return self._frames.pop(0)
-
-    def close(self):
-        pass
-
-
-class FakeDetector:
-    def __init__(self, detections_per_frame=None, lost_ids_per_call=None):
-        self._detections_per_frame = detections_per_frame
-        self._lost_ids_per_call = list(lost_ids_per_call or [])
-
-    def process(self, frame):
-        if self._detections_per_frame is not None:
-            return self._detections_per_frame.pop(0)
-        return [Detection(bbox=BBox(0, 0, 10, 10), class_id=0, confidence=0.9, track_id=1)]
-
-    def pop_lost_track_ids(self):
-        return self._lost_ids_per_call.pop(0) if self._lost_ids_per_call else []
-
-
-class FakeReID:
-    def __init__(self):
-        self.lost_calls = []
-
-    def resolve(self, track_id, embedding, bbox):
-        return "person-1"
-
-    def mark_lost(self, person_id, embedding):
-        self.lost_calls.append(person_id)
-
-
-class FakeDoor:
-    def update(self, person_id, position):
-        return Event(event="PERSON_ENTERED", person_id=person_id)
+from domain.entities import BBox, Detection
+from tests.fakes.fake_detector import FakeDetector
+from tests.fakes.fake_door import FakeDoor
+from tests.fakes.fake_reid import FakeReID
+from tests.fakes.fake_video_source import FakeVideoSource
 
 
 def test_run_emits_event_per_frame():

@@ -9,6 +9,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from application.vision_core_app import VisionCoreApp
+from application.event_serializer import event_to_dict
 from domain.ports import VideoSource, DetectorManager
 from infrastructure.video.file_video_source import FileVideoSource
 from infrastructure.video.rtsp_video_source import RtspVideoSource
@@ -90,7 +91,8 @@ def main():
         try:
             detector = RecordedDetector(YoloDetectorManager(args.model), output)
             def emit(event):
-                output.write(json.dumps({'kind': 'event', 'frame': source.frames, **event.to_dict()}) + '\n')
+                output.write(json.dumps({'kind': 'event', 'frame': source.frames,
+                                         **event_to_dict(event)}) + '\n')
             app = MeasuredApp(source, detector, InMemoryReID.from_env(),
                 PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door),
                 TorchvisionEmbeddingExtractor.from_env(), emit,

@@ -209,6 +209,7 @@ independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 | `infrastructure/reid/` | Recortes BGR→RGB, embeddings L2 y recuperación temporal de `person_id` |
 | `infrastructure/door/` | Validación de polígonos, zona por centro del bbox, confirmación e historial |
 | `application/vision_core_app.py` | Orquestación, notificación de pérdidas, mappings, eventos y cierre |
+| `application/event_serializer.py` | Serialización de eventos para JSON en el borde de la aplicación |
 | `main.py` | Construcción e inyección de las implementaciones concretas |
 | `scripts/` | Demo sintética, ejecución medida y evaluación contra anotaciones |
 

@@ -3,6 +3,8 @@ import threading
 import time
 from collections import Counter, deque
 
+from application.event_serializer import event_to_dict
+
 
 class MonitorState:
     def __init__(self, demo=False):
@@ -29,7 +31,7 @@ class MonitorState:
 
     def event(self, event):
         with self.lock:
-            self.events.appendleft(event.to_dict())
+            self.events.appendleft(event_to_dict(event))
             self.counts[event.event] += 1
 
     def person_label(self, person_id):

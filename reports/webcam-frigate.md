@@ -7,7 +7,7 @@ Fecha: 2026-11-03. Linux, webcam del host `/dev/video0`, Frigate Docker
 Comando ejecutado con el Python del entorno local:
 
 ```bash
-VISION_CORE_RTSP_URL=rtsp://127.0.0.1:28554/entrada python -m infrastructure.video.check_stream --frames 100 --transport tcp
+VISION_CORE_RTSP_URL=rtsp://127.0.0.1:28554/entrada python -m scripts.check_stream --frames 100 --transport tcp
 ```
 
 Resultado: código 0, `status=ok`.

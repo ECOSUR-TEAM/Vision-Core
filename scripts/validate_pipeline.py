@@ -1,16 +1,13 @@
 """python -m scripts.validate_pipeline --video recording.avi --zones zones.json"""
 import argparse
 import json
-import time
 import platform
+import time
 import numpy as np
 import torch
-from dataclasses import asdict
 from pathlib import Path
 
-from application.vision_core_app import VisionCoreApp
 from application.event_serializer import event_to_dict
-from domain.ports import VideoSource, DetectorManager
 from infrastructure.video.file_video_source import FileVideoSource
 from infrastructure.video.rtsp_video_source import RtspVideoSource
 from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
@@ -18,60 +15,9 @@ from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
 from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from infrastructure.door.zone_config import load_zones
-
-
-class MeasuredApp(VisionCoreApp):
-    def __init__(self, *args, output, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.output = output
-        self.durations = []
-
-    def _process_frame(self, frame):
-        if torch.cuda.is_available():
-            torch.cuda.synchronize()
-        start = time.perf_counter()
-        super()._process_frame(frame)
-        if torch.cuda.is_available():
-            torch.cuda.synchronize()
-        elapsed = time.perf_counter() - start
-        self.durations.append(elapsed)
-        self.output.write(json.dumps({'kind': 'resolved', 'frame': self._video.frames,
-            'persons': self._person_by_track, 'processing_ms': elapsed * 1000}) + '\n')
-
-
-class LimitedSource(VideoSource):
-    def __init__(self, source, limit):
-        self.source, self.limit, self.frames = source, limit, 0
-        self.read_seconds = []
-    def open(self):
-        self.source.open()
-    def read_frame(self):
-        if self.frames >= self.limit:
-            return None
-        start = time.perf_counter()
-        frame = self.source.read_frame()
-        if frame is not None:
-            self.read_seconds.append(time.perf_counter() - start)
-            self.frames += 1
-        return frame
-    def close(self):
-        self.source.close()
-
-
-class RecordedDetector(DetectorManager):
-    def __init__(self, detector, output):
-        self.detector, self.output, self.frame = detector, output, 0
-    def process(self, frame):
-        self.frame += 1
-        detections = self.detector.process(frame)
-        self.output.write(json.dumps({'kind': 'detections', 'frame': self.frame,
-                                     'detections': [asdict(d) for d in detections]}) + '\n')
-        return detections
-    def pop_lost_track_ids(self):
-        lost = self.detector.pop_lost_track_ids()
-        if lost:
-            self.output.write(json.dumps({'kind': 'lost_tracks', 'frame': self.frame, 'ids': lost}) + '\n')
-        return lost
+from scripts.pipeline_tools.limited_source import LimitedSource
+from scripts.pipeline_tools.measured_app import MeasuredApp
+from scripts.pipeline_tools.recorded_detector import RecordedDetector
 
 
 def main():

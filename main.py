@@ -2,6 +2,7 @@ import logging
 import os
 
 from application.vision_core_app import VisionCoreApp
+from application.event_serializer import event_to_json
 from domain.entities import Event
 from infrastructure.video.rtsp_video_source import RtspVideoSource
 from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
@@ -12,7 +13,7 @@ from infrastructure.door.zone_config import load_zones
 
 
 def print_event(event: Event) -> None:
-    print(event.to_json())
+    print(event_to_json(event))
 
 
 def main() -> None:

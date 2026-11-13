@@ -11,6 +11,8 @@ from urllib.parse import parse_qs, urlsplit
 import cv2
 import numpy as np
 
+from application.event_serializer import event_to_dict
+
 
 class MonitorState:
     def __init__(self, demo=False):
@@ -37,7 +39,7 @@ class MonitorState:
 
     def event(self, event):
         with self.lock:
-            self.events.appendleft(event.to_dict())
+            self.events.appendleft(event_to_dict(event))
             self.counts[event.event] += 1
 
     def publish(self, frame, tracks, processing_ms, zones, analytics, dropped=0):

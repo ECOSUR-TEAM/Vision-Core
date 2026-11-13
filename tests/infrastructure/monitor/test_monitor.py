@@ -9,6 +9,7 @@ from application.vision_core_app import VisionCoreApp
 from domain.entities import BBox, Event, ResolvedTrack
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from infrastructure.door.zone_config import load_zones
+from infrastructure.monitor.renderer import render_frame
 from infrastructure.monitor.server import MonitorState
 from infrastructure.video.latest_frame_source import LatestFrameSource
 from tests.application.test_vision_core_app import FakeVideoSource, FakeDetector, FakeReID, FakeDoor
@@ -39,7 +40,9 @@ def test_monitor_annotates_without_mutating_input_and_flags_stale(monkeypatch):
     frame = np.zeros((480, 640, 3), dtype=np.uint8)
     person = ResolvedTrack('person-a', BBox(10, 30, 110, 200), .9, 1)
     analytics.update(person.person_id, person.bbox.center)
-    state.publish(frame, [person], 22, zones, analytics, dropped=7)
+    jpeg, people = render_frame(frame, [person], zones, analytics, state.person_label,
+                                demo=state.demo)
+    state.publish(jpeg, people, 22, dropped=7)
     assert not frame.any()
     assert cv2.imdecode(np.frombuffer(state.jpeg, np.uint8), cv2.IMREAD_COLOR).any()
     report = state.snapshot()
@@ -121,8 +124,10 @@ def test_person_label_survives_a_change_of_track():
     analytics = PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door)
     frame = np.zeros((480, 640, 3), dtype=np.uint8)
     def publish(person_id, track_id):
-        state.publish(frame, [ResolvedTrack(person_id, BBox(10, 30, 110, 200), .9, track_id)],
-                      20, zones, analytics)
+        jpeg, people = render_frame(
+            frame, [ResolvedTrack(person_id, BBox(10, 30, 110, 200), .9, track_id)],
+            zones, analytics, state.person_label, demo=state.demo)
+        state.publish(jpeg, people, 20)
         return state.snapshot()['people'][0]['display_name']
     assert publish('original', 1) == 'Persona 1'
     assert publish('different', 2) == 'Persona 2'
@@ -136,7 +141,9 @@ def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
     frame = np.zeros((800, 1280, 3), np.uint8)
     person = ResolvedTrack('one', BBox(0, 0, 100, 200), .9, 1)
     assert analytics.update('one', (50, 100)) is None
-    state.publish(frame, [person], 10, None, analytics)
+    jpeg, people = render_frame(
+        frame, [person], None, analytics, state.person_label, demo=state.demo)
+    state.publish(jpeg, people, 10)
     assert state.snapshot()['events'] == []
     assert state.snapshot()['people'][0]['display_name'] == 'Persona 1'
     assert cv2.imdecode(np.frombuffer(state.jpeg, np.uint8), cv2.IMREAD_COLOR).shape == frame.shape

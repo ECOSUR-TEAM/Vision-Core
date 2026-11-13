@@ -6,7 +6,9 @@ import signal
 import threading
 from pathlib import Path
 
-from .server import MonitorState, make_server
+from .http_server import make_server
+from .renderer import render_frame
+from .state import MonitorState
 
 
 def main():
@@ -58,7 +60,9 @@ def main():
                 TorchvisionEmbeddingExtractor.from_env(), state.event,
                 expected_frame_size=(zones.width, zones.height) if zones else None,
                 on_frame=lambda frame, tracks, ms: state.publish(
-                    frame, tracks, ms, zones, analytics, source.dropped_frames))
+                    *render_frame(frame, tracks, zones, analytics, state.person_label,
+                                  demo=state.demo),
+                    ms, source.dropped_frames))
             app.run(stop.is_set)
             state.set_status('stopped')
         except Exception as error:

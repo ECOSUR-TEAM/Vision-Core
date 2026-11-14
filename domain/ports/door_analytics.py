@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from domain.entities import Event
+from domain.model.event import Event
 
 
 class DoorAnalytics(ABC):

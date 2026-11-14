@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 
-from domain.entities import Polygon
+from domain.model.polygon import Polygon
 
 
 def cross(a, b, c):

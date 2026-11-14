@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-from domain.entities import Detection
+from domain.model.detection import Detection
 
 
 class DetectorManager(ABC):

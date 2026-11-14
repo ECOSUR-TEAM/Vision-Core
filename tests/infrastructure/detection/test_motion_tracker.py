@@ -1,6 +1,7 @@
 import numpy as np
 
-from domain.entities import BBox, Detection
+from domain.model.bbox import BBox
+from domain.model.detection import Detection
 from infrastructure.detection.motion_tracker import MotionTracker
 
 

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from domain.entities import Detection
+from domain.model.detection import Detection
 
 from .iou import iou
 

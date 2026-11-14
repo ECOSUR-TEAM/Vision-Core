@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-from domain.entities import BBox
+from domain.model.bbox import BBox
 
 
 class ReIDMemory(ABC):

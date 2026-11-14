@@ -1,5 +1,5 @@
 import pytest
-from domain.entities import Polygon
+from domain.model.polygon import Polygon
 from infrastructure.door import polygon_door_analytics as module
 
 

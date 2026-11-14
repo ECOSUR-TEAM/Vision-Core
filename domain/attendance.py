@@ -1,5 +1,5 @@
 """Unique visitors and current occupancy are different from crossing counts."""
-from domain.entities import Event
+from domain.model.event import Event
 
 
 class SessionAttendance:

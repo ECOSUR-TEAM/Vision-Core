@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from domain.entities import Detection
+from domain.model.detection import Detection
 from infrastructure.detection.motion_tracker import MAX_MISSED_FRAMES
 from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 

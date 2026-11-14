@@ -3,11 +3,16 @@ import threading
 import time
 from collections import Counter, deque
 
-from application.event_serializer import event_to_dict
+
+def _event_to_dict(event):
+    """Fallback used when no boundary serializer is injected."""
+    return {'event': event.event, 'person_id': event.person_id,
+            'timestamp': event.timestamp, 'metadata': dict(event.metadata)}
 
 
 class MonitorState:
-    def __init__(self, demo=False):
+    def __init__(self, demo=False, event_serializer=None):
+        self._event_serializer = event_serializer or _event_to_dict
         self.lock = threading.Lock()
         self.changed = threading.Condition(self.lock)
         self._person_numbers = {}
@@ -31,7 +36,7 @@ class MonitorState:
 
     def event(self, event):
         with self.lock:
-            self.events.appendleft(event_to_dict(event))
+            self.events.appendleft(self._event_serializer(event))
             self.counts[event.event] += 1
 
     def person_label(self, person_id):

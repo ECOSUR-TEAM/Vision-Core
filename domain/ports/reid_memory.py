@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-import numpy as np
 
 from domain.entities import BBox
+from domain.types import Embedding
 
 
 class ReIDMemory(ABC):
@@ -16,10 +16,10 @@ class ReIDMemory(ABC):
         """Reserve retained local tracks before resolving new detections."""
 
     @abstractmethod
-    def resolve(self, track_id: int, embedding: np.ndarray, bbox: BBox) -> str:
+    def resolve(self, track_id: int, embedding: Embedding, bbox: BBox) -> str:
         ...
 
     @abstractmethod
-    def mark_lost(self, person_id: str, embedding: np.ndarray) -> None:
+    def mark_lost(self, person_id: str, embedding: Embedding) -> None:
         """Se llama al dejar de verse; elimina el mapping activo e inicia el TTL."""
         ...

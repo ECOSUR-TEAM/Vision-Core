@@ -9,7 +9,7 @@ from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from infrastructure.door.zone_config import load_zones
+from infrastructure.door.zone_loader import load_zones
 
 
 def print_event(event: Event) -> None:

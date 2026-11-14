@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 import cv2
 import numpy as np
-from .zone_config import load_zones
+from .zone_loader import load_zones
 
 
 def main():

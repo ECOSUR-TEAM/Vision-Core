@@ -3,7 +3,8 @@ import time
 from collections import deque
 from typing import Optional, NamedTuple
 
-from .zone_config import validate_polygon, on_segment
+from .geometry import on_segment
+from .polygon_validation import validate_polygon
 
 from domain.entities import Event, Polygon
 from domain.ports import DoorAnalytics

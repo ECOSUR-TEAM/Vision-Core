@@ -6,7 +6,9 @@ import numpy as np
 import pytest
 
 from application.vision_core_app import VisionCoreApp
-from domain.entities import BBox, Detection, Polygon
+from domain.model.bbox import BBox
+from domain.model.detection import Detection
+from domain.model.polygon import Polygon
 from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 

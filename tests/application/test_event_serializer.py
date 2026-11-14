@@ -3,7 +3,8 @@ import json
 import numpy as np
 
 from application.event_serializer import event_to_dict, event_to_json
-from domain.entities import Event, EventType
+from domain.model.event import Event
+from domain.model.event_type import EventType
 
 
 def test_event_to_dict_preserves_public_contract():

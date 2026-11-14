@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from application.vision_core_app import VisionCoreApp
-from domain.entities import Polygon
+from domain.model.polygon import Polygon
 from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics

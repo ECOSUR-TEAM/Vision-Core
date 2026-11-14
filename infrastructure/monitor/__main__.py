@@ -42,7 +42,7 @@ def main():
             from application.vision_core_app import VisionCoreApp
             from infrastructure.video.rtsp_video_source import RtspVideoSource
             from infrastructure.video.latest_frame_source import LatestFrameSource
-            from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+            from infrastructure.detection.yolo_detector_manager import person_detector_from_env
             from infrastructure.reid.memory_reid import InMemoryReID
             from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
             from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
@@ -54,7 +54,7 @@ def main():
                 confirmation_frames=int(os.getenv('VISION_CORE_ZONE_CONFIRMATION_FRAMES', '3')))
                 if zones else UncalibratedAnalytics())
             source = LatestFrameSource(RtspVideoSource.from_env())
-            app = VisionCoreApp(source, YoloDetectorManager(), InMemoryReID.from_env(), analytics,
+            app = VisionCoreApp(source, person_detector_from_env(), InMemoryReID.from_env(), analytics,
                 TorchvisionEmbeddingExtractor.from_env(), state.event,
                 expected_frame_size=(zones.width, zones.height) if zones else None,
                 on_frame=lambda frame, tracks, ms: state.publish(

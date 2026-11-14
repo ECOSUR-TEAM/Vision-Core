@@ -1,7 +1,25 @@
 # Detección y seguimiento
 
-`YoloDetectorManager.process(frame)` devuelve `list[Detection]` con personas
-(clase COCO 0) cuya confianza es estrictamente mayor que 0.5.
+`person_detector_from_env()` construye el detector configurado. Por defecto usa
+`PosePersonDetectorManager` con `yolov8n-pose.pt`: además de la caja de persona,
+exige al menos `VISION_CORE_MIN_VISIBLE_KEYPOINTS` keypoints con confianza
+`>= VISION_CORE_KEYPOINT_CONFIDENCE` y al menos una cadera visible (índices
+11/12 de COCO). Ese filtro descarta falsos positivos sin esqueleto humano
+completo (por ejemplo, un peluche) aunque la caja tenga confianza alta. Si la
+caja toca el borde del frame (`FRAME_EDGE_MARGIN`), se acepta la detección
+truncada con suficientes keypoints aunque las caderas queden fuera de cuadro.
+
+`YoloDetectorManager.process(frame)` (modo `detect`) devuelve `list[Detection]`
+con personas (clase COCO 0) cuya confianza es estrictamente mayor que 0.5.
+`PosePersonDetectorManager` hereda el mismo tracker y contrato.
+
+## Configuración
+
+- `VISION_CORE_PERSON_DETECTOR=pose|detect` (por defecto `pose`).
+- `VISION_CORE_YOLO_MODEL` (por defecto `yolov8n-pose.pt` en `pose` y
+  `yolov8n.pt` en `detect`).
+- `VISION_CORE_KEYPOINT_CONFIDENCE` (por defecto `0.5`).
+- `VISION_CORE_MIN_VISIBLE_KEYPOINTS` (por defecto `4`).
 
 Reutiliza una instancia por video y procesa sus frames en orden. El tracker
 propio asocia cajas por IoU (mínimo 0.3), predice su movimiento con velocidad
@@ -29,9 +47,10 @@ No requiere dependencias adicionales. No implementa ReID ni el algoritmo
 ByteTrack completo: movimientos bruscos, cambios de cámara y solapamientos
 ambiguos pueden cambiar los IDs.
 
-Pruebas: `pytest tests/infrastructure/detection/test_yolo_detector_manager.py`.
-Cubren filtros, movimiento, cruces, orden variable, ausencias, expiración y
-que `pop_lost_track_ids()` reporte cada id perdido exactamente una vez.
+Pruebas: `pytest tests/infrastructure/detection/test_yolo_detector_manager.py`
+y `pytest tests/infrastructure/detection/test_pose_person_detector_manager.py`.
+Cubren filtros, keypoints, movimiento, cruces, orden variable, ausencias,
+expiración y que `pop_lost_track_ids()` reporte cada id perdido exactamente una vez.
 Para validar un video real, usa una única instancia durante todo el video y
 comprueba los IDs devueltos junto a cada caja; las pruebas usan salidas YOLO
 simuladas y no sustituyen esa validación visual.

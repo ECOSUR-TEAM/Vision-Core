@@ -1,0 +1,15 @@
+# Override para Docker Desktop (Windows/macOS).
+# Uso: docker compose -f docker-compose.yml -f docker-compose.windows.yml up
+# Docker Desktop no ofrece host networking real, así que el puente escucha en la
+# red de Compose y Frigate lo alcanza por su nombre de servicio.
+services:
+  camera-bridge:
+    network_mode: !reset null
+    environment:
+      CAMERA_BRIDGE_RELAY_HOST: camera-bridge
+      CAMERA_BRIDGE_BIND: 0.0.0.0
+      CAMERA_BRIDGE_CHECK_HOST: 127.0.0.1
+
+  frigate:
+    environment:
+      CAMERA_BRIDGE_RELAY_HOST: camera-bridge

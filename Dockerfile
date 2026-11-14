@@ -13,5 +13,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir -r requirements.txt
 COPY . .
+# Cache the default person-pose weights so the runtime does not need network.
+RUN python -c "from ultralytics import YOLO; YOLO('yolov8n-pose.pt')"
 ENV PYTHONUNBUFFERED=1
 CMD ["python", "-m", "infrastructure.monitor", "--host", "0.0.0.0"]

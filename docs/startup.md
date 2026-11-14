@@ -60,7 +60,9 @@ Este montaje usa RTSP/TCP; no reenvía RTP por UDP.
 
 La imagen de Vision Core usa PyTorch para CPU. No se monta el entorno `venv` de
 la laptop. La caché de torchvision se conserva en el volumen `vision-model-cache`.
-YOLO usa `yolov8n.pt` si existe al construir, o descarga sus pesos al primer uso.
+YOLO usa `yolov8n-pose.pt` por defecto y lo cachea al construir la imagen;
+además filtra personas por keypoints. `VISION_CORE_PERSON_DETECTOR=detect`
+vuelve al detector de cajas `yolov8n.pt`, que se descarga al primer uso.
 
 ## Cuando calibremos la sala
 

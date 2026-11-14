@@ -7,7 +7,9 @@ import sys
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
-RELAY_HOST = 'host.docker.internal'
+RELAY_HOST = os.environ.get('CAMERA_BRIDGE_RELAY_HOST', 'host.docker.internal')
+RELAY_BIND = os.environ.get('CAMERA_BRIDGE_BIND', RELAY_HOST)
+RELAY_CHECK_HOST = os.environ.get('CAMERA_BRIDGE_CHECK_HOST', RELAY_HOST)
 RELAY_PORT = 15554
 
 
@@ -72,13 +74,14 @@ def main():
         os.environ['FRIGATE_CAMERA_RTSP_URL'] = relay_url(url)
         os.execv('/init', ['/init'])
     target = camera_target(url)
-    bind = socket.gethostbyname(RELAY_HOST)
     if mode == 'check':
         # Ensure both the host bridge and the actual camera are reachable.
-        for address in ((bind, RELAY_PORT), target):
+        check_host = '127.0.0.1' if RELAY_CHECK_HOST in ('0.0.0.0', '::') else socket.gethostbyname(RELAY_CHECK_HOST)
+        for address in ((check_host, RELAY_PORT), target):
             with socket.create_connection(address, timeout=3):
                 pass
     elif mode == 'serve':
+        bind = RELAY_BIND if RELAY_BIND in ('0.0.0.0', '::') else socket.gethostbyname(RELAY_BIND)
         asyncio.run(serve(target, bind))
     else:
         raise ValueError('Modo desconocido')

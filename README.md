@@ -205,7 +205,7 @@ independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 | `domain/entities.py` | Bounding boxes, detecciones, polígonos y eventos |
 | `domain/ports/` | Contratos de video, detector/tracker, ReID y zonas |
 | `infrastructure/video/` | RTSP con reconexión, reproducción de archivos, validación BGR y captura de referencia |
-| `infrastructure/detection/` | YOLOv8, personas clase COCO 0, cajas en píxeles y tracking local por movimiento/IoU |
+| `infrastructure/detection/` | YOLOv8 pose (personas con keypoints) o detección COCO 0, cajas en píxeles y tracking local por movimiento/IoU |
 | `infrastructure/reid/` | Recortes BGR→RGB, embeddings L2 y recuperación temporal de `person_id` |
 | `infrastructure/door/` | Validación de polígonos, zona por centro del bbox, confirmación e historial |
 | `application/vision_core_app.py` | Orquestación, notificación de pérdidas, mappings, eventos y cierre |

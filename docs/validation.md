@@ -11,8 +11,7 @@ se configura para entregar BGR: el orden de canales no puede deducirse solo de l
 valores de un ndarray. El formato `pix_fmt` de ffprobe corresponde al stream, no
 al ndarray decodificado.
 
-```bash
-export VISION_CORE_RTSP_URL='rtsp://IP_FRIGATE:8554/NOMBRE_STREAM'
+```bashexport VISION_CORE_RTSP_URL='rtsp://IP_FRIGATE:8554/NOMBRE_STREAM'
 export VISION_CORE_RECONNECT_ATTEMPTS=5
 export VISION_CORE_RECONNECT_DELAY_SECONDS=2
 export VISION_CORE_OPEN_TIMEOUT_MS=5000
@@ -54,11 +53,18 @@ recuperación física siguen pendientes hasta disponer de Frigate.
 
 ## Frames de Frigate → detecciones de personas
 
-El pipeline pasa cada frame al detector existente, que carga YOLO una sola vez.
+El pipeline pasa cada frame al detector configurado, que carga YOLO una sola vez.
 La entrada es BGR `uint8`, H×W×3; Ultralytics realiza su propio preprocesamiento.
-La inferencia recibe `classes=[0]` y `conf=0.5`. El adaptador vuelve a filtrar
-estrictamente `confidence > 0.5`: una detección con confianza exactamente 0.5
-se descarta. El umbral está definido en `CONFIDENCE_THRESHOLD`.
+Por defecto se usa `yolov8n-pose.pt`: la inferencia recibe `classes=[0]` y
+`conf=0.5`, y además se exige que al menos `VISION_CORE_MIN_VISIBLE_KEYPOINTS`
+keypoints superen `VISION_CORE_KEYPOINT_CONFIDENCE` y que se vea al menos una
+cadera (índices 11/12 de COCO). Así se descartan cajas de persona sin esqueleto
+humano completo (peluches, maniquíes) aunque su confianza sea alta. Si la caja
+toca el borde del frame, se acepta la detección truncada con suficientes
+keypoints aunque las caderas queden fuera de cuadro, para no perder personas que
+entran por el borde. El modo `detect` conserva el filtro estricto de clase COCO 0
+y `confidence > 0.5`. Los umbrales están definidos en `CONFIDENCE_THRESHOLD`,
+`KEYPOINT_CONFIDENCE`, `MIN_VISIBLE_KEYPOINTS` y `FRAME_EDGE_MARGIN`.
 
 Cada resultado se convierte en `Detection` con `BBox` xyxy en píxeles del frame
 original, confianza, clase 0 y el ID del tracker existente. Se recortan coordenadas

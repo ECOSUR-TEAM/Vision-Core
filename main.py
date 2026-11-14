@@ -4,7 +4,7 @@ import os
 from application.vision_core_app import VisionCoreApp
 from domain.entities import Event
 from infrastructure.video.rtsp_video_source import RtspVideoSource
-from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+from infrastructure.detection.yolo_detector_manager import person_detector_from_env
 from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
@@ -23,7 +23,7 @@ def main() -> None:
 
     app = VisionCoreApp(
         video_source=video_source,
-        detector=YoloDetectorManager(),
+        detector=person_detector_from_env(),
         reid_memory=InMemoryReID.from_env(),
         door_analytics=PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door,
             confirmation_frames=int(os.getenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "3"))),

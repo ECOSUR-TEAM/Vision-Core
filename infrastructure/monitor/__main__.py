@@ -48,7 +48,7 @@ def main():
             from infrastructure.reid.memory_reid import InMemoryReID
             from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
             from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-            from infrastructure.door.zone_config import load_zones
+            from infrastructure.door.zone_loader import load_zones
             from infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
 
             zones = load_zones(args.zones) if args.zones else None

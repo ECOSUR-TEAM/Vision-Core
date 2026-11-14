@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-import numpy as np
+
+from domain.types import Frame
 
 
 class VideoSource(ABC):
@@ -11,7 +12,7 @@ class VideoSource(ABC):
         ...
 
     @abstractmethod
-    def read_frame(self) -> Optional[np.ndarray]:
+    def read_frame(self) -> Optional[Frame]:
         """Devuelve BGR o None al terminar. Puede lanzar ConnectionError si falla la fuente."""
         ...
 

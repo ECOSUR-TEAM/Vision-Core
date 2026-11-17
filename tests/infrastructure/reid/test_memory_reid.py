@@ -1,6 +1,6 @@
 import numpy as np
 
-from domain.entities import BBox
+from domain.model.bbox import BBox
 from infrastructure.reid import memory_reid
 from infrastructure.reid.memory_reid import InMemoryReID
 

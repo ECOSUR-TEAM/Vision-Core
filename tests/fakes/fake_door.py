@@ -1,4 +1,4 @@
-from domain.entities import Event
+from domain.model.event import Event
 
 
 class FakeDoor:

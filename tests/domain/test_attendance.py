@@ -1,5 +1,5 @@
 from domain.attendance import SessionAttendance
-from domain.entities import Event
+from domain.model.event import Event
 
 
 def test_leave_and_return_is_one_visitor_but_restores_occupancy():

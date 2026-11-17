@@ -1,4 +1,5 @@
-from domain.entities import BBox, Detection
+from domain.model.bbox import BBox
+from domain.model.detection import Detection
 
 
 class FakeDetector:

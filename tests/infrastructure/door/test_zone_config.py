@@ -1,6 +1,6 @@
 import json
 import pytest
-from domain.entities import Polygon
+from domain.model.polygon import Polygon
 from infrastructure.door.zone_config import load_zones, validate_polygon
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 

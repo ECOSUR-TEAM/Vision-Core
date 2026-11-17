@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 import pytest
 
-from infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.features.video.infrastructure.adapters.rtsp_video_source import (
+    RtspVideoSource,
+)
 
 URL = "rtsp://user:secret@frigate:8554/entrada"
 

@@ -143,7 +143,7 @@ con `;`, `&`, `#` u otros caracteres especiales.
 3. Captura una imagen y calibra los polígonos:
 
 ```bash
-python -m infrastructure.video.capture_reference referencia.png
+python -m scripts.capture_reference referencia.png
 cp config/zones.example.json config/zones.json
 # Editar frame_size, door, exterior e interior usando referencia.png.
 python -m infrastructure.door.check_zones referencia.png config/zones.json zonas.png
@@ -174,6 +174,8 @@ proceso termina con error; no hay supervisor ni reinicio automático.
 | Variable | Predeterminado | Uso |
 |---|---|---|
 | `VISION_CORE_RTSP_URL` | Obligatoria para RTSP | `rtsp://HOST_FRIGATE:8554/NOMBRE_STREAM` |
+| `VISION_CORE_VIDEO_SOURCE` | `rtsp` | `rtsp` o `file`; selecciona el adaptador en `build_video()` |
+| `VISION_CORE_VIDEO_PATH` | Sin valor | Archivo local cuando `VISION_CORE_VIDEO_SOURCE=file` |
 | `VISION_CORE_OPEN_TIMEOUT_MS` | `5000` | Timeout positivo por apertura |
 | `VISION_CORE_DECODER_THREADS` | `1` | Hilos de decodificación; `0` usa selección automática y puede añadir retraso |
 | `VISION_CORE_READ_TIMEOUT_MS` | `5000` | Timeout positivo por lectura |
@@ -223,7 +225,7 @@ tests están documentados en [la guía de arquitectura](docs/architecture.md).
 | `src/vision_core/shared/domain/` | `BBox`, `Polygon`, `Event` y `EventType`, sin dependencias de frameworks |
 | `src/vision_core/features/` | Features verticales con `application`, `domain` e `infrastructure` |
 | `domain/` y `domain/ports/` | Shims temporales de compatibilidad durante la migración |
-| `infrastructure/video/` | RTSP con reconexión, reproducción de archivos, validación BGR y captura de referencia |
+| `src/vision_core/features/video/` | Slice de video: DTOs, casos de uso, port y adaptadores RTSP/archivo/latest (las rutas antiguas son shims) |
 | `infrastructure/detection/` | YOLOv8, personas clase COCO 0, cajas en píxeles y tracking local por movimiento/IoU |
 | `infrastructure/reid/` | Recortes BGR→RGB, embeddings L2 y recuperación temporal de `person_id` |
 | `infrastructure/door/` | Validación de polígonos, zona por centro del bbox, confirmación e historial |

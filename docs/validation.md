@@ -82,7 +82,7 @@ No hay una imagen real de la sala incluida. `config/zones.example.json` contiene
 coordenadas sintéticas y no constituye una calibración válida de la cámara.
 
 1. Con `VISION_CORE_RTSP_URL` configurada, captura sin navegador:
-   `python -m infrastructure.video.capture_reference referencia.png`.
+   `python -m scripts.capture_reference referencia.png`.
 2. Abre el PNG a resolución original en un editor que muestre coordenadas del
    cursor. Copia `config/zones.example.json` a `config/zones.json`. Escribe en
    `frame_size` el ancho y alto mostrados por la captura.

@@ -1,0 +1,1 @@
+"""Concrete video source adapters."""

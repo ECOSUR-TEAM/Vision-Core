@@ -14,10 +14,14 @@ def build_zones(path):
     return load_zones(path)
 
 
-def build_video_source():
-    from infrastructure.video.rtsp_video_source import RtspVideoSource
+def build_video_with(source=None, *, path=None, latest=False):
+    from vision_core.features.video.infrastructure.dependencies import build_video
 
-    return RtspVideoSource.from_env()
+    return build_video(source=source, path=path, latest=latest)
+
+
+def build_video_source():
+    return build_video_with()
 
 
 def build_door_analytics(zones=None, *, confirmation_frames=None):
@@ -118,9 +122,9 @@ class MonitorRuntime:
 
 
 def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None):
-    from infrastructure.video.latest_frame_source import LatestFrameSource
     from vision_core.features.monitor.infrastructure.dependencies import build_monitor
     from vision_core.features.monitor.infrastructure.renderer import render_frame
+    from vision_core.features.video.infrastructure.dependencies import build_video
     monitor = build_monitor(state=state)
 
     def pipeline(stop_requested):
@@ -129,7 +133,7 @@ def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_fai
             # Adapters load models lazily so the monitor can report startup failures.
             zones = build_zones(zones_file) if zones_file else None
             analytics = build_door_analytics(zones)
-            source = LatestFrameSource(build_video_source())
+            source = build_video(latest=True)
             app = build_vision_core_app(
                 video_source=source,
                 door_analytics=analytics,

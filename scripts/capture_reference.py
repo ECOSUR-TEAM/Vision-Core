@@ -4,7 +4,7 @@ from pathlib import Path
 
 import cv2
 
-from .rtsp_video_source import RtspVideoSource
+from composition import build_video_with
 
 
 def main():
@@ -14,10 +14,10 @@ def main():
     path = Path(args.output)
     if path.suffix.lower() != '.png' or path.exists():
         parser.error('Usa un archivo .png nuevo')
-    source = RtspVideoSource.from_env()
+    video = build_video_with()
     try:
-        source.open()
-        frame = source.read_frame()
+        video.open()
+        frame = video.read_frame()
         if frame is None:
             raise RuntimeError('No se recibió un frame')
         ok, encoded = cv2.imencode('.png', frame)
@@ -27,7 +27,7 @@ def main():
             output.write(encoded.tobytes())
         print(f'Frame guardado: {frame.shape[1]} × {frame.shape[0]} píxeles')
     finally:
-        source.close()
+        video.close()
 
 
 if __name__ == '__main__':

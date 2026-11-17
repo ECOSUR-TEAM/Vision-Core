@@ -46,7 +46,8 @@ def evaluate(rows, truth, threshold=.5):
         for _, i, j in candidates:
             if i in used_gt or j in used_pred:
                 continue
-            used_gt.add(i); used_pred.add(j)
+            used_gt.add(i)
+            used_pred.add(j)
             identity, track = gt[i]['id'], pred[j]['track_id']
             if identity in previous_track and previous_track[identity] != track:
                 switches += 1
@@ -70,7 +71,8 @@ def evaluate(rows, truth, threshold=.5):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('recording'); parser.add_argument('annotations')
+    parser.add_argument('recording')
+    parser.add_argument('annotations')
     parser.add_argument('--iou', type=float, default=.5)
     args = parser.parse_args()
     rows = [json.loads(line) for line in Path(args.recording).read_text().splitlines()]

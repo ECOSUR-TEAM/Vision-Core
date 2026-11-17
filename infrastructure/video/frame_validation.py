@@ -1,14 +1,5 @@
-"""Contrato de entrada del detector: OpenCV BGR, HWC, uint8."""
-import numpy as np
+"""Compatibility import for the BGR validation performed by the mapper."""
 
+from vision_core.features.video.application.mappers.video_mapper import validate_frame
 
-def validate_frame(frame: np.ndarray, expected_size=None) -> None:
-    if not isinstance(frame, np.ndarray):
-        raise ValueError('El frame debe ser un ndarray')  # noqa: TRY004 - contrato público: ValueError
-    if frame.dtype != np.uint8:
-        raise ValueError('El frame debe tener dtype uint8')
-    if frame.ndim != 3 or frame.shape[2] != 3 or min(frame.shape[:2]) <= 0:
-        raise ValueError('El frame debe tener forma H x W x 3 y no estar vacío')
-    if expected_size is not None and (frame.shape[1], frame.shape[0]) != expected_size:
-        raise ValueError('La resolución cambió o no coincide con la esperada')
-    # BGR is guaranteed by the decoder, not inferable from arbitrary pixel values.
+__all__ = ["validate_frame"]

@@ -7,7 +7,9 @@ import pytest
 
 from application.vision_core_app import VisionCoreApp
 from domain.model.resolved_track import ResolvedTrack
-from infrastructure.video.latest_frame_source import LatestFrameSource
+from vision_core.features.video.infrastructure.adapters.latest_frame_source import (
+    LatestFrameSource,
+)
 from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID

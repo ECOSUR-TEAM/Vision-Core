@@ -8,8 +8,10 @@ import time
 
 import numpy as np
 
-from infrastructure.video.frame_validation import validate_frame
-from infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.features.video.application.mappers.video_mapper import validate_frame
+from vision_core.features.video.infrastructure.adapters.rtsp_video_source import (
+    RtspVideoSource,
+)
 
 
 def probe(url, transport):

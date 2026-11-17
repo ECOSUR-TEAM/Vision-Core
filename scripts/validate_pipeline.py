@@ -14,8 +14,12 @@ from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from infrastructure.door.zone_loader import load_zones
 from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
 from infrastructure.reid.memory_reid import InMemoryReID
-from infrastructure.video.file_video_source import FileVideoSource
-from infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.features.video.infrastructure.adapters.file_video_source import (
+    FileVideoSource,
+)
+from vision_core.features.video.infrastructure.adapters.rtsp_video_source import (
+    RtspVideoSource,
+)
 from scripts.pipeline_tools.limited_source import LimitedSource
 from scripts.pipeline_tools.measured_app import MeasuredApp
 from scripts.pipeline_tools.recorded_detector import RecordedDetector

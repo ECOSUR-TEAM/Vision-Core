@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from domain.entities import Detection
+from domain.model.detection import Detection
 from domain.types import Frame
 
 

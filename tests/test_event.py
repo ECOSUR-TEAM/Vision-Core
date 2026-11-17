@@ -1,6 +1,7 @@
 import pytest
 
-from domain.entities import Event, EventType
+from domain.model.event import Event
+from domain.model.event_type import EventType
 
 
 def test_invalid_event_name_rejected():

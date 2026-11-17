@@ -1,7 +1,8 @@
 import numpy as np
 
 from application.vision_core_app import VisionCoreApp
-from domain.entities import BBox, Detection
+from domain.model.bbox import BBox
+from domain.model.detection import Detection
 from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID

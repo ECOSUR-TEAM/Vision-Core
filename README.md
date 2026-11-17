@@ -202,7 +202,7 @@ independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 
 | Componente | Responsabilidad |
 |---|---|
-| `domain/entities.py` | Bounding boxes, detecciones, polígonos y eventos |
+| `domain/model/` | Bounding boxes, detecciones, tracks resueltos, tipos de evento, eventos y polígonos (un archivo por concepto) |
 | `domain/ports/` | Contratos de video, detector/tracker, ReID y zonas |
 | `infrastructure/video/` | RTSP con reconexión, reproducción de archivos, validación BGR y captura de referencia |
 | `infrastructure/detection/` | YOLOv8, personas clase COCO 0, cajas en píxeles y tracking local por movimiento/IoU |

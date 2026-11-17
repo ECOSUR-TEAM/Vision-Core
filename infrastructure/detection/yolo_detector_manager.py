@@ -1,6 +1,7 @@
 import numpy as np
 
-from domain.entities import BBox, Detection
+from domain.model.bbox import BBox
+from domain.model.detection import Detection
 from domain.ports import DetectorManager
 
 from .motion_tracker import MAX_MISSED_FRAMES, MotionTracker

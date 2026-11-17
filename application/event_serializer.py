@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from domain.entities import Event
+from domain.model.event import Event
 
 
 def _jsonable(value: Any) -> Any:

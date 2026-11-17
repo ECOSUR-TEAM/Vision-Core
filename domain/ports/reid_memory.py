@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from domain.entities import BBox
+from domain.model.bbox import BBox
 from domain.types import Embedding
 
 

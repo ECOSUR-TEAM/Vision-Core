@@ -5,7 +5,8 @@ from typing import Optional, NamedTuple
 
 from .zone_config import validate_polygon, on_segment
 
-from domain.entities import Event, Polygon
+from domain.model.event import Event
+from domain.model.polygon import Polygon
 from domain.ports import DoorAnalytics
 
 

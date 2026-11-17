@@ -6,8 +6,8 @@ import uuid
 from collections import deque
 
 import numpy as np
-from domain.model.bbox import BBox
 
+from domain.model.bbox import BBox
 from domain.ports import ReIDMemory
 
 TTL_SECONDS = 60

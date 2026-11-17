@@ -1,7 +1,8 @@
 """Recorded synthetic frames, scripted YOLO outputs, real tracker/ReID/zones."""
+import sys
 from types import SimpleNamespace
 from unittest.mock import Mock
-import sys
+
 import cv2
 import numpy as np
 import pytest

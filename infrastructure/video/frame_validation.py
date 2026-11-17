@@ -4,7 +4,7 @@ import numpy as np
 
 def validate_frame(frame: np.ndarray, expected_size=None) -> None:
     if not isinstance(frame, np.ndarray):
-        raise ValueError('El frame debe ser un ndarray')
+        raise ValueError('El frame debe ser un ndarray')  # noqa: TRY004 - contrato público: ValueError
     if frame.dtype != np.uint8:
         raise ValueError('El frame debe tener dtype uint8')
     if frame.ndim != 3 or frame.shape[2] != 3 or min(frame.shape[:2]) <= 0:

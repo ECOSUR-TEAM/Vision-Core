@@ -4,7 +4,7 @@ from domain.model.bbox import BBox
 from domain.model.detection import Detection
 from domain.ports import DetectorManager
 
-from .motion_tracker import MAX_MISSED_FRAMES, MotionTracker
+from .motion_tracker import MotionTracker
 
 PERSON_CLASS_ID = 0  # COCO
 CONFIDENCE_THRESHOLD = 0.5

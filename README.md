@@ -212,6 +212,33 @@ No se necesita combinar archivos Compose. Los antiguos complementos de cámara y
 monitor son alias vacíos de compatibilidad. El archivo de webcam es una alternativa
 independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 
+## Imágenes Docker (GHCR)
+
+El workflow [Docker CD](.github/workflows/docker.yml) construye y publica las
+imágenes automáticamente en GitHub Container Registry (GHCR) en cada push a
+`main`, `develop` o un tag `v*`. En pull requests solo se construyen, sin publicar.
+
+Se publican dos targets del `Dockerfile`:
+
+- `ghcr.io/<owner>/<repo>` (`runtime`): monitor y pipeline de análisis.
+- `ghcr.io/<owner>/<repo>-camera-bridge` (`camera-bridge`): puente de cámara.
+
+El nombre se normaliza a minúsculas; para este repositorio son
+`ghcr.io/ecosur-team/vision-core` y
+`ghcr.io/ecosur-team/vision-core-camera-bridge`.
+
+Tags disponibles: `main`, `develop`, el SHA corto del commit (`sha-<7>`), tags
+semánticos (al subir `v0.1.0` se genera la etiqueta `0.1.0`) y `latest` en la rama
+por defecto.
+
+```bash
+# Si el paquete es privado, autentícate antes:
+# echo "$GHCR_TOKEN" | docker login ghcr.io -u "$TU_USUARIO" --password-stdin
+docker pull ghcr.io/ecosur-team/vision-core:main
+docker pull ghcr.io/ecosur-team/vision-core-camera-bridge:main
+docker pull ghcr.io/ecosur-team/vision-core:0.1.0
+```
+
 ## Módulos y responsabilidades
 
 | Componente | Responsabilidad |

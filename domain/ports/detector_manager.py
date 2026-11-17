@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-import numpy as np
 
 from domain.entities import Detection
+from domain.types import Frame
 
 
 class DetectorManager(ABC):
@@ -13,7 +13,7 @@ class DetectorManager(ABC):
     """
 
     @abstractmethod
-    def process(self, frame: np.ndarray) -> list[Detection]:
+    def process(self, frame: Frame) -> list[Detection]:
         ...
 
     @abstractmethod

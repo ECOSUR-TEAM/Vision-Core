@@ -1,8 +1,8 @@
 import numpy as np
 
 from domain.model.bbox import BBox
-from domain.model.detection import Detection
-from infrastructure.detection.motion_tracker import MotionTracker
+from vision_core.features.detection.domain.entities.detection import Detection
+from vision_core.features.detection.infrastructure.adapters.motion_tracker import MotionTracker
 
 
 def detection(x: float) -> Detection:

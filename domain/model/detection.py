@@ -1,12 +1,5 @@
-from dataclasses import dataclass
+"""Compatibility import for the detection slice entity."""
 
-from domain.model.bbox import BBox
+from vision_core.features.detection.domain.entities.detection import Detection
 
-
-@dataclass
-class Detection:
-    """Salida cruda del DetectorManager para un frame."""
-    bbox: BBox
-    class_id: int
-    confidence: float
-    track_id: int  # id local asignado por el tracker (Norfair/ByteTrack), no persistente
+__all__ = ["Detection"]

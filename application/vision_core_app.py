@@ -7,7 +7,8 @@ import numpy as np
 from domain.model.event import Event
 from domain.model.resolved_track import ResolvedTrack
 from domain.attendance import SessionAttendance
-from domain.ports import VideoSource, DetectorManager, ReIDMemory, DoorAnalytics
+from domain.ports import VideoSource, ReIDMemory, DoorAnalytics
+from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 
 
 logger = logging.getLogger(__name__)

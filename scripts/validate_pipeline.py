@@ -10,7 +10,7 @@ from pathlib import Path
 from application.event_serializer import event_to_dict
 from infrastructure.video.file_video_source import FileVideoSource
 from infrastructure.video.rtsp_video_source import RtspVideoSource
-from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
 from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
 from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics

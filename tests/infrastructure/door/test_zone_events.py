@@ -1,4 +1,5 @@
 import pytest
+
 from vision_core.domain.model.polygon import Polygon
 from vision_core.infrastructure.door import polygon_door_analytics as module
 

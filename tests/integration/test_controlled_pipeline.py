@@ -1,16 +1,19 @@
 """Recorded synthetic frames, scripted YOLO outputs, real tracker/ReID/zones."""
+import sys
 from types import SimpleNamespace
 from unittest.mock import Mock
-import sys
+
 import cv2
 import numpy as np
 import pytest
 
 from vision_core.application.vision_core_app import VisionCoreApp
 from vision_core.domain.model.polygon import Polygon
-from vision_core.infrastructure.detection.yolo_detector_manager import YoloDetectorManager
-from vision_core.infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.infrastructure.detection.yolo_detector_manager import (
+    YoloDetectorManager,
+)
 from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.infrastructure.reid.memory_reid import InMemoryReID
 from vision_core.infrastructure.video.file_video_source import FileVideoSource
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 from vision_core.scripts.pipeline_tools.limited_source import LimitedSource

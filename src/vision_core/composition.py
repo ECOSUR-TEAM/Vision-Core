@@ -22,10 +22,14 @@ def build_video_source():
 
 def build_door_analytics(zones=None, *, confirmation_frames=None):
     if zones is None:
-        from vision_core.infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
+        from vision_core.infrastructure.door.uncalibrated_analytics import (
+            UncalibratedAnalytics,
+        )
 
         return UncalibratedAnalytics()
-    from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+    from vision_core.infrastructure.door.polygon_door_analytics import (
+        PolygonDoorAnalytics,
+    )
 
     if confirmation_frames is None:
         confirmation_frames = int(os.getenv('VISION_CORE_ZONE_CONFIRMATION_FRAMES', '3'))
@@ -49,7 +53,9 @@ def build_vision_core_app(
     embedder=None,
 ) -> VisionCoreApp:
     if detector is None:
-        from vision_core.infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+        from vision_core.infrastructure.detection.yolo_detector_manager import (
+            YoloDetectorManager,
+        )
 
         detector = YoloDetectorManager()
     if reid_memory is None:
@@ -57,7 +63,9 @@ def build_vision_core_app(
 
         reid_memory = InMemoryReID.from_env()
     if embedder is None:
-        from vision_core.infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
+        from vision_core.infrastructure.reid.embedder import (
+            TorchvisionEmbeddingExtractor,
+        )
 
         embedder = TorchvisionEmbeddingExtractor.from_env()
     return VisionCoreApp(

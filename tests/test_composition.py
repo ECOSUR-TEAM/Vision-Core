@@ -4,13 +4,13 @@ from pathlib import Path
 
 import numpy as np
 
-from vision_core.application.vision_core_app import VisionCoreApp
-from vision_core.composition import build_monitor_state, build_vision_core_app
-from vision_core.domain.model.event import Event
 from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.application.vision_core_app import VisionCoreApp
+from vision_core.composition import build_monitor_state, build_vision_core_app
+from vision_core.domain.model.event import Event
 
 
 def test_infrastructure_does_not_import_application():

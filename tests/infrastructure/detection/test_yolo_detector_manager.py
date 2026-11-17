@@ -131,7 +131,7 @@ def test_model_loaded_once_and_predict_settings(monkeypatch):
     manager.process(frame)
     manager.process(frame)
     loader.assert_called_once_with('weights.pt')
-    assert model.predict.call_args.kwargs == dict(verbose=False, classes=[0], conf=0.5)
+    assert model.predict.call_args.kwargs == {'verbose': False, 'classes': [0], 'conf': 0.5}
 
 
 @pytest.mark.parametrize('first,second,expected', [
@@ -243,6 +243,7 @@ def test_reappearance_outside_prediction_gets_new_local_id(detector):
 
 def test_real_tracker_reports_loss_to_pipeline_once(detector):
     from unittest.mock import Mock
+
     from vision_core.application.vision_core_app import VisionCoreApp
 
     reid = Mock()

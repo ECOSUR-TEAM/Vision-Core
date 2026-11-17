@@ -5,6 +5,10 @@ import cv2
 import numpy as np
 import pytest
 
+from tests.fakes.fake_detector import FakeDetector
+from tests.fakes.fake_door import FakeDoor
+from tests.fakes.fake_reid import FakeReID
+from tests.fakes.fake_video_source import FakeVideoSource
 from vision_core.application.vision_core_app import VisionCoreApp
 from vision_core.domain.model.bbox import BBox
 from vision_core.domain.model.event import Event
@@ -14,10 +18,6 @@ from vision_core.infrastructure.door.zone_loader import load_zones
 from vision_core.infrastructure.monitor.renderer import render_frame
 from vision_core.infrastructure.monitor.server import MonitorState
 from vision_core.infrastructure.video.latest_frame_source import LatestFrameSource
-from tests.fakes.fake_detector import FakeDetector
-from tests.fakes.fake_door import FakeDoor
-from tests.fakes.fake_reid import FakeReID
-from tests.fakes.fake_video_source import FakeVideoSource
 
 
 def test_observer_receives_current_resolved_detections_and_empty_frames():
@@ -140,7 +140,9 @@ def test_person_label_survives_a_change_of_track():
 
 
 def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
-    from vision_core.infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
+    from vision_core.infrastructure.door.uncalibrated_analytics import (
+        UncalibratedAnalytics,
+    )
     analytics = UncalibratedAnalytics()
     state = MonitorState(demo=True)
     frame = np.zeros((800, 1280, 3), np.uint8)

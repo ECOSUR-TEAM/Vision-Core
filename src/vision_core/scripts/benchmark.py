@@ -9,7 +9,9 @@ from time import perf_counter
 import cv2
 
 from vision_core.domain.ports import DetectorManager
-from vision_core.infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+from vision_core.infrastructure.detection.yolo_detector_manager import (
+    YoloDetectorManager,
+)
 
 
 def benchmark_video(

@@ -7,6 +7,7 @@ import subprocess
 import time
 
 import numpy as np
+
 from vision_core.infrastructure.video.frame_validation import validate_frame
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 
@@ -80,11 +81,13 @@ def main():
         report['probe'] = probe(os.environ['VISION_CORE_RTSP_URL'], args.transport)
         detector = None
         if args.detector:
-            from vision_core.infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+            from vision_core.infrastructure.detection.yolo_detector_manager import (
+                YoloDetectorManager,
+            )
             detector = YoloDetectorManager()
         report['measurement'] = measure(source, args.frames, detector)
         report['status'] = 'ok' if report['probe']['status'] == 'ok' else 'incomplete'
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 - limit CLI exposure to exception type
         # Avoid outputting URLs/credentials from native exception text.
         report.update(status='failed', error_type=type(error).__name__)
     print(json.dumps(report, indent=2))

@@ -1,14 +1,19 @@
 import logging
 import math
 import time
-from typing import Callable
+from collections.abc import Callable
+
 import numpy as np
 
+from vision_core.domain.attendance import SessionAttendance
 from vision_core.domain.model.event import Event
 from vision_core.domain.model.resolved_track import ResolvedTrack
-from vision_core.domain.attendance import SessionAttendance
-from vision_core.domain.ports import VideoSource, DetectorManager, ReIDMemory, DoorAnalytics
-
+from vision_core.domain.ports import (
+    DetectorManager,
+    DoorAnalytics,
+    ReIDMemory,
+    VideoSource,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +63,7 @@ class VisionCoreApp:
             # Preserve the original failure even when resource cleanup also fails.
             try:
                 self._video.close()
-            except BaseException as close_error:
+            except Exception as close_error:  # noqa: BLE001 - preserve pipeline failure
                 logger.error("Falló el cierre de video (%s)", type(close_error).__name__)
             raise
         else:

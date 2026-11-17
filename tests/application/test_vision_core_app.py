@@ -1,12 +1,12 @@
 import numpy as np
 
-from vision_core.application.vision_core_app import VisionCoreApp
-from vision_core.domain.model.bbox import BBox
-from vision_core.domain.model.detection import Detection
 from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.application.vision_core_app import VisionCoreApp
+from vision_core.domain.model.bbox import BBox
+from vision_core.domain.model.detection import Detection
 
 
 def test_run_emits_event_per_frame():
@@ -52,6 +52,7 @@ def test_run_calls_mark_lost_when_track_is_dropped():
 
 
 import pytest
+
 from vision_core.infrastructure.reid import memory_reid
 from vision_core.infrastructure.reid.memory_reid import InMemoryReID
 

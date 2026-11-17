@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from vision_core.scripts.camera_bridge import camera_target, relay_url, forward
+from vision_core.scripts.camera_bridge import camera_target, forward, relay_url
 
 
 def test_relay_preserves_credentials_path_and_query():

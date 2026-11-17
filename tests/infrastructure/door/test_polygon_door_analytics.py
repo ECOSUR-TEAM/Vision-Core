@@ -1,7 +1,7 @@
 import pytest
 
-from domain.model.polygon import Polygon
-from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.domain.model.polygon import Polygon
+from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 
 ext_poly = Polygon(name="ext", points=((0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)))
 int_poly = Polygon(name="int", points=((3.0, 3.0), (7.0, 3.0), (7.0, 7.0), (3.0, 7.0)))

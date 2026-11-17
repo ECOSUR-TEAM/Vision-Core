@@ -19,7 +19,7 @@ services:
       context: .
       target: runtime
     env_file: .env
-    command: ["python", "-m", "infrastructure.monitor", "--host", "0.0.0.0", "--demo-zones"]
+    command: ["python", "main.py", "--host", "0.0.0.0", "--demo-zones"]
     environment:
       VISION_CORE_RTSP_URL: rtsp://frigate:8554/entrada
       VISION_CORE_MONITOR_UNCALIBRATED: "0"

@@ -1,5 +1,5 @@
 import pytest
-from scripts.evaluate_room import evaluate
+from vision_core.scripts.evaluate_room import evaluate
 
 
 def detection(track, x=0):

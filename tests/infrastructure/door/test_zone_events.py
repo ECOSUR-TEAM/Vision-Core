@@ -1,6 +1,6 @@
 import pytest
-from domain.model.polygon import Polygon
-from infrastructure.door import polygon_door_analytics as module
+from vision_core.domain.model.polygon import Polygon
+from vision_core.infrastructure.door import polygon_door_analytics as module
 
 
 @pytest.fixture

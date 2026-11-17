@@ -4,9 +4,9 @@ from pathlib import Path
 
 import numpy as np
 
-from application.vision_core_app import VisionCoreApp
-from composition import build_monitor_state, build_vision_core_app
-from domain.model.event import Event
+from vision_core.application.vision_core_app import VisionCoreApp
+from vision_core.composition import build_monitor_state, build_vision_core_app
+from vision_core.domain.model.event import Event
 from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
@@ -43,7 +43,7 @@ def test_build_monitor_state_uses_the_application_serializer():
 
 
 def test_monitor_main_uses_injected_state_and_runtime(monkeypatch):
-    from infrastructure.monitor import __main__ as monitor
+    from vision_core.infrastructure.monitor import __main__ as monitor
 
     calls = {}
 

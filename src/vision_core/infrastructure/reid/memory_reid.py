@@ -6,8 +6,8 @@ import uuid
 from collections import deque
 
 import numpy as np
-from vision_core.domain.model.bbox import BBox
 
+from vision_core.domain.model.bbox import BBox
 from vision_core.domain.ports import ReIDMemory
 
 TTL_SECONDS = 60

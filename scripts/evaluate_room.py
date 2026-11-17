@@ -46,7 +46,8 @@ def evaluate(rows, truth, threshold=.5):
         for _, i, j in candidates:
             if i in used_gt or j in used_pred:
                 continue
-            used_gt.add(i); used_pred.add(j)
+            used_gt.add(i)
+            used_pred.add(j)
             identity, track = gt[i]['id'], pred[j]['track_id']
             if identity in previous_track and previous_track[identity] != track:
                 switches += 1
@@ -60,17 +61,18 @@ def evaluate(rows, truth, threshold=.5):
         tp += len(used_gt)
         fp += len(pred)-len(used_pred)
         fn += len(gt)-len(used_gt)
-    return dict(annotated_frames=len(seen), true_positives=tp, false_positives=fp,
-                missed_detections=fn, precision=tp/(tp+fp) if tp+fp else None,
-                recall=tp/(tp+fn) if tp+fn else None, local_id_changes=switches,
-                person_id_changes=person_switches if identity_samples else None,
-                resolved_identity_samples=identity_samples, iou_threshold=threshold,
-                matching='greedy descending IoU; changes compared to last matched observation')
+    return {'annotated_frames': len(seen), 'true_positives': tp, 'false_positives': fp,
+                'missed_detections': fn, 'precision': tp/(tp+fp) if tp+fp else None,
+                'recall': tp/(tp+fn) if tp+fn else None, 'local_id_changes': switches,
+                'person_id_changes': person_switches if identity_samples else None,
+                'resolved_identity_samples': identity_samples, 'iou_threshold': threshold,
+                'matching': 'greedy descending IoU; changes compared to last matched observation'}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('recording'); parser.add_argument('annotations')
+    parser.add_argument('recording')
+    parser.add_argument('annotations')
     parser.add_argument('--iou', type=float, default=.5)
     args = parser.parse_args()
     rows = [json.loads(line) for line in Path(args.recording).read_text().splitlines()]

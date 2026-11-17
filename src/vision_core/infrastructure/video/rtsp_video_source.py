@@ -3,11 +3,11 @@ import logging
 import math
 import os
 import time
-from typing import Optional
 from urllib.parse import urlsplit
 
 import cv2
 import numpy as np
+
 from vision_core.domain.ports import VideoSource
 from .frame_validation import validate_frame
 
@@ -43,7 +43,7 @@ class RtspVideoSource(VideoSource):
         self._attempts = reconnect_attempts
         self._delay = reconnect_delay_seconds
         self._decoder_threads = decoder_threads
-        self._cap: Optional[cv2.VideoCapture] = None
+        self._cap: cv2.VideoCapture | None = None
         self.reconnections = 0
 
     @classmethod
@@ -104,7 +104,7 @@ class RtspVideoSource(VideoSource):
         validate_frame(frame)
         return frame
 
-    def read_frame(self) -> Optional[np.ndarray]:
+    def read_frame(self) -> np.ndarray | None:
         if self._cap is None:
             raise RuntimeError('Llama a open() antes de read_frame()')
         frame = self._read()

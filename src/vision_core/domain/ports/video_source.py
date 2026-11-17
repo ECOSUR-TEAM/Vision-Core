@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from vision_core.domain.types import Frame
 
@@ -12,7 +11,7 @@ class VideoSource(ABC):
         ...
 
     @abstractmethod
-    def read_frame(self) -> Optional[Frame]:
+    def read_frame(self) -> Frame | None:
         """Devuelve BGR o None al terminar. Puede lanzar ConnectionError si falla la fuente."""
         ...
 

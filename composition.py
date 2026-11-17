@@ -5,6 +5,8 @@ import threading
 
 from vision_core.application.vision_core_app import VisionCoreApp
 
+logger = logging.getLogger(__name__)
+
 
 def build_zones(path):
     from vision_core.infrastructure.door.zone_loader import load_zones
@@ -97,11 +99,11 @@ class MonitorRuntime:
         try:
             self._pipeline(self._stop.is_set)
             self._state.set_status('stopped')
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001 - límite del hilo: cualquier fallo se refleja en el estado
             # Do not expose URLs, credentials or native exception messages in HTTP.
             kind = type(error).__name__
             self._state.set_status('error', kind)
-            logging.error('Pipeline detenido (%s). Revisa stream, zonas y pesos locales.', kind)
+            logger.error('Pipeline detenido (%s). Revisa stream, zonas y pesos locales.', kind)
             if self._exit_on_error:
                 self.failed.set()
                 if self._on_failure is not None:

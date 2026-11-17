@@ -6,7 +6,6 @@ import pytest
 
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 
-
 URL = "rtsp://user:secret@frigate:8554/entrada"
 
 

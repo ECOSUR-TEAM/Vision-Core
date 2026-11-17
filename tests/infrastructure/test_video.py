@@ -1,7 +1,9 @@
 from unittest.mock import Mock
+
 import cv2
 import numpy as np
 import pytest
+
 from vision_core.infrastructure.video.frame_validation import validate_frame
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 from scripts.check_stream import measure

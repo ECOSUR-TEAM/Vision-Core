@@ -4,7 +4,7 @@ from vision_core.domain.model.bbox import BBox
 from vision_core.domain.model.detection import Detection
 from vision_core.domain.ports import DetectorManager
 
-from .motion_tracker import MAX_MISSED_FRAMES, MotionTracker
+from .motion_tracker import MotionTracker
 
 PERSON_CLASS_ID = 0  # COCO
 CONFIDENCE_THRESHOLD = 0.5

@@ -72,9 +72,9 @@ def build_vision_core_app(
 
 def build_monitor_state(*, demo=False):
     from application.event_serializer import event_to_dict
-    from infrastructure.monitor.state import MonitorState
+    from vision_core.features.monitor.infrastructure.dependencies import build_monitor
 
-    return MonitorState(demo=demo, event_serializer=event_to_dict)
+    return build_monitor(demo=demo, event_serializer=event_to_dict).state
 
 
 class MonitorRuntime:
@@ -116,8 +116,10 @@ class MonitorRuntime:
 
 
 def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None):
-    from infrastructure.monitor.renderer import render_frame
+    from vision_core.features.monitor.infrastructure.dependencies import build_monitor
+    from vision_core.features.monitor.infrastructure.renderer import render_frame
     from infrastructure.video.latest_frame_source import LatestFrameSource
+    monitor = build_monitor(state=state)
 
     def pipeline(stop_requested):
         source = None
@@ -129,9 +131,9 @@ def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_fai
             app = build_vision_core_app(
                 video_source=source,
                 door_analytics=analytics,
-                on_event=state.event,
+                on_event=monitor.publish.publish_event,
                 expected_frame_size=(zones.width, zones.height) if zones else None,
-                on_frame=lambda frame, tracks, ms: state.publish(
+                on_frame=lambda frame, tracks, ms: monitor.publish.execute(
                     *render_frame(frame, tracks, zones, analytics, state.person_label,
                                   demo=state.demo),
                     ms, source.dropped_frames,

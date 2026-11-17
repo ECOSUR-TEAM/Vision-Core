@@ -5,12 +5,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from application.vision_core_app import VisionCoreApp
-from domain.model.bbox import BBox
-from domain.model.detection import Detection
-from domain.model.polygon import Polygon
-from infrastructure.reid.memory_reid import InMemoryReID
-from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.application.vision_core_app import VisionCoreApp
+from vision_core.domain.model.bbox import BBox
+from vision_core.domain.model.detection import Detection
+from vision_core.domain.model.polygon import Polygon
+from vision_core.infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 
 
 FRAME = np.zeros((40, 40, 3), dtype=np.uint8)
@@ -101,12 +101,12 @@ def test_video_to_real_reid_and_zones_with_reappearance():
 
 
 def test_application_has_no_infrastructure_imports():
-    tree = ast.parse(Path('application/vision_core_app.py').read_text())
+    tree = ast.parse(Path('src/vision_core/application/vision_core_app.py').read_text())
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
-            assert not (node.module or '').startswith('infrastructure')
+            assert not (node.module or '').startswith(('infrastructure', 'vision_core.infrastructure'))
         elif isinstance(node, ast.Import):
-            assert all(not item.name.startswith('infrastructure') for item in node.names)
+            assert all(not item.name.startswith(('infrastructure', 'vision_core.infrastructure')) for item in node.names)
 
 
 def test_close_failure_on_normal_completion_is_reported():

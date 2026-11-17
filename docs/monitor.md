@@ -24,7 +24,7 @@ source venv/bin/activate  # O .venv/bin/activate, según tu instalación.
 set -a
 source .env
 set +a
-python -m infrastructure.monitor --demo-zones --port 8080
+python main.py --demo-zones --port 8080
 ```
 
 `.env` debe contener `VISION_CORE_RTSP_URL=rtsp://127.0.0.1:28554/entrada`.
@@ -64,7 +64,7 @@ Cambia `VISION_CORE_RTSP_URL` al restream remoto, exporta `.env` y calibra las z
 con [la guía de validación](validation.md). Inicia sin `--demo-zones`:
 
 ```bash
-python -m infrastructure.monitor --zones config/zones.json --port 8080
+python main.py --zones config/zones.json --port 8080
 ```
 
 Mantén `VISION_CORE_MONITOR_DEMO_ZONES=0` (predeterminado). Si vale `1`, activa las
@@ -156,11 +156,11 @@ La prueba de 15 imágenes/s verifica fluidez, no latencia absoluta.
 Para usar la resolución nativa de una cámara nueva, sin polígonos de ejemplo:
 
 ```bash
-python -m infrastructure.monitor --uncalibrated --port 8080
+python main.py --uncalibrated --port 8080
 ```
 
 Este modo admite 1280 × 800 de la Vivotek FD8134 y otras resoluciones. Detecta y
 recuerda personas pero no genera entradas/salidas hasta que haya zonas reales.
 El texto «Calibración pendiente» sigue visible. Al volver a ver a alguien, la
 etiqueta se conserva si el tracker o la memoria recuperan su identidad.
-Consulta [la memoria de sesión](../infrastructure/reid/README.md).
+Consulta [la memoria de sesión](../src/vision_core/infrastructure/reid/README.md).

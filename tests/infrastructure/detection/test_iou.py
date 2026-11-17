@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from infrastructure.detection.iou import iou
+from vision_core.infrastructure.detection.iou import iou
 
 
 @pytest.mark.parametrize("first,second,expected", [

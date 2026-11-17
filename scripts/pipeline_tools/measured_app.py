@@ -3,7 +3,7 @@ import time
 
 import torch
 
-from application.vision_core_app import VisionCoreApp
+from vision_core.application.vision_core_app import VisionCoreApp
 
 
 class MeasuredApp(VisionCoreApp):

@@ -1,6 +1,6 @@
 import time
 
-from domain.ports import VideoSource
+from vision_core.domain.ports import VideoSource
 
 
 class LimitedSource(VideoSource):

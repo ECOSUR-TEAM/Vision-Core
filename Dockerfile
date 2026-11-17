@@ -12,6 +12,11 @@ COPY requirements.txt .
 # CPU deployment: avoid pulling CUDA libraries for the laptop test stack.
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir -r requirements.txt
-COPY . .
+COPY pyproject.toml .
+COPY src /app/src
+COPY main.py composition.py /app/
+COPY config /app/config
+ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1
-CMD ["python", "-m", "infrastructure.monitor", "--host", "0.0.0.0"]
+ENV VISION_CORE_ENTRYPOINT=monitor
+CMD ["python", "main.py"]

@@ -56,6 +56,7 @@ services:
     env_file:
       - .env
     environment:
+      VISION_CORE_ENTRYPOINT: monitor
       VISION_CORE_RTSP_URL: rtsp://frigate:8554/entrada
       VISION_CORE_MONITOR_UNCALIBRATED: ${VISION_CORE_MONITOR_UNCALIBRATED:-1}
       VISION_CORE_MONITOR_EXIT_ON_ERROR: "1"

@@ -4,10 +4,10 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from domain.model.detection import Detection
-from infrastructure.detection.iou import iou
-from infrastructure.detection.motion_tracker import MAX_MISSED_FRAMES
-from infrastructure.detection.yolo_detector_manager import (
+from vision_core.domain.model.detection import Detection
+from vision_core.infrastructure.detection.iou import iou
+from vision_core.infrastructure.detection.motion_tracker import MAX_MISSED_FRAMES
+from vision_core.infrastructure.detection.yolo_detector_manager import (
     YoloDetectorManager,
 )
 
@@ -243,7 +243,7 @@ def test_reappearance_outside_prediction_gets_new_local_id(detector):
 
 def test_real_tracker_reports_loss_to_pipeline_once(detector):
     from unittest.mock import Mock
-    from application.vision_core_app import VisionCoreApp
+    from vision_core.application.vision_core_app import VisionCoreApp
 
     reid = Mock()
     reid.resolve.return_value = 'person-1'

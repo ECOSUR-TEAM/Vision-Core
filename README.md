@@ -46,9 +46,15 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -e .
 python -m pip check
 python -m pytest -q
 ```
+
+`pip install -e .` instala el paquete `vision_core` desde `src/` en modo
+editable. Si prefieres no instalarlo, exporta `PYTHONPATH=src` desde la raíz del
+repositorio. `main.py` y `composition.py` permanecen en la raíz como composition
+root; el código de la aplicación vive en `src/vision_core/`.
 
 Si ya tienes el repositorio, comienza en su carpeta. `ffprobe` viene con FFmpeg y
 se necesita para inspeccionar códec/transporte. OpenCV utiliza su backend FFmpeg
@@ -106,7 +112,12 @@ recuadros, etiquetas «Persona 1» y conteo de personas visibles. Los IDs son
 temporales; no identifican nombres ni rostros. Mientras no calibremos la sala,
 `VISION_CORE_MONITOR_UNCALIBRATED=1` evita inventar cruces de puerta.
 
-[Detalles del monitor](docs/monitor.md). La interfaz de Frigate sigue en 15000.
+Fuera de Docker, el monitor arranca con `python main.py --demo-zones --port 8080`,
+`python main.py --zones config/zones.json --port 8080` o
+`python main.py --uncalibrated --port 8080`. `main.py` delega en el monitor cuando
+recibe esas banderas o cuando `VISION_CORE_ENTRYPOINT=monitor` (valor usado por la
+imagen Docker). [Detalles del monitor](docs/monitor.md). La interfaz de Frigate
+sigue en 15000.
 
 ## Validación manual con Python
 
@@ -129,10 +140,10 @@ con `;`, `&`, `#` u otros caracteres especiales.
 3. Captura una imagen y calibra los polígonos:
 
 ```bash
-python -m infrastructure.video.capture_reference referencia.png
+python -m vision_core.infrastructure.video.capture_reference referencia.png
 cp config/zones.example.json config/zones.json
 # Editar frame_size, door, exterior e interior usando referencia.png.
-python -m infrastructure.door.check_zones referencia.png config/zones.json zonas.png
+python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png
 ```
 
 El ejemplo contiene coordenadas sintéticas. La [guía de calibración](docs/validation.md#calibrar-puerta-y-zonas-con-la-cámara)
@@ -202,15 +213,16 @@ independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 
 | Componente | Responsabilidad |
 |---|---|
-| `domain/model/` | Bounding boxes, detecciones, tracks resueltos, tipos de evento, eventos y polígonos (un archivo por concepto) |
-| `domain/ports/` | Contratos de video, detector/tracker, ReID y zonas |
-| `infrastructure/video/` | RTSP con reconexión, reproducción de archivos, validación BGR y captura de referencia |
-| `infrastructure/detection/` | YOLOv8, personas clase COCO 0, cajas en píxeles y tracking local por movimiento/IoU |
-| `infrastructure/reid/` | Recortes BGR→RGB, embeddings L2 y recuperación temporal de `person_id` |
-| `infrastructure/door/` | Validación de polígonos, zona por centro del bbox, confirmación e historial |
-| `application/vision_core_app.py` | Orquestación, notificación de pérdidas, mappings, eventos y cierre |
-| `application/event_serializer.py` | Serialización de eventos para JSON en el borde de la aplicación |
-| `main.py` | Construcción e inyección de las implementaciones concretas |
+| `src/vision_core/domain/model/` | Bounding boxes, detecciones, tracks resueltos, tipos de evento, eventos y polígonos (un archivo por concepto) |
+| `src/vision_core/domain/ports/` | Contratos de video, detector/tracker, ReID y zonas |
+| `src/vision_core/infrastructure/video/` | RTSP con reconexión, reproducción de archivos, validación BGR y captura de referencia |
+| `src/vision_core/infrastructure/detection/` | YOLOv8, personas clase COCO 0, cajas en píxeles y tracking local por movimiento/IoU |
+| `src/vision_core/infrastructure/reid/` | Recortes BGR→RGB, embeddings L2 y recuperación temporal de `person_id` |
+| `src/vision_core/infrastructure/door/` | Validación de polígonos, zona por centro del bbox, confirmación e historial |
+| `src/vision_core/application/vision_core_app.py` | Orquestación, notificación de pérdidas, mappings, eventos y cierre |
+| `src/vision_core/application/event_serializer.py` | Serialización de eventos para JSON en el borde de la aplicación |
+| `composition.py` | Construcción e inyección de las implementaciones concretas |
+| `main.py` | Entrypoint raíz: decide entre pipeline y monitor sin lógica de negocio |
 | `scripts/` | Demo sintética, ejecución medida y evaluación contra anotaciones |
 
 La aplicación depende de los ports, no de infraestructura. Los adaptadores no
@@ -255,9 +267,9 @@ locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unit
 escenas controladas y pruebas reales optativas. Consulta:
 
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
-- [Orquestación y cierre](application/README.md).
-- [Detección y tracking](infrastructure/detection/README.md).
-- [Embeddings y TTL](infrastructure/reid/README.md).
+- [Orquestación y cierre](src/vision_core/application/README.md).
+- [Detección y tracking](src/vision_core/infrastructure/detection/README.md).
+- [Embeddings y TTL](src/vision_core/infrastructure/reid/README.md).
 - [Resultados, anotaciones y evaluación pendiente de la sala](reports/room-evaluation.md).
 - [Hardware y problemas conocidos](docs/operations.md).
 

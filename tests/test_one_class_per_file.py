@@ -2,7 +2,14 @@ import ast
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-ROOTS = ["domain", "application", "infrastructure", "scripts", "tests", "main.py"]
+ROOTS = [
+    "src/vision_core/domain",
+    "src/vision_core/application",
+    "src/vision_core/infrastructure",
+    "scripts",
+    "tests",
+    "main.py",
+]
 
 
 def _python_files(root: str):

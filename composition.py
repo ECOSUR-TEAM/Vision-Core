@@ -3,27 +3,27 @@ import logging
 import os
 import threading
 
-from application.vision_core_app import VisionCoreApp
+from vision_core.application.vision_core_app import VisionCoreApp
 
 
 def build_zones(path):
-    from infrastructure.door.zone_loader import load_zones
+    from vision_core.infrastructure.door.zone_loader import load_zones
 
     return load_zones(path)
 
 
 def build_video_source():
-    from infrastructure.video.rtsp_video_source import RtspVideoSource
+    from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 
     return RtspVideoSource.from_env()
 
 
 def build_door_analytics(zones=None, *, confirmation_frames=None):
     if zones is None:
-        from infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
+        from vision_core.infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
 
         return UncalibratedAnalytics()
-    from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+    from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 
     if confirmation_frames is None:
         confirmation_frames = int(os.getenv('VISION_CORE_ZONE_CONFIRMATION_FRAMES', '3'))
@@ -47,15 +47,15 @@ def build_vision_core_app(
     embedder=None,
 ) -> VisionCoreApp:
     if detector is None:
-        from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+        from vision_core.infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 
         detector = YoloDetectorManager()
     if reid_memory is None:
-        from infrastructure.reid.memory_reid import InMemoryReID
+        from vision_core.infrastructure.reid.memory_reid import InMemoryReID
 
         reid_memory = InMemoryReID.from_env()
     if embedder is None:
-        from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
+        from vision_core.infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
 
         embedder = TorchvisionEmbeddingExtractor.from_env()
     return VisionCoreApp(
@@ -71,8 +71,8 @@ def build_vision_core_app(
 
 
 def build_monitor_state(*, demo=False):
-    from application.event_serializer import event_to_dict
-    from infrastructure.monitor.state import MonitorState
+    from vision_core.application.event_serializer import event_to_dict
+    from vision_core.infrastructure.monitor.state import MonitorState
 
     return MonitorState(demo=demo, event_serializer=event_to_dict)
 
@@ -116,8 +116,8 @@ class MonitorRuntime:
 
 
 def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None):
-    from infrastructure.monitor.renderer import render_frame
-    from infrastructure.video.latest_frame_source import LatestFrameSource
+    from vision_core.infrastructure.monitor.renderer import render_frame
+    from vision_core.infrastructure.video.latest_frame_source import LatestFrameSource
 
     def pipeline(stop_requested):
         source = None

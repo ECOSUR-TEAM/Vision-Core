@@ -7,8 +7,8 @@ import subprocess
 import time
 
 import numpy as np
-from infrastructure.video.frame_validation import validate_frame
-from infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.infrastructure.video.frame_validation import validate_frame
+from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 
 
 def probe(url, transport):
@@ -80,7 +80,7 @@ def main():
         report['probe'] = probe(os.environ['VISION_CORE_RTSP_URL'], args.transport)
         detector = None
         if args.detector:
-            from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+            from vision_core.infrastructure.detection.yolo_detector_manager import YoloDetectorManager
             detector = YoloDetectorManager()
         report['measurement'] = measure(source, args.frames, detector)
         report['status'] = 'ok' if report['probe']['status'] == 'ok' else 'incomplete'

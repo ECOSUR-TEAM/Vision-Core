@@ -7,14 +7,14 @@ import numpy as np
 import torch
 from pathlib import Path
 
-from application.event_serializer import event_to_dict
-from infrastructure.video.file_video_source import FileVideoSource
-from infrastructure.video.rtsp_video_source import RtspVideoSource
-from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
-from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
-from infrastructure.reid.memory_reid import InMemoryReID
-from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from infrastructure.door.zone_loader import load_zones
+from vision_core.application.event_serializer import event_to_dict
+from vision_core.infrastructure.video.file_video_source import FileVideoSource
+from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+from vision_core.infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
+from vision_core.infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.infrastructure.door.zone_loader import load_zones
 from scripts.pipeline_tools.limited_source import LimitedSource
 from scripts.pipeline_tools.measured_app import MeasuredApp
 from scripts.pipeline_tools.recorded_detector import RecordedDetector

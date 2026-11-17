@@ -1,22 +1,36 @@
 import logging
 import os
+import sys
 
-from application.event_serializer import event_to_json
 from composition import (
     build_door_analytics,
     build_video_source,
     build_vision_core_app,
     build_zones,
 )
-from domain.model.event import Event
+from vision_core.application.event_serializer import event_to_json
+from vision_core.domain.model.event import Event
+
+MONITOR_FLAGS = frozenset(
+    {'--host', '--port', '--zones', '--demo-zones', '--uncalibrated'}
+)
 
 
 def print_event(event: Event) -> None:
     print(event_to_json(event))
 
 
+def run_monitor() -> None:
+    from vision_core.infrastructure.monitor.__main__ import main as monitor_main
+
+    monitor_main()
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
+    if os.getenv('VISION_CORE_ENTRYPOINT') == 'monitor' or MONITOR_FLAGS.intersection(sys.argv[1:]):
+        run_monitor()
+        return
     zones = build_zones(os.environ["VISION_CORE_ZONES_FILE"])
 
     app = build_vision_core_app(

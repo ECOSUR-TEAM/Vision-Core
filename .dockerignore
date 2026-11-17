@@ -15,3 +15,6 @@ config/frigate-camera-local
 *.jsonl
 *.avi
 *.mp4
+*.egg-info
+build
+dist

@@ -218,6 +218,12 @@ importan otras carpetas de infraestructura; los puntos de composición conectan
 los módulos. Dueños originales: detección Carlos/Ameth, ReID Briyan, zonas Melissa,
 orquestación Fabricio.
 
+El layout horizontal de arriba es el estado actual. La evolución a Vertical
+Slice y Screaming Architecture (código en `src/vision_core/`, features con sus
+tres capas y DTOs, `main.py` en la raíz) está decidida en
+[ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md), que incluye
+el mapa de migración archivo viejo → archivo nuevo.
+
 Las herramientas de diagnóstico y benchmark viven en `scripts/`, fuera de los
 adaptadores. Ejecútalas con `python -m scripts.check_stream` y
 `python -m scripts.benchmark`; estos puntos de composición pueden cablear varios
@@ -255,6 +261,7 @@ locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unit
 escenas controladas y pruebas reales optativas. Consulta:
 
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
+- [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
 - [Orquestación y cierre](application/README.md).
 - [Detección y tracking](infrastructure/detection/README.md).
 - [Embeddings y TTL](infrastructure/reid/README.md).

@@ -6,9 +6,9 @@ from pathlib import Path
 import cv2
 import pytest
 
-from domain.entities import Detection
+from domain.model.detection import Detection
 from domain.ports import DetectorManager
-from infrastructure.detection.benchmark import benchmark_video
+from scripts.benchmark import benchmark_video
 from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 
 

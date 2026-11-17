@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from infrastructure.video.frame_validation import validate_frame
 from infrastructure.video.rtsp_video_source import RtspVideoSource
-from infrastructure.video.check_stream import measure
+from scripts.check_stream import measure
 
 FRAME = np.zeros((48, 64, 3), dtype=np.uint8)
 

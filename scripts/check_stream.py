@@ -1,4 +1,4 @@
-"""Run: python -m infrastructure.video.check_stream --frames 100"""
+"""Run: python -m scripts.check_stream --frames 100"""
 import argparse
 import json
 import os
@@ -7,8 +7,8 @@ import subprocess
 import time
 
 import numpy as np
-from .frame_validation import validate_frame
-from .rtsp_video_source import RtspVideoSource
+from infrastructure.video.frame_validation import validate_frame
+from infrastructure.video.rtsp_video_source import RtspVideoSource
 
 
 def probe(url, transport):

@@ -1,10 +1,20 @@
 import pytest
 
-from domain.entities import Polygon
+from domain.model.polygon import Polygon
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 
 ext_poly = Polygon(name="ext", points=((0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)))
 int_poly = Polygon(name="int", points=((3.0, 3.0), (7.0, 3.0), (7.0, 7.0), (3.0, 7.0)))
+
+
+@pytest.mark.parametrize('point,expected', [((5,5), True), ((-1,5), False),
+    ((0,0), True), ((10,0), True), ((0,10), True), ((10,10), True),
+    ((0,5), True), ((5,0), True), ((10,5), True), ((5,10), True),
+    ((10.001,5), False)])
+def test_boundaries(point, expected):
+    pts = ((0,0), (10,0), (10,10), (0,10))
+    for order in (pts, pts[::-1]):
+        assert PolygonDoorAnalytics._point_in_polygon(point, Polygon('test', order)) == expected
 
 
 def test_diferentes_poligonos_no_interfieren():

@@ -79,6 +79,29 @@ python -m pip check
 python -m pytest -q
 ```
 
+## Lint y Formato de Código (Ruff)
+
+El proyecto usa [Ruff](https://docs.astral.sh/ruff/) con las reglas `E`, `F`, `W`
+e `I` (imports), `line-length = 120` y Python 3.10 como objetivo. Instala la
+misma versión fijada que usa la CI (también disponible como hook de pre-commit):
+
+```bash
+python -m pip install ruff==0.3.0
+```
+
+Antes de hacer commit, arregla los errores de lint/imports y aplica el formato:
+
+```bash
+ruff check . --fix
+ruff format .
+```
+
+Para verificar sin modificar archivos, usa `ruff check .` y
+`ruff format --check .`. El workflow
+[Lint and Format](.github/workflows/lint.yml) ejecuta ambos chequeos más
+`compileall`; este job `lint` será un **requerimiento obligatorio** en los
+rulesets de `main` y `develop`, por lo que un PR no podrá mergearse si falla.
+
 ## Primera prueba sin cámara
 
 ```bash

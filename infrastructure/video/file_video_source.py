@@ -9,6 +9,7 @@ from .frame_validation import validate_frame
 
 class FileVideoSource(VideoSource):
     """Replay a local recording; unlike RTSP, EOF is expected."""
+
     def __init__(self, path):
         self.path = Path(path)
         self._cap = None
@@ -20,11 +21,11 @@ class FileVideoSource(VideoSource):
         self._cap = cv2.VideoCapture(str(self.path))
         if not self._cap.isOpened():
             self.close()
-            raise ConnectionError('No se pudo abrir el video grabado')
+            raise ConnectionError("No se pudo abrir el video grabado")
 
     def read_frame(self):
         if self._cap is None:
-            raise RuntimeError('Llama a open() antes de read_frame()')
+            raise RuntimeError("Llama a open() antes de read_frame()")
         ok, frame = self._cap.read()
         if not ok:
             return None

@@ -4,7 +4,6 @@ from domain.model.bbox import BBox
 from infrastructure.reid import memory_reid
 from infrastructure.reid.memory_reid import InMemoryReID
 
-
 BBOX = BBox(0, 0, 10, 10)
 
 

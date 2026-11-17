@@ -1,4 +1,5 @@
 import pytest
+
 from domain.model.polygon import Polygon
 from infrastructure.door import polygon_door_analytics as module
 

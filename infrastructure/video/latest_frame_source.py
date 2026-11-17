@@ -33,7 +33,7 @@ class LatestFrameSource(VideoSource):
                         self.dropped_frames += 1
                     self._frame = frame
                     self._condition.notify_all()
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001 - cualquier fallo del hilo debe llegar al lector
             with self._condition:
                 self._error = error
         finally:

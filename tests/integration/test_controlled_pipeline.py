@@ -1,7 +1,8 @@
 """Recorded synthetic frames, scripted YOLO outputs, real tracker/ReID/zones."""
+import sys
 from types import SimpleNamespace
 from unittest.mock import Mock
-import sys
+
 import cv2
 import numpy as np
 import pytest
@@ -9,8 +10,8 @@ import pytest
 from application.vision_core_app import VisionCoreApp
 from domain.model.polygon import Polygon
 from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
-from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.video.file_video_source import FileVideoSource
 from infrastructure.video.rtsp_video_source import RtspVideoSource
 from scripts.pipeline_tools.limited_source import LimitedSource

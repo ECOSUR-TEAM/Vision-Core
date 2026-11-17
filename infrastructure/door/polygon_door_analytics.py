@@ -1,20 +1,15 @@
 import math
 import time
 from collections import deque
-from typing import Optional, NamedTuple
+from typing import Optional
 
 from .geometry import on_segment
 from .polygon_validation import validate_polygon
+from .zone_observation import ZoneObservation
 
 from domain.model.event import Event
 from domain.model.polygon import Polygon
 from domain.ports import DoorAnalytics
-
-
-class ZoneObservation(NamedTuple):
-    position: tuple[float, float]
-    zone: str
-    timestamp: float
 
 
 class PolygonDoorAnalytics(DoorAnalytics):

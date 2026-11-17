@@ -223,6 +223,24 @@ adaptadores. Ejecútalas con `python -m scripts.check_stream` y
 `python -m scripts.benchmark`; estos puntos de composición pueden cablear varios
 adaptadores sin introducir dependencias entre subcarpetas de `infrastructure/`.
 
+## Convención: una clase por archivo
+
+Cada archivo Python define como máximo **una clase de nivel superior**. Las
+funciones auxiliares pueden compartir archivo con la clase que las usa; lo que se
+separa son las clases. Las clases locales dentro de funciones de test pueden
+permanecer donde están.
+
+La política aplica a `domain/`, `application/`, `infrastructure/`, `scripts/`,
+`tests/` y `main.py`.
+
+El chequeo automático `tests/test_one_class_per_file.py` falla si encuentra un
+archivo con más de una clase de nivel superior. Se ejecuta con la suite habitual
+o de forma aislada:
+
+```bash
+python -m pytest tests/test_one_class_per_file.py -q
+```
+
 ## Pruebas y documentación de referencia
 
 ```bash

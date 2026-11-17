@@ -1,23 +1,12 @@
-from dataclasses import dataclass
-
 import numpy as np
 
 from domain.model.detection import Detection
 
 from .iou import iou
+from .track import _Track
 
 MATCH_IOU_THRESHOLD = 0.3
 MAX_MISSED_FRAMES = 30
-
-
-@dataclass
-class _Track:
-    bbox: np.ndarray
-    velocity: np.ndarray
-    missed: int = 0
-
-    def predict(self) -> np.ndarray:
-        return self.bbox + self.velocity * (self.missed + 1)
 
 
 class MotionTracker:

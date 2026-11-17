@@ -10,7 +10,7 @@ from domain.model.bbox import BBox
 from domain.model.event import Event
 from domain.model.resolved_track import ResolvedTrack
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from infrastructure.door.zone_config import load_zones
+from infrastructure.door.zone_loader import load_zones
 from infrastructure.monitor.renderer import render_frame
 from infrastructure.monitor.server import MonitorState
 from infrastructure.video.latest_frame_source import LatestFrameSource

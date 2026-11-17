@@ -60,12 +60,12 @@ def evaluate(rows, truth, threshold=.5):
         tp += len(used_gt)
         fp += len(pred)-len(used_pred)
         fn += len(gt)-len(used_gt)
-    return dict(annotated_frames=len(seen), true_positives=tp, false_positives=fp,
-                missed_detections=fn, precision=tp/(tp+fp) if tp+fp else None,
-                recall=tp/(tp+fn) if tp+fn else None, local_id_changes=switches,
-                person_id_changes=person_switches if identity_samples else None,
-                resolved_identity_samples=identity_samples, iou_threshold=threshold,
-                matching='greedy descending IoU; changes compared to last matched observation')
+    return {'annotated_frames': len(seen), 'true_positives': tp, 'false_positives': fp,
+                'missed_detections': fn, 'precision': tp/(tp+fp) if tp+fp else None,
+                'recall': tp/(tp+fn) if tp+fn else None, 'local_id_changes': switches,
+                'person_id_changes': person_switches if identity_samples else None,
+                'resolved_identity_samples': identity_samples, 'iou_threshold': threshold,
+                'matching': 'greedy descending IoU; changes compared to last matched observation'}
 
 
 def main():

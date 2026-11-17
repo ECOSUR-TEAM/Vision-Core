@@ -1,6 +1,9 @@
 from pathlib import Path
+
 import cv2
+
 from domain.ports import VideoSource
+
 from .frame_validation import validate_frame
 
 

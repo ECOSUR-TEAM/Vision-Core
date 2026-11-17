@@ -1,6 +1,6 @@
-from unittest.mock import Mock
 import ast
 from pathlib import Path
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -9,9 +9,8 @@ from application.vision_core_app import VisionCoreApp
 from domain.model.bbox import BBox
 from domain.model.detection import Detection
 from domain.model.polygon import Polygon
-from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-
+from infrastructure.reid.memory_reid import InMemoryReID
 
 FRAME = np.zeros((40, 40, 3), dtype=np.uint8)
 
@@ -30,9 +29,9 @@ def components():
 def test_stage_failure_closes_and_propagates(stage):
     args = components()
     source, detector, reid, door, embedder, sink = args
-    target = dict(open=source.open, read=source.read_frame, detect=detector.process,
-                  lost=detector.pop_lost_track_ids, embed=embedder,
-                  reid=reid.resolve, door=door.update, event=sink)[stage]
+    target = {'open': source.open, 'read': source.read_frame, 'detect': detector.process,
+                  'lost': detector.pop_lost_track_ids, 'embed': embedder,
+                  'reid': reid.resolve, 'door': door.update, 'event': sink}[stage]
     error = RuntimeError('stage failure')
     target.side_effect = error
     with pytest.raises(RuntimeError) as caught:

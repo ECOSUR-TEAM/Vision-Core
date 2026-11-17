@@ -1,7 +1,9 @@
 """Save one full-resolution frame from Frigate without a browser."""
 import argparse
 from pathlib import Path
+
 import cv2
+
 from .rtsp_video_source import RtspVideoSource
 
 

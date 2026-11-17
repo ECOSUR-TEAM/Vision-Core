@@ -1,4 +1,3 @@
-import numpy as np
 
 from domain.model.bbox import BBox
 from domain.model.detection import Detection

@@ -52,6 +52,7 @@ def test_run_calls_mark_lost_when_track_is_dropped():
 
 
 import pytest
+
 from infrastructure.reid import memory_reid
 from infrastructure.reid.memory_reid import InMemoryReID
 

@@ -1,5 +1,7 @@
 # Vision Core
 
+[![CI Tests](https://github.com/ECOSUR-TEAM/Vision-Core/actions/workflows/ci.yml/badge.svg)](https://github.com/ECOSUR-TEAM/Vision-Core/actions/workflows/ci.yml)
+
 Pipeline de analítica de personas: **cámara → Frigate/go2rtc → RTSP → YOLOv8 y
 tracking → embeddings y ReID → zonas → eventos JSON**. El análisis corre en el
 servidor y se ve desde el monitor web. Frigate entrega video; Vision Core hace su
@@ -64,6 +66,18 @@ python -c "import torch, torchvision, cv2; print(torch.__version__, torchvision.
 
 `requirements.txt` no fija versiones. Conserva `python -m pip freeze` con cada
 medición para reproducirla. No se requiere OSNet, torchreid ni `third_party/`.
+
+## Ejecutar tests localmente
+
+CI usa Python 3.11 con PyTorch de CPU en Ubuntu. Para reproducir el mismo
+entorno en local (tras crear y activar un entorno virtual):
+
+```bash
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements.txt
+python -m pip check
+python -m pytest -q
+```
 
 ## Primera prueba sin cámara
 

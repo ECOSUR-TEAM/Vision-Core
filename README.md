@@ -200,10 +200,15 @@ independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 
 ## Módulos y responsabilidades
 
+La organización nueva sigue Vertical Slice. Cada feature tiene sus capas bajo
+`src/vision_core/features/`; los límites de imports y la estructura espejo de
+tests están documentados en [la guía de arquitectura](docs/architecture.md).
+
 | Componente | Responsabilidad |
 |---|---|
-| `domain/model/` | Bounding boxes, detecciones, tracks resueltos, tipos de evento, eventos y polígonos (un archivo por concepto) |
-| `domain/ports/` | Contratos de video, detector/tracker, ReID y zonas |
+| `src/vision_core/shared/domain/` | `BBox`, `Polygon`, `Event` y `EventType`, sin dependencias de frameworks |
+| `src/vision_core/features/` | Features verticales con `application`, `domain` e `infrastructure` |
+| `domain/` y `domain/ports/` | Shims temporales de compatibilidad durante la migración |
 | `infrastructure/video/` | RTSP con reconexión, reproducción de archivos, validación BGR y captura de referencia |
 | `infrastructure/detection/` | YOLOv8, personas clase COCO 0, cajas en píxeles y tracking local por movimiento/IoU |
 | `infrastructure/reid/` | Recortes BGR→RGB, embeddings L2 y recuperación temporal de `person_id` |

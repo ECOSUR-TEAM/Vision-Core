@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 
 from application.vision_core_app import VisionCoreApp
-from domain.model.polygon import Polygon
-from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+from vision_core.shared.domain.polygon import Polygon
+from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
 from infrastructure.reid.memory_reid import InMemoryReID
-from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from infrastructure.video.file_video_source import FileVideoSource
 from infrastructure.video.rtsp_video_source import RtspVideoSource
 from scripts.pipeline_tools.limited_source import LimitedSource

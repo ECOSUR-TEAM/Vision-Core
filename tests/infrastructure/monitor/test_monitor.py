@@ -9,8 +9,8 @@ from application.vision_core_app import VisionCoreApp
 from domain.model.bbox import BBox
 from domain.model.event import Event
 from domain.model.resolved_track import ResolvedTrack
-from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from infrastructure.door.zone_loader import load_zones
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 from infrastructure.monitor.renderer import render_frame
 from infrastructure.monitor.server import MonitorState
 from infrastructure.video.latest_frame_source import LatestFrameSource
@@ -140,7 +140,7 @@ def test_person_label_survives_a_change_of_track():
 
 
 def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
-    from infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
+    from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics import UncalibratedAnalytics
     analytics = UncalibratedAnalytics()
     state = MonitorState(demo=True)
     frame = np.zeros((800, 1280, 3), np.uint8)

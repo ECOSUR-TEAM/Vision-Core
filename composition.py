@@ -7,7 +7,7 @@ from application.vision_core_app import VisionCoreApp
 
 
 def build_zones(path):
-    from infrastructure.door.zone_loader import load_zones
+    from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 
     return load_zones(path)
 
@@ -20,10 +20,10 @@ def build_video_source():
 
 def build_door_analytics(zones=None, *, confirmation_frames=None):
     if zones is None:
-        from infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
+        from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics import UncalibratedAnalytics
 
         return UncalibratedAnalytics()
-    from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+    from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 
     if confirmation_frames is None:
         confirmation_frames = int(os.getenv('VISION_CORE_ZONE_CONFIRMATION_FRAMES', '3'))

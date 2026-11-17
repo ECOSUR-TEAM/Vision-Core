@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from domain.model.bbox import BBox
+from vision_core.shared.domain.bbox import BBox
 
 
 @dataclass

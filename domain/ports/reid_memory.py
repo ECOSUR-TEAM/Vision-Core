@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from domain.model.bbox import BBox
+from vision_core.shared.domain.bbox import BBox
 from domain.types import Embedding
 
 

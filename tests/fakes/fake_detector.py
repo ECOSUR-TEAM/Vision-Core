@@ -1,4 +1,4 @@
-from domain.model.bbox import BBox
+from vision_core.shared.domain.bbox import BBox
 from domain.model.detection import Detection
 
 

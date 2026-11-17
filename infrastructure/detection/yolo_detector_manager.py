@@ -1,6 +1,6 @@
 import numpy as np
 
-from domain.model.bbox import BBox
+from vision_core.shared.domain.bbox import BBox
 from domain.model.detection import Detection
 from domain.ports import DetectorManager
 

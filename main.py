@@ -8,7 +8,7 @@ from composition import (
     build_vision_core_app,
     build_zones,
 )
-from domain.model.event import Event
+from vision_core.shared.domain.event import Event
 
 
 def print_event(event: Event) -> None:

@@ -1,7 +1,7 @@
 """Zone configuration model."""
 from dataclasses import dataclass
 
-from domain.model.polygon import Polygon
+from vision_core.shared.domain.polygon import Polygon
 
 
 @dataclass(frozen=True)

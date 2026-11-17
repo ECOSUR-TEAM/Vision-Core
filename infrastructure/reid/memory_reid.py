@@ -6,7 +6,7 @@ import uuid
 from collections import deque
 
 import numpy as np
-from domain.model.bbox import BBox
+from vision_core.shared.domain.bbox import BBox
 
 from domain.ports import ReIDMemory
 

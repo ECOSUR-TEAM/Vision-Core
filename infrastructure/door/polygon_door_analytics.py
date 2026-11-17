@@ -7,8 +7,8 @@ from .geometry import on_segment
 from .polygon_validation import validate_polygon
 from .zone_observation import ZoneObservation
 
-from domain.model.event import Event
-from domain.model.polygon import Polygon
+from vision_core.shared.domain.event import Event
+from vision_core.shared.domain.polygon import Polygon
 from domain.ports import DoorAnalytics
 
 

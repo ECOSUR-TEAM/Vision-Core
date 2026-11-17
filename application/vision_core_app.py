@@ -4,7 +4,7 @@ import time
 from typing import Callable
 import numpy as np
 
-from domain.model.event import Event
+from vision_core.shared.domain.event import Event
 from domain.model.resolved_track import ResolvedTrack
 from domain.attendance import SessionAttendance
 from domain.ports import VideoSource, DetectorManager, ReIDMemory, DoorAnalytics

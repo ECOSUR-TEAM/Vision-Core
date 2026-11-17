@@ -7,7 +7,7 @@ from application.vision_core_app import VisionCoreApp
 
 
 def build_zones(path):
-    from infrastructure.door.zone_config import load_zones
+    from infrastructure.door.zone_loader import load_zones
 
     return load_zones(path)
 

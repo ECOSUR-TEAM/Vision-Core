@@ -14,7 +14,7 @@ from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
 from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from infrastructure.door.zone_config import load_zones
+from infrastructure.door.zone_loader import load_zones
 from scripts.pipeline_tools.limited_source import LimitedSource
 from scripts.pipeline_tools.measured_app import MeasuredApp
 from scripts.pipeline_tools.recorded_detector import RecordedDetector

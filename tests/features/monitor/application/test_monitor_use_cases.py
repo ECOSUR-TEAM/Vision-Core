@@ -1,10 +1,16 @@
 import json
 
-from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
-from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
+from vision_core.features.monitor.application.dto.request.request_frame import (
+    RequestFrame,
+)
+from vision_core.features.monitor.application.dto.request.request_snapshot import (
+    RequestSnapshot,
+)
 from vision_core.features.monitor.application.use_cases.get_frame import GetFrame
 from vision_core.features.monitor.application.use_cases.get_snapshot import GetSnapshot
-from vision_core.features.monitor.application.use_cases.publish_monitor_state import PublishMonitorState
+from vision_core.features.monitor.application.use_cases.publish_monitor_state import (
+    PublishMonitorState,
+)
 
 
 class FakeMonitorState:

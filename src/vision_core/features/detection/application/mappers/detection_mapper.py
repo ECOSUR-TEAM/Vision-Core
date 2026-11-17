@@ -1,6 +1,8 @@
-from typing import Mapping
+from collections.abc import Mapping
 
-from vision_core.features.detection.application.dto.response.response_detector import ResponseDetector
+from vision_core.features.detection.application.dto.response.response_detector import (
+    ResponseDetector,
+)
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.shared.domain.bbox import BBox
 

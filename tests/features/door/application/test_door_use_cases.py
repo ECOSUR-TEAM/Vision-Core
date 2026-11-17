@@ -1,5 +1,9 @@
-from vision_core.features.door.application.dto.request.request_get_history import RequestGetHistory
-from vision_core.features.door.application.dto.request.request_update import RequestUpdate
+from vision_core.features.door.application.dto.request.request_get_history import (
+    RequestGetHistory,
+)
+from vision_core.features.door.application.dto.request.request_update import (
+    RequestUpdate,
+)
 from vision_core.features.door.application.use_cases.get_history import GetHistory
 from vision_core.features.door.application.use_cases.update_zone import UpdateZone
 from vision_core.features.door.domain.entities.zone_observation import ZoneObservation

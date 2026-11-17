@@ -2,8 +2,12 @@ import json
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlsplit
 
-from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
-from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
+from vision_core.features.monitor.application.dto.request.request_frame import (
+    RequestFrame,
+)
+from vision_core.features.monitor.application.dto.request.request_snapshot import (
+    RequestSnapshot,
+)
 
 
 class Handler(BaseHTTPRequestHandler):

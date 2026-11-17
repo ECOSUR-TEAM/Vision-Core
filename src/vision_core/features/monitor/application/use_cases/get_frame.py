@@ -1,8 +1,14 @@
 from typing import Any
 
-from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
-from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
-from vision_core.features.monitor.application.mappers.monitor_mapper import frame_to_response
+from vision_core.features.monitor.application.dto.request.request_frame import (
+    RequestFrame,
+)
+from vision_core.features.monitor.application.dto.response.response_frame import (
+    ResponseFrame,
+)
+from vision_core.features.monitor.application.mappers.monitor_mapper import (
+    frame_to_response,
+)
 
 
 class GetFrame:

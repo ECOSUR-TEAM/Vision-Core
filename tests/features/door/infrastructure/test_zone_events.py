@@ -1,8 +1,9 @@
 import pytest
-from vision_core.shared.domain.polygon import Polygon
+
 from vision_core.features.door.infrastructure.adapters import (
     polygon_door_analytics as module,
 )
+from vision_core.shared.domain.polygon import Polygon
 
 
 @pytest.fixture

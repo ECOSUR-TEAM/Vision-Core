@@ -118,9 +118,9 @@ class MonitorRuntime:
 
 
 def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None):
+    from infrastructure.video.latest_frame_source import LatestFrameSource
     from vision_core.features.monitor.infrastructure.dependencies import build_monitor
     from vision_core.features.monitor.infrastructure.renderer import render_frame
-    from infrastructure.video.latest_frame_source import LatestFrameSource
     monitor = build_monitor(state=state)
 
     def pipeline(stop_requested):

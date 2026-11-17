@@ -1,8 +1,8 @@
 import numpy as np
 
-from vision_core.shared.domain.bbox import BBox
 from infrastructure.reid import memory_reid
 from infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.shared.domain.bbox import BBox
 
 BBOX = BBox(0, 0, 10, 10)
 

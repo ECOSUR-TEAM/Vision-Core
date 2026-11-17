@@ -6,18 +6,20 @@ import numpy as np
 import pytest
 
 from application.vision_core_app import VisionCoreApp
-from vision_core.shared.domain.bbox import BBox
-from vision_core.shared.domain.event import Event
 from domain.model.resolved_track import ResolvedTrack
-from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
-from vision_core.features.door.infrastructure.config.zone_loader import load_zones
-from vision_core.features.monitor.infrastructure.renderer import render_frame
-from vision_core.features.monitor.infrastructure.state import MonitorState
 from infrastructure.video.latest_frame_source import LatestFrameSource
 from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import (
+    PolygonDoorAnalytics,
+)
+from vision_core.features.door.infrastructure.config.zone_loader import load_zones
+from vision_core.features.monitor.infrastructure.renderer import render_frame
+from vision_core.features.monitor.infrastructure.state import MonitorState
+from vision_core.shared.domain.bbox import BBox
+from vision_core.shared.domain.event import Event
 
 
 def test_observer_receives_current_resolved_detections_and_empty_frames():

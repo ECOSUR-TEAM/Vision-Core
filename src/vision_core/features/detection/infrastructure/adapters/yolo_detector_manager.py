@@ -3,7 +3,6 @@ import numpy as np
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.detection.infrastructure.adapters.motion_tracker import (
-    MAX_MISSED_FRAMES,
     MotionTracker,
 )
 from vision_core.shared.domain.bbox import BBox

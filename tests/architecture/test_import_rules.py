@@ -1,7 +1,6 @@
 import ast
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SRC = PROJECT_ROOT / "src" / "vision_core"
 FEATURES = SRC / "features"
@@ -36,8 +35,9 @@ def _assert_no_imports(paths, predicate, message):
 def test_shared_does_not_import_features_or_infrastructure():
     _assert_no_imports(
         _python_files(SRC / "shared"),
-        lambda module: module.startswith("vision_core.features")
-        or module.startswith("vision_core.infrastructure"),
+        lambda module: module.startswith(
+            ("vision_core.features", "vision_core.infrastructure")
+        ),
         "shared import boundary violated",
     )
 
@@ -78,9 +78,12 @@ def test_features_do_not_import_another_features_infrastructure():
         prefix = f"vision_core.features.{feature.name}."
         for path in _python_files(feature):
             for module in _imports(path):
-                if module.startswith("vision_core.features.") and ".infrastructure" in module:
-                    if not module.startswith(prefix):
-                        violations.append((path.relative_to(SRC), module))
+                if (
+                    module.startswith("vision_core.features.")
+                    and ".infrastructure" in module
+                    and not module.startswith(prefix)
+                ):
+                    violations.append((path.relative_to(SRC), module))
     assert not violations, f"cross-feature infrastructure import violated: {violations}"
 
 

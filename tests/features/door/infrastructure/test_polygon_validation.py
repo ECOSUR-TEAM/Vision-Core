@@ -1,7 +1,10 @@
 import pytest
 
+from vision_core.features.door.infrastructure.polygon_validation import (
+    validate_polygon,
+    validate_vertices_in_frame,
+)
 from vision_core.shared.domain.polygon import Polygon
-from vision_core.features.door.infrastructure.polygon_validation import validate_polygon, validate_vertices_in_frame
 
 
 @pytest.mark.parametrize('points', [((0,0),(1,1),(2,2)),

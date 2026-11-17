@@ -3,7 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import (
+    PolygonDoorAnalytics,
+)
 from vision_core.features.door.infrastructure.config.zone_config import ZoneConfig
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 

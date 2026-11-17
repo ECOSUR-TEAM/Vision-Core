@@ -2,8 +2,12 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from vision_core.features.detection.application.dto.request.request_detector import RequestDetector
-from vision_core.features.detection.application.dto.response.response_detector import ResponseDetector
+from vision_core.features.detection.application.dto.request.request_detector import (
+    RequestDetector,
+)
+from vision_core.features.detection.application.dto.response.response_detector import (
+    ResponseDetector,
+)
 
 
 def test_request_and_response_dtos_are_immutable():

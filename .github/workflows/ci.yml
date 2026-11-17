@@ -47,6 +47,9 @@ jobs:
           python -m pip install -e .
           python -m pip check
 
+      - name: Ejecutar checks de arquitectura
+        run: python -m pytest -q tests/architecture
+
       - name: Ejecutar suite completa
         run: python -m pytest -q
 

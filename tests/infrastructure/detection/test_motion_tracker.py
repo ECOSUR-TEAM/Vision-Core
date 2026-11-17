@@ -1,4 +1,3 @@
-import numpy as np
 
 from vision_core.domain.model.bbox import BBox
 from vision_core.domain.model.detection import Detection

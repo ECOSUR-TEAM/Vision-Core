@@ -87,6 +87,6 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 - límite CLI: convierte cualquier fallo en código de salida
         print(f'Puente de cámara: {type(error).__name__}. Revisa cámara y configuración.', file=sys.stderr)
         raise SystemExit(1)

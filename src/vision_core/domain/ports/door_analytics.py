@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from vision_core.domain.model.event import Event
 
@@ -16,5 +15,5 @@ class DoorAnalytics(ABC):
     """
 
     @abstractmethod
-    def update(self, person_id: str, position: tuple[float, float]) -> Optional[Event]:
+    def update(self, person_id: str, position: tuple[float, float]) -> Event | None:
         ...

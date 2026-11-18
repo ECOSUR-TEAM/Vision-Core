@@ -1,9 +1,5 @@
-from vision_core.features.monitor.application.dto.response.response_frame import (
-    ResponseFrame,
-)
-from vision_core.features.monitor.application.dto.response.response_snapshot import (
-    ResponseSnapshot,
-)
+from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
+from vision_core.features.monitor.application.dto.response.response_snapshot import ResponseSnapshot
 
 
 def snapshot_to_response(snapshot: dict[str, object]) -> ResponseSnapshot:

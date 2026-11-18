@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from composition import build_video_with
+from vision_core.composition import build_video_with
 from tests.fakes.fake_video_source import FakeVideoSource
 
 

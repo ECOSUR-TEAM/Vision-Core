@@ -19,7 +19,8 @@ Los tests transversales están en `tests/integration/`, `tests/evaluation/` y
 - `application/` no importe `infrastructure`.
 - Un feature no importe la infraestructura de otro feature.
 - Los DTOs no dependan del dominio, infraestructura ni frameworks de visión.
-- Solo el `main.py` raíz pueda importar factories de múltiples features.
+- Solo los composition roots `main.py` y `composition.py` puedan importar
+  factories de múltiples features.
 
 `tests/architecture/test_one_class_per_file.py` mantiene la política de una
 clase de nivel superior por archivo.
@@ -29,4 +30,4 @@ cada pull request. Si un check falla, mueve la dependencia al límite correcto
 (normalmente un port o un mapper) en lugar de relajar la regla.
 
 La decisión arquitectónica y sus motivaciones están registradas en
-[ADR-001](adr/001-vertical-slice.md).
+[ADR-0001](adr/0001-screaming-architecture-vertical-slice.md).

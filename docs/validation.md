@@ -17,7 +17,7 @@ export VISION_CORE_RECONNECT_ATTEMPTS=5
 export VISION_CORE_RECONNECT_DELAY_SECONDS=2
 export VISION_CORE_OPEN_TIMEOUT_MS=5000
 export VISION_CORE_READ_TIMEOUT_MS=5000
-python -m scripts.check_stream --frames 300 --transport tcp
+python -m vision_core.scripts.check_stream --frames 300 --transport tcp
 ```
 
 El comando imprime JSON con apertura, duración media/p95/máxima de lectura,
@@ -69,7 +69,7 @@ Referencia: [contrato de predicción de Ultralytics](https://docs.ultralytics.co
 Para probar Frigate y YOLO sin ejecutar ReID:
 
 ```bash
-python -m scripts.check_stream --frames 300 --transport tcp --detector
+python -m vision_core.scripts.check_stream --frames 300 --transport tcp --detector
 ```
 
 Las pruebas automatizadas cubren carga única, opciones de inferencia, clase,
@@ -82,7 +82,7 @@ No hay una imagen real de la sala incluida. `config/zones.example.json` contiene
 coordenadas sintéticas y no constituye una calibración válida de la cámara.
 
 1. Con `VISION_CORE_RTSP_URL` configurada, captura sin navegador:
-   `python -m scripts.capture_reference referencia.png`.
+   `python -m vision_core.infrastructure.video.capture_reference referencia.png`.
 2. Abre el PNG a resolución original en un editor que muestre coordenadas del
    cursor. Copia `config/zones.example.json` a `config/zones.json`. Escribe en
    `frame_size` el ancho y alto mostrados por la captura.
@@ -91,7 +91,7 @@ coordenadas sintéticas y no constituye una calibración válida de la cámara.
    superior izquierda; x crece a la derecha e y hacia abajo. Los puntos deben
    quedar dentro de la imagen y los contornos no deben cruzarse consigo mismos.
 4. Revisa la superposición:
-   `python -m infrastructure.door.check_zones referencia.png config/zones.json zonas.png`.
+   `python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png`.
    Exterior: azul; interior: verde; puerta: rojo. Los vértices están numerados.
 5. Configura `VISION_CORE_ZONES_FILE=config/zones.json` en el entorno o `.env`.
    `main.py` exige esta configuración y verifica la resolución durante la lectura;
@@ -161,8 +161,8 @@ simulada. Las pruebas de módulos cubren FALSE_ALARM, TTL y expiración de track
 ### Modelos reales sobre un video sintético reproducible
 
 ```bash
-python -m scripts.create_pipeline_sample /tmp/mi-prueba-vision
-VISION_CORE_EMBEDDING_DEVICE=cpu python -m scripts.validate_pipeline \
+python -m vision_core.scripts.create_pipeline_sample /tmp/mi-prueba-vision
+VISION_CORE_EMBEDDING_DEVICE=cpu python -m vision_core.scripts.validate_pipeline \
   --video /tmp/mi-prueba-vision/sample.avi \
   --zones /tmp/mi-prueba-vision/zones.json \
   --output /tmp/mi-prueba-vision/result.jsonl

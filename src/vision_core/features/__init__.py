@@ -1,1 +1,1 @@
-"""Vertical slices by business capability."""
+"""Vertical feature slices."""

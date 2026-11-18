@@ -1,1 +1,1 @@
-"""Vision Core application package."""
+"""Vision Core package."""

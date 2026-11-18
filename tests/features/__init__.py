@@ -1,1 +1,1 @@
-"""Video slice tests."""
+"""Feature tests."""

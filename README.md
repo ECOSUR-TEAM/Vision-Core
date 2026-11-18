@@ -48,6 +48,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -e .
 python -m pip check
 python -m pytest -q
 ```
@@ -79,11 +80,34 @@ python -m pip check
 python -m pytest -q
 ```
 
+## Lint y Formato de Código (Ruff)
+
+El proyecto usa [Ruff](https://docs.astral.sh/ruff/) con las reglas `E`, `F`, `W`
+e `I` (imports), `line-length = 120` y Python 3.10 como objetivo. Instala la
+misma versión fijada que usa la CI (también disponible como hook de pre-commit):
+
+```bash
+python -m pip install ruff==0.3.0
+```
+
+Antes de hacer commit, arregla los errores de lint/imports y aplica el formato:
+
+```bash
+ruff check . --fix
+ruff format .
+```
+
+Para verificar sin modificar archivos, usa `ruff check .` y
+`ruff format --check .`. El workflow
+[Lint and Format](.github/workflows/lint.yml) ejecuta ambos chequeos más
+`compileall`; este job `lint` será un **requerimiento obligatorio** en los
+rulesets de `main` y `develop`, por lo que un PR no podrá mergearse si falla.
+
 ## Primera prueba sin cámara
 
 ```bash
-python -m scripts.create_pipeline_sample /tmp/vision-core-demo
-VISION_CORE_EMBEDDING_DEVICE=cpu python -m scripts.validate_pipeline \
+python -m vision_core.scripts.create_pipeline_sample /tmp/vision-core-demo
+VISION_CORE_EMBEDDING_DEVICE=cpu python -m vision_core.scripts.validate_pipeline \
   --video /tmp/vision-core-demo/sample.avi \
   --zones /tmp/vision-core-demo/zones.json \
   --output /tmp/vision-core-demo/result.jsonl
@@ -133,7 +157,7 @@ cp .env.example .env
 set -a
 source .env
 set +a
-python -m scripts.check_stream --frames 100 --transport tcp
+python -m vision_core.scripts.check_stream --frames 100 --transport tcp
 ```
 
 Python no carga `.env` automáticamente: `source` exporta sus valores. Docker
@@ -143,10 +167,10 @@ con `;`, `&`, `#` u otros caracteres especiales.
 3. Captura una imagen y calibra los polígonos:
 
 ```bash
-python -m scripts.capture_reference referencia.png
+python -m vision_core.infrastructure.video.capture_reference referencia.png
 cp config/zones.example.json config/zones.json
 # Editar frame_size, door, exterior e interior usando referencia.png.
-python -m infrastructure.door.check_zones referencia.png config/zones.json zonas.png
+python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png
 ```
 
 El ejemplo contiene coordenadas sintéticas. La [guía de calibración](docs/validation.md#calibrar-puerta-y-zonas-con-la-cámara)
@@ -163,7 +187,7 @@ Los eventos se imprimen como JSON en stdout; los diagnósticos de bibliotecas pu
 compartir esa salida. Para un registro estructurado de pruebas usa el runner:
 
 ```bash
-python -m scripts.validate_pipeline --zones config/zones.json --frames 3000 --output sala.jsonl
+python -m vision_core.scripts.validate_pipeline --zones config/zones.json --frames 3000 --output sala.jsonl
 ```
 
 Omitir `--video` selecciona RTSP. Ctrl+C cierra el stream. Tras agotar reintentos el
@@ -174,8 +198,6 @@ proceso termina con error; no hay supervisor ni reinicio automático.
 | Variable | Predeterminado | Uso |
 |---|---|---|
 | `VISION_CORE_RTSP_URL` | Obligatoria para RTSP | `rtsp://HOST_FRIGATE:8554/NOMBRE_STREAM` |
-| `VISION_CORE_VIDEO_SOURCE` | `rtsp` | `rtsp` o `file`; selecciona el adaptador en `build_video()` |
-| `VISION_CORE_VIDEO_PATH` | Sin valor | Archivo local cuando `VISION_CORE_VIDEO_SOURCE=file` |
 | `VISION_CORE_OPEN_TIMEOUT_MS` | `5000` | Timeout positivo por apertura |
 | `VISION_CORE_DECODER_THREADS` | `1` | Hilos de decodificación; `0` usa selección automática y puede añadir retraso |
 | `VISION_CORE_READ_TIMEOUT_MS` | `5000` | Timeout positivo por lectura |
@@ -214,35 +236,55 @@ No se necesita combinar archivos Compose. Los antiguos complementos de cámara y
 monitor son alias vacíos de compatibilidad. El archivo de webcam es una alternativa
 independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 
-## Módulos y responsabilidades
+## Imágenes Docker (GHCR)
 
-La organización nueva sigue Vertical Slice. Cada feature tiene sus capas bajo
-`src/vision_core/features/`; los límites de imports y la estructura espejo de
-tests están documentados en [la guía de arquitectura](docs/architecture.md).
+El workflow [Docker CD](.github/workflows/docker.yml) construye y publica las
+imágenes automáticamente en GitHub Container Registry (GHCR) en cada push a
+`main`, `develop` o un tag `v*`. En pull requests solo se construyen, sin publicar.
+
+Se publican dos targets del `Dockerfile`:
+
+- `ghcr.io/<owner>/<repo>` (`runtime`): monitor y pipeline de análisis.
+- `ghcr.io/<owner>/<repo>-camera-bridge` (`camera-bridge`): puente de cámara.
+
+El nombre se normaliza a minúsculas; para este repositorio son
+`ghcr.io/ecosur-team/vision-core` y
+`ghcr.io/ecosur-team/vision-core-camera-bridge`.
+
+Tags disponibles: `main`, `develop`, el SHA corto del commit (`sha-<7>`), tags
+semánticos (al subir `v0.1.0` se genera la etiqueta `0.1.0`) y `latest` en la rama
+por defecto.
+
+```bash
+# Si el paquete es privado, autentícate antes:
+# echo "$GHCR_TOKEN" | docker login ghcr.io -u "$TU_USUARIO" --password-stdin
+docker pull ghcr.io/ecosur-team/vision-core:main
+docker pull ghcr.io/ecosur-team/vision-core-camera-bridge:main
+docker pull ghcr.io/ecosur-team/vision-core:0.1.0
+```
+
+## Módulos y responsabilidades
 
 | Componente | Responsabilidad |
 |---|---|
-| `src/vision_core/shared/domain/` | `BBox`, `Polygon`, `Event` y `EventType`, sin dependencias de frameworks |
-| `src/vision_core/features/` | Features verticales con `application`, `domain` e `infrastructure` |
-| `domain/` y `domain/ports/` | Shims temporales de compatibilidad durante la migración |
-| `src/vision_core/features/video/` | Slice de video: DTOs, casos de uso, port y adaptadores RTSP/archivo/latest (las rutas antiguas son shims) |
-| `infrastructure/detection/` | YOLOv8, personas clase COCO 0, cajas en píxeles y tracking local por movimiento/IoU |
-| `infrastructure/reid/` | Recortes BGR→RGB, embeddings L2 y recuperación temporal de `person_id` |
-| `infrastructure/door/` | Validación de polígonos, zona por centro del bbox, confirmación e historial |
-| `application/vision_core_app.py` | Orquestación, notificación de pérdidas, mappings, eventos y cierre |
-| `application/event_serializer.py` | Serialización de eventos para JSON en el borde de la aplicación |
-| `main.py` | Construcción e inyección de las implementaciones concretas |
-| `scripts/` | Demo sintética, ejecución medida y evaluación contra anotaciones |
+| `src/vision_core/features/` | Features de detección, puerta, monitor, ReID y video |
+| `src/vision_core/application/` | Orquestación y serialización de eventos |
+| `src/vision_core/domain/` | Entidades, modelos y puertos compartidos |
+| `src/vision_core/infrastructure/` | Adaptadores concretos de video, detección, ReID, puerta y monitor |
+| `src/vision_core/composition.py` | Composición e inyección de dependencias |
+| `src/vision_core/scripts/` | Demostración, diagnóstico, ejecución medida y evaluación |
+| `main.py` | Entrypoint raíz de Docker y ejecución local |
 
 La aplicación depende de los ports, no de infraestructura. Los adaptadores no
 importan otras carpetas de infraestructura; los puntos de composición conectan
 los módulos. Dueños originales: detección Carlos/Ameth, ReID Briyan, zonas Melissa,
 orquestación Fabricio.
 
-Las herramientas de diagnóstico y benchmark viven en `scripts/`, fuera de los
-adaptadores. Ejecútalas con `python -m scripts.check_stream` y
-`python -m scripts.benchmark`; estos puntos de composición pueden cablear varios
-adaptadores sin introducir dependencias entre subcarpetas de `infrastructure/`.
+Las herramientas de diagnóstico y benchmark viven en `src/vision_core/scripts/`.
+Ejecuta `python -m vision_core.scripts.check_stream` y
+`python -m vision_core.scripts.benchmark`.
+La estructura Vertical Slice y Screaming Architecture está registrada en
+[ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
 
 ## Convención: una clase por archivo
 
@@ -251,7 +293,7 @@ funciones auxiliares pueden compartir archivo con la clase que las usa; lo que s
 separa son las clases. Las clases locales dentro de funciones de test pueden
 permanecer donde están.
 
-La política aplica a `domain/`, `application/`, `infrastructure/`, `scripts/`,
+La política aplica a `src/vision_core/`,
 `tests/` y `main.py`.
 
 El chequeo automático `tests/test_one_class_per_file.py` falla si encuentra un
@@ -268,7 +310,7 @@ python -m pytest tests/test_one_class_per_file.py -q
 python -m pytest -q
 python -m pytest tests/integration tests/application -q
 DETECTION_TEST_VIDEO=/ruta/video.avi DETECTION_TEST_MODEL=/ruta/yolov8n.pt python -m pytest tests/infrastructure/detection/test_real_video.py -q
-python -m scripts.evaluate_room sala.jsonl anotaciones.json
+python -m vision_core.scripts.evaluate_room sala.jsonl anotaciones.json
 ```
 
 Los tests no descargan pesos. Se omiten pruebas reales cuando falta video, pesos
@@ -276,9 +318,9 @@ locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unit
 escenas controladas y pruebas reales optativas. Consulta:
 
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
-- [Orquestación y cierre](application/README.md).
-- [Detección y tracking](infrastructure/detection/README.md).
-- [Embeddings y TTL](infrastructure/reid/README.md).
+- [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
+- [Orquestación y cierre](docs/operations.md).
+- [Detección y tracking](docs/validation.md).
 - [Resultados, anotaciones y evaluación pendiente de la sala](reports/room-evaluation.md).
 - [Hardware y problemas conocidos](docs/operations.md).
 

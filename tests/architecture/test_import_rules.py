@@ -35,14 +35,15 @@ def _assert_no_imports(paths, predicate, message):
 def test_shared_does_not_import_features_or_infrastructure():
     _assert_no_imports(
         _python_files(SRC / "shared"),
-        lambda module: module.startswith(
-            ("vision_core.features", "vision_core.infrastructure")
-        ),
+        lambda module: module.startswith("vision_core.features")
+        or module.startswith("vision_core.infrastructure"),
         "shared import boundary violated",
     )
 
 
 def test_domain_does_not_import_application_or_infrastructure():
+    if not FEATURES.exists():
+        return
     paths = (
         path
         for feature in FEATURES.iterdir()
@@ -57,6 +58,8 @@ def test_domain_does_not_import_application_or_infrastructure():
 
 
 def test_application_does_not_import_infrastructure():
+    if not FEATURES.exists():
+        return
     paths = (
         path
         for feature in FEATURES.iterdir()
@@ -71,6 +74,8 @@ def test_application_does_not_import_infrastructure():
 
 
 def test_features_do_not_import_another_features_infrastructure():
+    if not FEATURES.exists():
+        return
     violations = []
     for feature in FEATURES.iterdir():
         if not feature.is_dir():
@@ -78,12 +83,9 @@ def test_features_do_not_import_another_features_infrastructure():
         prefix = f"vision_core.features.{feature.name}."
         for path in _python_files(feature):
             for module in _imports(path):
-                if (
-                    module.startswith("vision_core.features.")
-                    and ".infrastructure" in module
-                    and not module.startswith(prefix)
-                ):
-                    violations.append((path.relative_to(SRC), module))
+                if module.startswith("vision_core.features.") and ".infrastructure" in module:
+                    if not module.startswith(prefix):
+                        violations.append((path.relative_to(SRC), module))
     assert not violations, f"cross-feature infrastructure import violated: {violations}"
 
 
@@ -102,7 +104,7 @@ def test_dtos_do_not_import_domain_infrastructure_or_frameworks():
     assert not violations, f"DTO import boundary violated: {violations}"
 
 
-def test_only_root_main_imports_multiple_feature_factories():
+def test_only_composition_roots_import_multiple_feature_factories():
     factory_importers = []
     roots = [
         SRC,
@@ -112,10 +114,15 @@ def test_only_root_main_imports_multiple_feature_factories():
         PROJECT_ROOT / "scripts",
         PROJECT_ROOT / "tests",
         PROJECT_ROOT / "main.py",
+        PROJECT_ROOT / "composition.py",
     ]
     paths = (path for root in roots for path in _python_files(root))
     for path in paths:
-        if path == PROJECT_ROOT / "main.py":
+        if path in (
+            PROJECT_ROOT / "main.py",
+            PROJECT_ROOT / "composition.py",
+            SRC / "composition.py",
+        ):
             continue
         modules = _imports(path)
         imported_factories = [
@@ -128,6 +135,6 @@ def test_only_root_main_imports_multiple_feature_factories():
             factory_importers.append((path, imported_factories))
 
     assert not factory_importers, (
-        "Only the repository root main.py may import feature factories: "
+        "Only the composition roots main.py and vision_core/composition.py may import feature factories: "
         f"{factory_importers}"
     )

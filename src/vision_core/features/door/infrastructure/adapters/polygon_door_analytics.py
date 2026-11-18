@@ -1,6 +1,7 @@
 import math
 import time
 from collections import deque
+from typing import Optional
 
 from vision_core.features.door.domain.entities.zone_observation import ZoneObservation
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
@@ -53,15 +54,13 @@ class PolygonDoorAnalytics(DoorAnalytics):
         p1x, p1y = pts[0]
         for i in range(1, n + 1):
             p2x, p2y = pts[i % n]
-            if (
-                y > min(p1y, p2y)
-                and y <= max(p1y, p2y)
-                and x <= max(p1x, p2x)
-            ):
-                if p1y != p2y:
-                    xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                if p1x == p2x or x <= xinters:
-                    inside = not inside
+            if y > min(p1y, p2y):
+                if y <= max(p1y, p2y):
+                    if x <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or x <= xinters:
+                            inside = not inside
             p1x, p1y = p2x, p2y
         return inside
 
@@ -75,7 +74,7 @@ class PolygonDoorAnalytics(DoorAnalytics):
     def get_history(self, person_id: str) -> tuple[ZoneObservation, ...]:
         return tuple(self._history.get(person_id, ()))
 
-    def update(self, person_id: str, position: tuple[float, float]) -> Event | None:
+    def update(self, person_id: str, position: tuple[float, float]) -> Optional[Event]:
         if len(position) != 2 or not all(math.isfinite(value) for value in position):
             raise ValueError("La posición debe tener dos coordenadas finitas")
         position = tuple(position)

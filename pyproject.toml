@@ -1,7 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "vision-core"
 version = "0.1.0"
 requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"vision_core.infrastructure.monitor" = ["index.html"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]

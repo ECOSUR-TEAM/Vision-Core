@@ -17,4 +17,5 @@ COPY main.py /app/main.py
 COPY config /app/config
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/src
+ENV VISION_CORE_MONITOR_HOST=0.0.0.0
 CMD ["python", "main.py", "--host", "0.0.0.0"]

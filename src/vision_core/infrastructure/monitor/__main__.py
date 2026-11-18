@@ -10,7 +10,7 @@ from vision_core.features.monitor.infrastructure.http.server import make_server
 
 def main(*, state=None, build_runtime=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--host", default=os.getenv("VISION_CORE_MONITOR_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--zones", default=os.getenv("VISION_CORE_ZONES_FILE"))
     parser.add_argument(

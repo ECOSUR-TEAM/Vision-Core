@@ -1,5 +1,5 @@
-from vision_core.shared.domain.polygon import Polygon
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.shared.domain.polygon import Polygon
 
 ext_poly = Polygon(name="ext", points=((0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)))
 int_poly = Polygon(name="int", points=((3.0, 3.0), (7.0, 3.0), (7.0, 7.0), (3.0, 7.0)))
@@ -22,10 +22,10 @@ def test_trayectoria_person_entered():
     # Persona camina desde fuera, pasa por exterior, y llega a interior
     trayectoria = [
         (15.0, 15.0),  # fuera
-        (8.0, 8.0),    # exterior
-        (2.0, 2.0),    # exterior (se acerca)
-        (5.0, 5.0),    # interior (cruza)
-        (5.5, 5.5),    # interior (se queda)
+        (8.0, 8.0),  # exterior
+        (2.0, 2.0),  # exterior (se acerca)
+        (5.0, 5.0),  # interior (cruza)
+        (5.5, 5.5),  # interior (se queda)
     ]
 
     eventos = _run_trayectoria(door, "p1", trayectoria)
@@ -40,10 +40,10 @@ def test_trayectoria_person_exited():
 
     # Persona empieza adentro y sale hacia el exterior
     trayectoria = [
-        (5.0, 5.0),    # interior
-        (5.5, 5.5),    # interior (se queda un momento)
-        (2.0, 2.0),    # exterior (cruza)
-        (1.0, 1.0),    # exterior (se aleja)
+        (5.0, 5.0),  # interior
+        (5.5, 5.5),  # interior (se queda un momento)
+        (2.0, 2.0),  # exterior (cruza)
+        (1.0, 1.0),  # exterior (se aleja)
     ]
 
     eventos = _run_trayectoria(door, "p1", trayectoria)
@@ -59,8 +59,8 @@ def test_trayectoria_false_alarm():
     # Persona toca la zona exterior pero nunca llega a interior, y se retira
     trayectoria = [
         (15.0, 15.0),  # fuera
-        (1.0, 1.0),    # exterior (toca)
-        (1.5, 1.5),    # exterior (duda)
+        (1.0, 1.0),  # exterior (toca)
+        (1.5, 1.5),  # exterior (duda)
         (20.0, 20.0),  # fuera (se retira sin haber llegado a interior)
     ]
 

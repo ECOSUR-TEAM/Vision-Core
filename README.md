@@ -1,5 +1,7 @@
 # Vision Core
 
+[![CI Tests](https://github.com/ECOSUR-TEAM/Vision-Core/actions/workflows/ci.yml/badge.svg)](https://github.com/ECOSUR-TEAM/Vision-Core/actions/workflows/ci.yml)
+
 Pipeline de analítica de personas: **cámara → Frigate/go2rtc → RTSP → YOLOv8 y
 tracking → embeddings y ReID → zonas → eventos JSON**. El análisis corre en el
 servidor y se ve desde el monitor web. Frigate entrega video; Vision Core hace su
@@ -64,6 +66,41 @@ python -c "import torch, torchvision, cv2; print(torch.__version__, torchvision.
 
 `requirements.txt` no fija versiones. Conserva `python -m pip freeze` con cada
 medición para reproducirla. No se requiere OSNet, torchreid ni `third_party/`.
+
+## Ejecutar tests localmente
+
+CI usa Python 3.11 con PyTorch de CPU en Ubuntu. Para reproducir el mismo
+entorno en local (tras crear y activar un entorno virtual):
+
+```bash
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements.txt
+python -m pip check
+python -m pytest -q
+```
+
+## Lint y Formato de Código (Ruff)
+
+El proyecto usa [Ruff](https://docs.astral.sh/ruff/) con las reglas `E`, `F`, `W`
+e `I` (imports), `line-length = 120` y Python 3.10 como objetivo. Instala la
+misma versión fijada que usa la CI (también disponible como hook de pre-commit):
+
+```bash
+python -m pip install ruff==0.3.0
+```
+
+Antes de hacer commit, arregla los errores de lint/imports y aplica el formato:
+
+```bash
+ruff check . --fix
+ruff format .
+```
+
+Para verificar sin modificar archivos, usa `ruff check .` y
+`ruff format --check .`. El workflow
+[Lint and Format](.github/workflows/lint.yml) ejecuta ambos chequeos más
+`compileall`; este job `lint` será un **requerimiento obligatorio** en los
+rulesets de `main` y `develop`, por lo que un PR no podrá mergearse si falla.
 
 ## Primera prueba sin cámara
 
@@ -198,6 +235,33 @@ No se necesita combinar archivos Compose. Los antiguos complementos de cámara y
 monitor son alias vacíos de compatibilidad. El archivo de webcam es una alternativa
 independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 
+## Imágenes Docker (GHCR)
+
+El workflow [Docker CD](.github/workflows/docker.yml) construye y publica las
+imágenes automáticamente en GitHub Container Registry (GHCR) en cada push a
+`main`, `develop` o un tag `v*`. En pull requests solo se construyen, sin publicar.
+
+Se publican dos targets del `Dockerfile`:
+
+- `ghcr.io/<owner>/<repo>` (`runtime`): monitor y pipeline de análisis.
+- `ghcr.io/<owner>/<repo>-camera-bridge` (`camera-bridge`): puente de cámara.
+
+El nombre se normaliza a minúsculas; para este repositorio son
+`ghcr.io/ecosur-team/vision-core` y
+`ghcr.io/ecosur-team/vision-core-camera-bridge`.
+
+Tags disponibles: `main`, `develop`, el SHA corto del commit (`sha-<7>`), tags
+semánticos (al subir `v0.1.0` se genera la etiqueta `0.1.0`) y `latest` en la rama
+por defecto.
+
+```bash
+# Si el paquete es privado, autentícate antes:
+# echo "$GHCR_TOKEN" | docker login ghcr.io -u "$TU_USUARIO" --password-stdin
+docker pull ghcr.io/ecosur-team/vision-core:main
+docker pull ghcr.io/ecosur-team/vision-core-camera-bridge:main
+docker pull ghcr.io/ecosur-team/vision-core:0.1.0
+```
+
 ## Módulos y responsabilidades
 
 | Componente | Responsabilidad |
@@ -217,6 +281,12 @@ La aplicación depende de los ports, no de infraestructura. Los adaptadores no
 importan otras carpetas de infraestructura; los puntos de composición conectan
 los módulos. Dueños originales: detección Carlos/Ameth, ReID Briyan, zonas Melissa,
 orquestación Fabricio.
+
+El layout horizontal de arriba es el estado actual. La evolución a Vertical
+Slice y Screaming Architecture (código en `src/vision_core/`, features con sus
+tres capas y DTOs, `main.py` en la raíz) está decidida en
+[ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md), que incluye
+el mapa de migración archivo viejo → archivo nuevo.
 
 Las herramientas de diagnóstico y benchmark viven en `scripts/`, fuera de los
 adaptadores. Ejecútalas con `python -m scripts.check_stream` y
@@ -255,6 +325,7 @@ locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unit
 escenas controladas y pruebas reales optativas. Consulta:
 
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
+- [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
 - [Orquestación y cierre](application/README.md).
 - [Detección y tracking](infrastructure/detection/README.md).
 - [Embeddings y TTL](infrastructure/reid/README.md).

@@ -6,4 +6,4 @@ from vision_core.features.door.infrastructure.adapters.polygon_door_analytics im
     PolygonDoorAnalytics,
 )
 
-__all__ = ["PolygonDoorAnalytics"]
+__all__ = ["PolygonDoorAnalytics", "time"]

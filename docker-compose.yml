@@ -38,7 +38,7 @@ services:
       - "127.0.0.1:28554:8554"
     volumes:
       - ./config/frigate-camera-local:/config
-      - ./scripts/camera_bridge.py:/camera_bridge.py:ro
+      - ./src/vision_core/scripts/camera_bridge.py:/camera_bridge.py:ro
     tmpfs:
       - /tmp/cache:size=256m
       - /media/frigate:size=256m

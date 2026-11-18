@@ -1,4 +1,5 @@
 """Session identity memory with a small appearance gallery per person."""
+
 import math
 import os
 import time
@@ -22,14 +23,20 @@ class InMemoryReID(ReIDMemory):
     application entry points use from_env(), which defaults to the whole session.
     """
 
-    def __init__(self, *, ttl_seconds=TTL_SECONDS, similarity_threshold=SIMILARITY_THRESHOLD,
-                 ambiguity_margin=0.03, gallery_size=8) -> None:
+    def __init__(
+        self,
+        *,
+        ttl_seconds=TTL_SECONDS,
+        similarity_threshold=SIMILARITY_THRESHOLD,
+        ambiguity_margin=0.03,
+        gallery_size=8,
+    ) -> None:
         if not math.isfinite(ttl_seconds) or ttl_seconds < 0:
-            raise ValueError('El tiempo de memoria debe ser finito y no negativo')
+            raise ValueError("El tiempo de memoria debe ser finito y no negativo")
         if not 0 < similarity_threshold <= 1 or not 0 <= ambiguity_margin <= 1:
-            raise ValueError('Umbrales de similitud inválidos')
-        if type(gallery_size) is not int or gallery_size < 1:
-            raise ValueError('El tamaño de la galería debe ser positivo')
+            raise ValueError("Umbrales de similitud inválidos")
+        if not isinstance(gallery_size, int) or isinstance(gallery_size, bool) or gallery_size < 1:
+            raise ValueError("El tamaño de la galería debe ser positivo")
         self.ttl_seconds = ttl_seconds
         self.threshold = similarity_threshold
         self.margin = ambiguity_margin
@@ -41,13 +48,14 @@ class InMemoryReID(ReIDMemory):
         self._reserved: set[str] = set()
 
     def begin_frame(self, visible_track_ids: set[int]) -> None:
-        self._reserved = {self._retired_tracks[t] for t in visible_track_ids
-                          if t in self._retired_tracks}
+        self._reserved = {self._retired_tracks[t] for t in visible_track_ids if t in self._retired_tracks}
 
     @classmethod
     def from_env(cls):
-        return cls(ttl_seconds=float(os.getenv('VISION_CORE_REID_TTL_SECONDS', '0')),
-                   similarity_threshold=float(os.getenv('VISION_CORE_REID_THRESHOLD', '0.85')))
+        return cls(
+            ttl_seconds=float(os.getenv("VISION_CORE_REID_TTL_SECONDS", "0")),
+            similarity_threshold=float(os.getenv("VISION_CORE_REID_THRESHOLD", "0.85")),
+        )
 
     def _purge(self, now):
         if self.ttl_seconds == 0:
@@ -62,13 +70,13 @@ class InMemoryReID(ReIDMemory):
     def _normalize(embedding):
         value = np.asarray(embedding, dtype=np.float32)
         if value.ndim != 1 or not np.isfinite(value).all() or np.linalg.norm(value) < 1e-12:
-            raise ValueError('Embedding inválido')
+            raise ValueError("Embedding inválido")
         return value / np.linalg.norm(value)
 
     def _remember(self, person, vector):
         gallery = self._gallery.setdefault(person, deque(maxlen=self.gallery_size))
         # Keep different views instead of filling the gallery with identical frames.
-        if not gallery or max(float(np.dot(v, vector)) for v in gallery) < .98:
+        if not gallery or max(float(np.dot(v, vector)) for v in gallery) < 0.98:
             gallery.append(vector.copy())
 
     def resolve(self, track_id: int, embedding: np.ndarray, bbox: BBox) -> str:
@@ -114,10 +122,8 @@ class InMemoryReID(ReIDMemory):
         now = time.monotonic()
         self._purge(now)
         vector = self._normalize(embedding)
-        self._retired_tracks.update({track: person for track, person in self._active.items()
-                                     if person == person_id})
-        self._active = {track: person for track, person in self._active.items()
-                        if person != person_id}
+        self._retired_tracks.update({track: person for track, person in self._active.items() if person == person_id})
+        self._active = {track: person for track, person in self._active.items() if person != person_id}
         self._remember(person_id, vector)
         # Duplicate notifications must not extend the retention window.
         if person_id not in self._lost:

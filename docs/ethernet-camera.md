@@ -47,7 +47,7 @@ reescribe su destino al puente, conservando ruta y credenciales. Los archivos
 locales de Frigate se mantienen en `config/frigate-camera-local/`, fuera de Git.
 La configuración inicial se prepara automáticamente sin sobrescribirla.
 
-`scripts/allow_camera_rtsp.sh` queda únicamente para el montaje anterior; no se
+`src/vision_core/scripts/allow_camera_rtsp.sh` queda únicamente para el montaje anterior; no se
 usa en el arranque actual. Una excepción antigua no es necesaria para este flujo.
 
 ## Monitor y memoria
@@ -57,7 +57,7 @@ resolución nativa de la FD8134. No genera cruces de sala hasta que existan zona
 reales. Después de calibrar, cambia `VISION_CORE_MONITOR_UNCALIBRATED=0` en `.env`.
 
 La memoria dura esta ejecución (`VISION_CORE_REID_TTL_SECONDS=0`). El control de
-reuniones queda pendiente. [Memoria y reingresos](../src/vision_core/infrastructure/reid/README.md).
+reuniones queda pendiente. [Memoria y reingresos](monitor.md).
 
 ## Volver al perfil Ethernet anterior
 

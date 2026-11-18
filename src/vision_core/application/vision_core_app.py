@@ -8,7 +8,12 @@ import numpy as np
 from vision_core.domain.attendance import SessionAttendance
 from vision_core.domain.model.event import Event
 from vision_core.domain.model.resolved_track import ResolvedTrack
-from vision_core.domain.ports import DetectorManager, DoorAnalytics, ReIDMemory, VideoSource
+from vision_core.domain.ports import (
+    DetectorManager,
+    DoorAnalytics,
+    ReIDMemory,
+    VideoSource,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +23,7 @@ class VisionCoreApp:
 
     video -> DetectorManager -> ReIDMemory -> DoorAnalytics -> Event
 
-    Depende solo de los ports (vision_core.domain.ports), nunca de una implementación
+    Depende solo de los ports (domain.ports), nunca de una implementación
     concreta: eso permite testear con mocks y que cada módulo avance
     en paralelo sin acoplarse a los demás.
     """
@@ -58,7 +63,7 @@ class VisionCoreApp:
             # Preserve the original failure even when resource cleanup also fails.
             try:
                 self._video.close()
-            except BaseException as close_error:  # noqa: BLE001 - el cierre no debe enmascarar el error original
+            except Exception as close_error:  # noqa: BLE001 - preserve pipeline failure
                 logger.error("Falló el cierre de video (%s)", type(close_error).__name__)
             raise
         else:
@@ -83,7 +88,7 @@ class VisionCoreApp:
 
         # Optional for legacy adapters; concrete ReID reserves still-known IDs
         # before a new track can claim the same absent person's appearance.
-        begin_frame = getattr(self._reid, 'begin_frame', None)
+        begin_frame = getattr(self._reid, "begin_frame", None)
         if begin_frame is not None:
             begin_frame(visible_tracks)
 

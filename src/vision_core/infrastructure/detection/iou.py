@@ -1,13 +1,5 @@
-import numpy as np
+"""Compatibility import for the detection IoU adapter."""
 
+from vision_core.features.detection.infrastructure.adapters.iou import iou
 
-def iou(first: np.ndarray, second: np.ndarray) -> float:
-    intersection = np.maximum(
-        np.minimum(first[2:], second[2:]) - np.maximum(first[:2], second[:2]), 0
-    ).prod()
-    union = (
-        np.maximum(first[2:] - first[:2], 0).prod()
-        + np.maximum(second[2:] - second[:2], 0).prod()
-        - intersection
-    )
-    return float(intersection / union) if union > 0 else 0.0
+__all__ = ["iou"]

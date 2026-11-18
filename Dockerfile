@@ -1,6 +1,6 @@
 FROM python:3.11-slim AS camera-bridge
 WORKDIR /app
-COPY scripts/camera_bridge.py /app/camera_bridge.py
+COPY src/vision_core/scripts/camera_bridge.py /app/camera_bridge.py
 CMD ["python", "/app/camera_bridge.py", "serve"]
 
 FROM python:3.11-slim AS runtime
@@ -12,12 +12,10 @@ COPY requirements.txt .
 # CPU deployment: avoid pulling CUDA libraries for the laptop test stack.
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir -r requirements.txt
-COPY pyproject.toml .
 COPY src /app/src
-COPY main.py composition.py /app/
+COPY main.py /app/main.py
 COPY config /app/config
-ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1
-ENV VISION_CORE_ENTRYPOINT=monitor
+ENV PYTHONPATH=/app/src
 ENV VISION_CORE_MONITOR_HOST=0.0.0.0
-CMD ["python", "main.py"]
+CMD ["python", "main.py", "--host", "0.0.0.0"]

@@ -44,6 +44,7 @@ jobs:
           python -m pip install torch torchvision \
             --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -r requirements.txt
+          python -m pip install -e .
           python -m pip check
 
       - name: Ejecutar suite completa
@@ -76,16 +77,15 @@ jobs:
           python -m pip install torch torchvision \
             --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -r requirements.txt
+          python -m pip install -e .
           python -m pip check
 
       - name: Verificar compilación
         run: |
           python -m compileall -q \
             src \
-            scripts \
             tests \
-            main.py \
-            composition.py
+            main.py
 
       - name: Ejecutar pruebas
         run: python -m pytest -q

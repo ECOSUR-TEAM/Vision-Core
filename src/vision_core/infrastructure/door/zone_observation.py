@@ -1,7 +1,5 @@
-from typing import NamedTuple
+"""Compatibility import for door zone observations."""
 
+from vision_core.features.door.domain.entities.zone_observation import ZoneObservation
 
-class ZoneObservation(NamedTuple):
-    position: tuple[float, float]
-    zone: str
-    timestamp: float
+__all__ = ["ZoneObservation"]

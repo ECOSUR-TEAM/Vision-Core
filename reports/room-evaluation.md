@@ -37,9 +37,9 @@ videos usados para ajustar parámetros de videos de evaluación final. Repetir l
 mediciones con iguales condiciones y sin cargas ajenas.
 
 ```bash
-VISION_CORE_EMBEDDING_DEVICE=cpu python -m scripts.validate_pipeline \
+VISION_CORE_EMBEDDING_DEVICE=cpu python -m vision_core.scripts.validate_pipeline \
   --video sala.avi --zones config/zones.json --frames 3000 --output sala.jsonl
-python -m scripts.evaluate_room sala.jsonl anotaciones.json
+python -m vision_core.scripts.evaluate_room sala.jsonl anotaciones.json
 ```
 
 Las anotaciones son una lista JSON. Los frames empiezan en 1 y deben corresponder

@@ -6,7 +6,9 @@ import pytest
 
 from vision_core.domain.model.detection import Detection
 from vision_core.infrastructure.detection.motion_tracker import MAX_MISSED_FRAMES
-from vision_core.infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+from vision_core.infrastructure.detection.yolo_detector_manager import (
+    YoloDetectorManager,
+)
 
 
 def box(x, confidence=0.9, class_id=0):

@@ -6,9 +6,9 @@ from pathlib import Path
 import cv2
 import pytest
 
+from scripts.benchmark import benchmark_video
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
-from scripts.benchmark import benchmark_video
 from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
 
 

@@ -12,9 +12,7 @@ from vision_core.features.detection.domain.ports.detector_manager import Detecto
 from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
 
 
-def benchmark_video(
-    video_path: str, detector: DetectorManager, seconds: float = 30.0
-) -> dict:
+def benchmark_video(video_path: str, detector: DetectorManager, seconds: float = 30.0) -> dict:
     if not math.isfinite(seconds) or seconds < 30:
         raise ValueError("El benchmark requiere al menos 30 segundos de video")
     capture = cv2.VideoCapture(video_path)
@@ -33,9 +31,7 @@ def benchmark_video(
         for index in range(target_frames):
             ok, frame = capture.read()
             if not ok:
-                raise ValueError(
-                    f"Video insuficiente o ilegible: {index}/{target_frames} frames"
-                )
+                raise ValueError(f"Video insuficiente o ilegible: {index}/{target_frames} frames")
             process_started = perf_counter()
             detections = detector.process(frame)
             process_seconds += perf_counter() - process_started

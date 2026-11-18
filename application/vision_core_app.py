@@ -1,15 +1,15 @@
 import logging
 import math
 import time
-from typing import Callable
+from collections.abc import Callable
+
 import numpy as np
 
+from domain.attendance import SessionAttendance
 from domain.model.event import Event
 from domain.model.resolved_track import ResolvedTrack
-from domain.attendance import SessionAttendance
-from domain.ports import VideoSource, ReIDMemory, DoorAnalytics
+from domain.ports import DoorAnalytics, ReIDMemory, VideoSource
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
-
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class VisionCoreApp:
             # Preserve the original failure even when resource cleanup also fails.
             try:
                 self._video.close()
-            except BaseException as close_error:
+            except BaseException as close_error:  # noqa: BLE001 - el cierre no debe enmascarar el error original
                 logger.error("Falló el cierre de video (%s)", type(close_error).__name__)
             raise
         else:
@@ -84,7 +84,7 @@ class VisionCoreApp:
 
         # Optional for legacy adapters; concrete ReID reserves still-known IDs
         # before a new track can claim the same absent person's appearance.
-        begin_frame = getattr(self._reid, 'begin_frame', None)
+        begin_frame = getattr(self._reid, "begin_frame", None)
         if begin_frame is not None:
             begin_frame(visible_tracks)
 

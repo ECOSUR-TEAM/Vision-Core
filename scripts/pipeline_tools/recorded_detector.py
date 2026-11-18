@@ -1,7 +1,7 @@
 import json
 from dataclasses import asdict
 
-from domain.ports import DetectorManager
+from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 
 
 class RecordedDetector(DetectorManager):

@@ -10,7 +10,6 @@ import numpy as np
 import torch
 
 from application.event_serializer import event_to_dict
-from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from infrastructure.door.zone_loader import load_zones
 from infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
@@ -20,6 +19,7 @@ from infrastructure.video.rtsp_video_source import RtspVideoSource
 from scripts.pipeline_tools.limited_source import LimitedSource
 from scripts.pipeline_tools.measured_app import MeasuredApp
 from scripts.pipeline_tools.recorded_detector import RecordedDetector
+from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
 
 
 def main():

@@ -1,5 +1,5 @@
 from vision_core.shared.domain.bbox import BBox
-from domain.model.detection import Detection
+from vision_core.features.detection.domain.entities.detection import Detection
 
 
 class FakeDetector:

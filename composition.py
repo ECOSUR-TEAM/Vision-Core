@@ -50,7 +50,7 @@ def build_vision_core_app(
     embedder=None,
 ) -> VisionCoreApp:
     if detector is None:
-        from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+        from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
 
         detector = YoloDetectorManager()
     if reid_memory is None:

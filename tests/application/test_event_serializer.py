@@ -2,9 +2,9 @@ import json
 
 import numpy as np
 
-from application.event_serializer import event_to_dict, event_to_json
-from vision_core.shared.domain.event import Event
-from vision_core.shared.domain.event_type import EventType
+from vision_core.application.event_serializer import event_to_dict, event_to_json
+from vision_core.domain.model.event import Event
+from vision_core.domain.model.event_type import EventType
 
 
 def test_event_to_dict_preserves_public_contract():

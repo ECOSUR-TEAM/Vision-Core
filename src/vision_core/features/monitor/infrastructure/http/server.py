@@ -15,7 +15,7 @@ class MonitorHTTPServer(ThreadingHTTPServer):
 
 
 def make_server(host, port, state, page_path=None):
-    default_page = Path(__file__).parents[6] / "infrastructure/monitor/index.html"
+    default_page = Path(__file__).resolve().parents[4] / "infrastructure/monitor/index.html"
     page = Path(page_path or default_page).read_bytes()
     return MonitorHTTPServer(
         (host, port),

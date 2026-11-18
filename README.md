@@ -48,6 +48,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m pip install -e .
 python -m pip check
 python -m pytest -q
 ```
@@ -105,8 +106,8 @@ rulesets de `main` y `develop`, por lo que un PR no podrá mergearse si falla.
 ## Primera prueba sin cámara
 
 ```bash
-python -m scripts.create_pipeline_sample /tmp/vision-core-demo
-VISION_CORE_EMBEDDING_DEVICE=cpu python -m scripts.validate_pipeline \
+python -m vision_core.scripts.create_pipeline_sample /tmp/vision-core-demo
+VISION_CORE_EMBEDDING_DEVICE=cpu python -m vision_core.scripts.validate_pipeline \
   --video /tmp/vision-core-demo/sample.avi \
   --zones /tmp/vision-core-demo/zones.json \
   --output /tmp/vision-core-demo/result.jsonl
@@ -156,7 +157,7 @@ cp .env.example .env
 set -a
 source .env
 set +a
-python -m scripts.check_stream --frames 100 --transport tcp
+python -m vision_core.scripts.check_stream --frames 100 --transport tcp
 ```
 
 Python no carga `.env` automáticamente: `source` exporta sus valores. Docker
@@ -166,10 +167,10 @@ con `;`, `&`, `#` u otros caracteres especiales.
 3. Captura una imagen y calibra los polígonos:
 
 ```bash
-python -m infrastructure.video.capture_reference referencia.png
+python -m vision_core.infrastructure.video.capture_reference referencia.png
 cp config/zones.example.json config/zones.json
 # Editar frame_size, door, exterior e interior usando referencia.png.
-python -m infrastructure.door.check_zones referencia.png config/zones.json zonas.png
+python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png
 ```
 
 El ejemplo contiene coordenadas sintéticas. La [guía de calibración](docs/validation.md#calibrar-puerta-y-zonas-con-la-cámara)
@@ -186,7 +187,7 @@ Los eventos se imprimen como JSON en stdout; los diagnósticos de bibliotecas pu
 compartir esa salida. Para un registro estructurado de pruebas usa el runner:
 
 ```bash
-python -m scripts.validate_pipeline --zones config/zones.json --frames 3000 --output sala.jsonl
+python -m vision_core.scripts.validate_pipeline --zones config/zones.json --frames 3000 --output sala.jsonl
 ```
 
 Omitir `--video` selecciona RTSP. Ctrl+C cierra el stream. Tras agotar reintentos el
@@ -266,32 +267,24 @@ docker pull ghcr.io/ecosur-team/vision-core:0.1.0
 
 | Componente | Responsabilidad |
 |---|---|
-| `domain/model/` | Bounding boxes, detecciones, tracks resueltos, tipos de evento, eventos y polígonos (un archivo por concepto) |
-| `domain/ports/` | Contratos de video, detector/tracker, ReID y zonas |
-| `infrastructure/video/` | RTSP con reconexión, reproducción de archivos, validación BGR y captura de referencia |
-| `infrastructure/detection/` | YOLOv8, personas clase COCO 0, cajas en píxeles y tracking local por movimiento/IoU |
-| `infrastructure/reid/` | Recortes BGR→RGB, embeddings L2 y recuperación temporal de `person_id` |
-| `infrastructure/door/` | Validación de polígonos, zona por centro del bbox, confirmación e historial |
-| `application/vision_core_app.py` | Orquestación, notificación de pérdidas, mappings, eventos y cierre |
-| `application/event_serializer.py` | Serialización de eventos para JSON en el borde de la aplicación |
-| `main.py` | Construcción e inyección de las implementaciones concretas |
-| `scripts/` | Demo sintética, ejecución medida y evaluación contra anotaciones |
+| `src/vision_core/features/` | Features de detección, puerta, monitor, ReID y video |
+| `src/vision_core/application/` | Orquestación y serialización de eventos |
+| `src/vision_core/domain/` | Entidades, modelos y puertos compartidos |
+| `src/vision_core/infrastructure/` | Adaptadores concretos de video, detección, ReID, puerta y monitor |
+| `src/vision_core/composition.py` | Composición e inyección de dependencias |
+| `src/vision_core/scripts/` | Demostración, diagnóstico, ejecución medida y evaluación |
+| `main.py` | Entrypoint raíz de Docker y ejecución local |
 
 La aplicación depende de los ports, no de infraestructura. Los adaptadores no
 importan otras carpetas de infraestructura; los puntos de composición conectan
 los módulos. Dueños originales: detección Carlos/Ameth, ReID Briyan, zonas Melissa,
 orquestación Fabricio.
 
-El layout horizontal de arriba es el estado actual. La evolución a Vertical
-Slice y Screaming Architecture (código en `src/vision_core/`, features con sus
-tres capas y DTOs, `main.py` en la raíz) está decidida en
-[ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md), que incluye
-el mapa de migración archivo viejo → archivo nuevo.
-
-Las herramientas de diagnóstico y benchmark viven en `scripts/`, fuera de los
-adaptadores. Ejecútalas con `python -m scripts.check_stream` y
-`python -m scripts.benchmark`; estos puntos de composición pueden cablear varios
-adaptadores sin introducir dependencias entre subcarpetas de `infrastructure/`.
+Las herramientas de diagnóstico y benchmark viven en `src/vision_core/scripts/`.
+Ejecuta `python -m vision_core.scripts.check_stream` y
+`python -m vision_core.scripts.benchmark`.
+La estructura Vertical Slice y Screaming Architecture está registrada en
+[ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
 
 ## Convención: una clase por archivo
 
@@ -300,7 +293,7 @@ funciones auxiliares pueden compartir archivo con la clase que las usa; lo que s
 separa son las clases. Las clases locales dentro de funciones de test pueden
 permanecer donde están.
 
-La política aplica a `domain/`, `application/`, `infrastructure/`, `scripts/`,
+La política aplica a `src/vision_core/`,
 `tests/` y `main.py`.
 
 El chequeo automático `tests/test_one_class_per_file.py` falla si encuentra un
@@ -317,7 +310,7 @@ python -m pytest tests/test_one_class_per_file.py -q
 python -m pytest -q
 python -m pytest tests/integration tests/application -q
 DETECTION_TEST_VIDEO=/ruta/video.avi DETECTION_TEST_MODEL=/ruta/yolov8n.pt python -m pytest tests/infrastructure/detection/test_real_video.py -q
-python -m scripts.evaluate_room sala.jsonl anotaciones.json
+python -m vision_core.scripts.evaluate_room sala.jsonl anotaciones.json
 ```
 
 Los tests no descargan pesos. Se omiten pruebas reales cuando falta video, pesos
@@ -326,9 +319,8 @@ escenas controladas y pruebas reales optativas. Consulta:
 
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
 - [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
-- [Orquestación y cierre](application/README.md).
-- [Detección y tracking](infrastructure/detection/README.md).
-- [Embeddings y TTL](infrastructure/reid/README.md).
+- [Orquestación y cierre](docs/operations.md).
+- [Detección y tracking](docs/validation.md).
 - [Resultados, anotaciones y evaluación pendiente de la sala](reports/room-evaluation.md).
 - [Hardware y problemas conocidos](docs/operations.md).
 

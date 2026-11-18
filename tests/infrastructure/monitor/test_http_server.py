@@ -5,8 +5,8 @@ from urllib.request import urlopen
 
 import pytest
 
-from infrastructure.monitor.http_server import make_server
-from infrastructure.monitor.state import MonitorState
+from vision_core.infrastructure.monitor.http_server import make_server
+from vision_core.infrastructure.monitor.state import MonitorState
 
 
 @pytest.fixture

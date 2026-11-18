@@ -4,9 +4,9 @@ import cv2
 import numpy as np
 import pytest
 
-from infrastructure.video.frame_validation import validate_frame
-from infrastructure.video.rtsp_video_source import RtspVideoSource
-from scripts.check_stream import measure
+from vision_core.infrastructure.video.frame_validation import validate_frame
+from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.scripts.check_stream import measure
 
 FRAME = np.zeros((48, 64, 3), dtype=np.uint8)
 

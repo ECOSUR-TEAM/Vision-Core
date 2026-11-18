@@ -8,14 +8,16 @@ import cv2
 import numpy as np
 import pytest
 
-from application.vision_core_app import VisionCoreApp
-from infrastructure.reid.memory_reid import InMemoryReID
-from infrastructure.video.file_video_source import FileVideoSource
-from infrastructure.video.rtsp_video_source import RtspVideoSource
-from scripts.pipeline_tools.limited_source import LimitedSource
-from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
-from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
-from vision_core.shared.domain.polygon import Polygon
+from vision_core.application.vision_core_app import VisionCoreApp
+from vision_core.domain.model.polygon import Polygon
+from vision_core.infrastructure.detection.yolo_detector_manager import (
+    YoloDetectorManager,
+)
+from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.infrastructure.video.file_video_source import FileVideoSource
+from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.scripts.pipeline_tools.limited_source import LimitedSource
 
 
 def scene(monkeypatch, count):

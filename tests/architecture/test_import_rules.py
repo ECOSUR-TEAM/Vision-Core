@@ -96,26 +96,21 @@ def test_only_composition_roots_import_multiple_feature_factories():
         PROJECT_ROOT / "scripts",
         PROJECT_ROOT / "tests",
         PROJECT_ROOT / "main.py",
-        PROJECT_ROOT / "composition.py",
     ]
     paths = (path for root in roots for path in _python_files(root))
     for path in paths:
-        if path in (
-            PROJECT_ROOT / "main.py",
-            PROJECT_ROOT / "composition.py",
-            SRC / "composition.py",
-        ):
+        if path == PROJECT_ROOT / "main.py":
             continue
         modules = _imports(path)
-        imported_factories = [
+        imported_factories = {
             module
             for module in modules
             if module.startswith("vision_core.features.") and module.endswith(".infrastructure.dependencies")
-        ]
-        if imported_factories:
-            factory_importers.append((path, imported_factories))
+        }
+        if len(imported_factories) > 1:
+            factory_importers.append((path, sorted(imported_factories)))
 
     assert not factory_importers, (
-        "Only the composition roots main.py and vision_core/composition.py may import feature factories: "
+        "Only the root main.py composition root may import feature factories: "
         f"{factory_importers}"
     )

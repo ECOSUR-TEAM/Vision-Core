@@ -85,7 +85,7 @@ para pesos. Los reinicios del proceso borran la memoria temporal de identidades.
 
 ## Implementación y acceso
 
-`VisionCoreApp` dispone de un observador opcional `on_frame(frame, tracks, ms)`,
+`RunPipeline` dispone de un observador opcional `on_frame(frame, tracks, ms)`,
 ejecutado una vez al terminar cada frame, incluso si no hay detecciones.
 El monitor consume los mismos IDs y eventos que el pipeline normal. No realiza
 una inferencia adicional por navegador. La API expone:

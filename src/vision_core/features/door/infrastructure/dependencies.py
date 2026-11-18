@@ -11,6 +11,7 @@ from vision_core.features.door.infrastructure.config.zone_loader import load_zon
 
 @dataclass(frozen=True)
 class DoorUseCases:
+    analytics: DoorAnalytics
     update_zone: UpdateZone
     get_history: GetHistory
 
@@ -34,4 +35,8 @@ def build_door(
                 confirmation_frames=confirmation_frames,
                 history_limit=history_limit,
             )
-    return DoorUseCases(UpdateZone(analytics), GetHistory(analytics))
+    return DoorUseCases(
+        analytics=analytics,
+        update_zone=UpdateZone(analytics),
+        get_history=GetHistory(analytics),
+    )

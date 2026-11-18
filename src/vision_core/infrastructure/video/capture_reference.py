@@ -5,7 +5,7 @@ from pathlib import Path
 
 import cv2
 
-from vision_core.composition import build_video_with
+from main import build_video_with
 
 
 def main():

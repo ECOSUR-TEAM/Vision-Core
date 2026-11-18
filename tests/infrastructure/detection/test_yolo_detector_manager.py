@@ -254,14 +254,14 @@ def test_reappearance_outside_prediction_gets_new_local_id(detector):
 def test_real_tracker_reports_loss_to_pipeline_once(detector):
     from unittest.mock import Mock
 
-    from vision_core.application.vision_core_app import VisionCoreApp
+    from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 
     reid = Mock()
     reid.resolve.return_value = "person-1"
     door = Mock()
     door.update.return_value = None
     frame = np.zeros((80, 160, 3), dtype=np.uint8)
-    app = VisionCoreApp(Mock(), detector.manager, reid, door, lambda crop: np.ones(4), lambda event: None)
+    app = RunPipeline(Mock(), detector.manager, reid, door, lambda crop: np.ones(4), lambda event: None)
     # Feed simulated YOLO outputs through the real tracker and application.
     model = detector.manager._model
     model.boxes = [box(10)]

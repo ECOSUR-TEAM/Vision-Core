@@ -1,10 +1,7 @@
 import pytest
 
-from domain.model.polygon import Polygon
-from infrastructure.door.polygon_validation import (
-    validate_polygon,
-    validate_vertices_in_frame,
-)
+from vision_core.features.door.infrastructure.polygon_validation import validate_polygon, validate_vertices_in_frame
+from vision_core.shared.domain.polygon import Polygon
 
 
 @pytest.mark.parametrize(

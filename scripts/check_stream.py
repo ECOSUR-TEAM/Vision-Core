@@ -112,10 +112,7 @@ def main():
         report["probe"] = probe(os.environ["VISION_CORE_RTSP_URL"], args.transport)
         detector = None
         if args.detector:
-            from infrastructure.detection.yolo_detector_manager import (
-                YoloDetectorManager,
-            )
-
+            from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
             detector = YoloDetectorManager()
         report["measurement"] = measure(source, args.frames, detector)
         report["status"] = "ok" if report["probe"]["status"] == "ok" else "incomplete"

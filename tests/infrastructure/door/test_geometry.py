@@ -1,6 +1,6 @@
 import pytest
 
-from infrastructure.door.geometry import cross, on_segment
+from vision_core.features.door.infrastructure.geometry import cross, on_segment
 
 
 def test_cross_detects_turn_direction():

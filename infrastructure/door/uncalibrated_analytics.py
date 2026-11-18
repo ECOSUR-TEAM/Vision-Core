@@ -1,11 +1,7 @@
-"""No room crossings until actual camera zones have been calibrated."""
+"""Compatibility import for the uncalibrated door adapter."""
 
-from domain.ports import DoorAnalytics
+from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics import (
+    UncalibratedAnalytics,
+)
 
-
-class UncalibratedAnalytics(DoorAnalytics):
-    def update(self, person_id, position):
-        return None
-
-    def get_history(self, person_id):
-        return ()
+__all__ = ["UncalibratedAnalytics"]

@@ -1,5 +1,5 @@
-from domain.model.polygon import Polygon
-from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.shared.domain.polygon import Polygon
 
 ext_poly = Polygon(name="ext", points=((0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)))
 int_poly = Polygon(name="int", points=((3.0, 3.0), (7.0, 3.0), (7.0, 7.0), (3.0, 7.0)))

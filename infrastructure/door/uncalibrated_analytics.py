@@ -1,4 +1,5 @@
 """No room crossings until actual camera zones have been calibrated."""
+
 from domain.ports import DoorAnalytics
 
 

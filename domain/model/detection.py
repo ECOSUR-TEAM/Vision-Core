@@ -6,6 +6,7 @@ from domain.model.bbox import BBox
 @dataclass
 class Detection:
     """Salida cruda del DetectorManager para un frame."""
+
     bbox: BBox
     class_id: int
     confidence: float

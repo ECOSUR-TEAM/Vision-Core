@@ -15,5 +15,4 @@ class DoorAnalytics(ABC):
     """
 
     @abstractmethod
-    def update(self, person_id: str, position: tuple[float, float]) -> Event | None:
-        ...
+    def update(self, person_id: str, position: tuple[float, float]) -> Event | None: ...

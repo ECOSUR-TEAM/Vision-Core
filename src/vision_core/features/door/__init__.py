@@ -1,1 +1,1 @@
-"""Door analytics feature."""
+"""Door analytics feature slice."""

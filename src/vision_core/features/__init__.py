@@ -1,1 +1,1 @@
-"""Feature-oriented public modules."""
+"""Vertical feature slices."""

@@ -1,1 +1,1 @@
-"""Monitor feature."""
+"""Monitor feature slice."""

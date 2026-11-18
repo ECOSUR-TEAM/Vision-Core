@@ -1,3 +1,7 @@
-from vision_core.infrastructure.door.zone_observation import ZoneObservation
+from typing import NamedTuple
 
-__all__ = ["ZoneObservation"]
+
+class ZoneObservation(NamedTuple):
+    position: tuple[float, float]
+    zone: str
+    timestamp: float

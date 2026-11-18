@@ -1,3 +1,13 @@
-from vision_core.domain.model.detection import Detection
+from dataclasses import dataclass
 
-__all__ = ["Detection"]
+from vision_core.shared.domain.bbox import BBox
+
+
+@dataclass
+class Detection:
+    """Salida cruda del detector para un frame."""
+
+    bbox: BBox
+    class_id: int
+    confidence: float
+    track_id: int

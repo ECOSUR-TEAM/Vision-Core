@@ -5,7 +5,7 @@ import os
 import signal
 from pathlib import Path
 
-from .http_server import make_server
+from vision_core.features.monitor.infrastructure.http.server import make_server
 
 
 def main(*, state=None, build_runtime=None):

@@ -1,1 +1,1 @@
-"""Detection feature."""
+"""Person detection feature slice."""

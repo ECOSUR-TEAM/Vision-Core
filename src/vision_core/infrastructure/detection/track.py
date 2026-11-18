@@ -1,13 +1,5 @@
-from dataclasses import dataclass
+"""Compatibility import for the detection track adapter."""
 
-import numpy as np
+from vision_core.features.detection.infrastructure.adapters.track import _Track
 
-
-@dataclass
-class _Track:
-    bbox: np.ndarray
-    velocity: np.ndarray
-    missed: int = 0
-
-    def predict(self) -> np.ndarray:
-        return self.bbox + self.velocity * (self.missed + 1)
+__all__ = ["_Track"]

@@ -1,9 +1,5 @@
-from dataclasses import dataclass
+"""Compatibility import for the shared polygon."""
 
+from vision_core.shared.domain.polygon import Polygon
 
-@dataclass(frozen=True)
-class Polygon:
-    """Zona ROI (exterior/interior) como lista de puntos (x, y)."""
-
-    name: str
-    points: tuple[tuple[float, float], ...]
+__all__ = ["Polygon"]

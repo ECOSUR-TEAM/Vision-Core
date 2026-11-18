@@ -1,4 +1,4 @@
-from domain.model.event import Event
+from vision_core.shared.domain.event import Event
 
 
 class FakeDoor:

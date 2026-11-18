@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from domain.model.polygon import Polygon
+from vision_core.shared.domain.polygon import Polygon
 
 from .polygon_validation import validate_polygon, validate_vertices_in_frame
 from .zone_config import ZoneConfig

@@ -6,7 +6,7 @@ import numpy as np
 
 from application.vision_core_app import VisionCoreApp
 from composition import build_monitor_state, build_vision_core_app
-from domain.model.event import Event
+from vision_core.shared.domain.event import Event
 from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID

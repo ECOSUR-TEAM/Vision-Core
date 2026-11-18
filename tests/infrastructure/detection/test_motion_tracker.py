@@ -1,5 +1,3 @@
-import numpy as np
-
 from vision_core.shared.domain.bbox import BBox
 from domain.model.detection import Detection
 from infrastructure.detection.motion_tracker import MotionTracker

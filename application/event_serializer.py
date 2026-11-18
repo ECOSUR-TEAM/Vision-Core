@@ -1,4 +1,5 @@
 """Serialize domain events at the application boundary."""
+
 import json
 from enum import Enum
 from typing import Any

@@ -1,4 +1,5 @@
 """Unique visitors and current occupancy are different from crossing counts."""
+
 from vision_core.shared.domain.event import Event
 
 
@@ -9,12 +10,14 @@ class SessionAttendance:
 
     def apply(self, event: Event) -> dict:
         returning = False
-        if event.event == 'PERSON_ENTERED':
+        if event.event == "PERSON_ENTERED":
             returning = event.person_id in self.visitors
             self.visitors.add(event.person_id)
             self.inside.add(event.person_id)
-        elif event.event == 'PERSON_EXITED':
+        elif event.event == "PERSON_EXITED":
             self.inside.discard(event.person_id)
-        return {'returning_person': returning,
-                'unique_people_entered': len(self.visitors),
-                'people_inside': len(self.inside)}
+        return {
+            "returning_person": returning,
+            "unique_people_entered": len(self.visitors),
+            "people_inside": len(self.inside),
+        }

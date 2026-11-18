@@ -16,8 +16,7 @@ class ReIDMemory(ABC):
         """Reserve retained local tracks before resolving new detections."""
 
     @abstractmethod
-    def resolve(self, track_id: int, embedding: Embedding, bbox: BBox) -> str:
-        ...
+    def resolve(self, track_id: int, embedding: Embedding, bbox: BBox) -> str: ...
 
     @abstractmethod
     def mark_lost(self, person_id: str, embedding: Embedding) -> None:

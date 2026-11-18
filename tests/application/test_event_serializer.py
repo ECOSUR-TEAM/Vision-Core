@@ -8,8 +8,7 @@ from vision_core.shared.domain.event_type import EventType
 
 
 def test_event_to_dict_preserves_public_contract():
-    event = Event(EventType.PERSON_ENTERED, "abc", timestamp=12.5,
-                  metadata={"zone": "interior"})
+    event = Event(EventType.PERSON_ENTERED, "abc", timestamp=12.5, metadata={"zone": "interior"})
 
     assert event_to_dict(event) == {
         "event": "PERSON_ENTERED",

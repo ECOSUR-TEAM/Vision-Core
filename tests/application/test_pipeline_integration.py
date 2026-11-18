@@ -29,10 +29,17 @@ def components():
 def test_stage_failure_closes_and_propagates(stage):
     args = components()
     source, detector, reid, door, embedder, sink = args
-    target = {'open': source.open, 'read': source.read_frame, 'detect': detector.process,
-              'lost': detector.pop_lost_track_ids, 'embed': embedder,
-              'reid': reid.resolve, 'door': door.update, 'event': sink}[stage]
-    error = RuntimeError('stage failure')
+    target = {
+        "open": source.open,
+        "read": source.read_frame,
+        "detect": detector.process,
+        "lost": detector.pop_lost_track_ids,
+        "embed": embedder,
+        "reid": reid.resolve,
+        "door": door.update,
+        "event": sink,
+    }[stage]
+    error = RuntimeError("stage failure")
     target.side_effect = error
     with pytest.raises(RuntimeError) as caught:
         VisionCoreApp(*args).run()
@@ -101,7 +108,7 @@ def test_video_to_real_reid_and_zones_with_reappearance():
 
 
 def test_application_has_no_infrastructure_imports():
-    tree = ast.parse(Path('src/vision_core/application/vision_core_app.py').read_text())
+    tree = ast.parse(Path("src/vision_core/application/vision_core_app.py").read_text())
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             assert not (node.module or "").startswith("infrastructure")

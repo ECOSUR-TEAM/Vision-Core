@@ -1,4 +1,5 @@
 """Single capture owner; slow inference consumes the newest frame, not a queue."""
+
 import threading
 
 from ...domain.ports.video_source import VideoSource

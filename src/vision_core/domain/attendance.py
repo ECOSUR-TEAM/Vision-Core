@@ -1,4 +1,5 @@
 """Unique visitors and current occupancy are different from crossing counts."""
+
 from vision_core.domain.model.event import Event
 
 

@@ -30,9 +30,9 @@ class PolygonDoorAnalytics(DoorAnalytics):
         for polygon in (exterior_zone, interior_zone, door_zone):
             if polygon is not None:
                 validate_polygon(polygon)
-        if type(confirmation_frames) is not int or confirmation_frames < 1:
+        if not isinstance(confirmation_frames, int) or isinstance(confirmation_frames, bool) or confirmation_frames < 1:
             raise ValueError("confirmation_frames debe ser un entero positivo")
-        if type(history_limit) is not int or history_limit < 1:
+        if not isinstance(history_limit, int) or isinstance(history_limit, bool) or history_limit < 1:
             raise ValueError("history_limit debe ser un entero positivo")
         self._confirmation_frames = confirmation_frames
         self._history_limit = history_limit
@@ -81,7 +81,8 @@ class PolygonDoorAnalytics(DoorAnalytics):
         zone = self._zone_for(position)
         timestamp = time.time()
         self._history.setdefault(person_id, deque(maxlen=self._history_limit)).append(
-            ZoneObservation(position, zone, timestamp))
+            ZoneObservation(position, zone, timestamp)
+        )
         previous_zone = self._last_zone.get(person_id)
         if zone == previous_zone:
             self._pending.pop(person_id, None)

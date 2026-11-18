@@ -9,5 +9,4 @@ class GetHistory:
         self._analytics = analytics
 
     def execute(self, request: RequestGetHistory) -> ResponseGetHistory:
-        return ResponseGetHistory(observations_to_dto(
-            self._analytics.get_history(request.person_id)))
+        return ResponseGetHistory(observations_to_dto(self._analytics.get_history(request.person_id)))

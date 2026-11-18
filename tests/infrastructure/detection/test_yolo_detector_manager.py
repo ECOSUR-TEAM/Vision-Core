@@ -131,8 +131,8 @@ def test_model_loaded_once_and_predict_settings(monkeypatch):
     frame = np.zeros((48, 64, 3), dtype=np.uint8)
     manager.process(frame)
     manager.process(frame)
-    loader.assert_called_once_with('weights.pt')
-    assert model.predict.call_args.kwargs == {'verbose': False, 'classes': [0], 'conf': 0.5}
+    loader.assert_called_once_with("weights.pt")
+    assert model.predict.call_args.kwargs == {"verbose": False, "classes": [0], "conf": 0.5}
 
 
 @pytest.mark.parametrize(

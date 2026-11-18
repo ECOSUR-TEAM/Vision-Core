@@ -10,4 +10,3 @@ class PublishMonitorState:
 
     def publish_event(self, event) -> None:
         self._state.event(event)
-

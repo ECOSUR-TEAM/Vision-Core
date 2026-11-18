@@ -1,4 +1,5 @@
 """Validate coordinates and render an overlay on the original camera frame."""
+
 import argparse
 from pathlib import Path
 

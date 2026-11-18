@@ -1,6 +1,6 @@
+from ...domain.ports.video_source import VideoSource
 from ..dto.request.request_open_video import RequestOpenVideo
 from ..dto.response.response_open_video import ResponseOpenVideo
-from ...domain.ports.video_source import VideoSource
 
 
 class OpenVideo:

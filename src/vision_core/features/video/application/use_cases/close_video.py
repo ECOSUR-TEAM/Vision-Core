@@ -1,6 +1,6 @@
+from ...domain.ports.video_source import VideoSource
 from ..dto.request.request_close_video import RequestCloseVideo
 from ..dto.response.response_close_video import ResponseCloseVideo
-from ...domain.ports.video_source import VideoSource
 
 
 class CloseVideo:

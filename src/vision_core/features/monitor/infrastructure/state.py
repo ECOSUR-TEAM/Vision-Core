@@ -1,4 +1,5 @@
 """In-memory monitor telemetry and synchronization."""
+
 import threading
 import time
 from collections import Counter, deque
@@ -44,9 +45,7 @@ class MonitorState:
 
     def person_label(self, person_id):
         with self.lock:
-            number = self._person_numbers.setdefault(
-                person_id, len(self._person_numbers) + 1
-            )
+            number = self._person_numbers.setdefault(person_id, len(self._person_numbers) + 1)
             return f"Persona {number}"
 
     def publish(self, jpeg, people, processing_ms, dropped=0):

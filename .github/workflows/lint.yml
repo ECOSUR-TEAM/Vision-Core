@@ -37,4 +37,4 @@ jobs:
         run: ruff format --check .
 
       - name: Check syntax
-        run: python -m compileall -q application domain infrastructure scripts tests main.py
+        run: python -m compileall -q src tests main.py

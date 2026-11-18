@@ -162,6 +162,7 @@ def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
     from vision_core.infrastructure.door.uncalibrated_analytics import (
         UncalibratedAnalytics,
     )
+
     analytics = UncalibratedAnalytics()
     state = MonitorState(demo=True)
     frame = np.zeros((800, 1280, 3), np.uint8)
@@ -176,6 +177,7 @@ def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
 
 def test_compose_mode_exits_on_pipeline_error_for_docker_restart(monkeypatch, tmp_path):
     from vision_core.infrastructure.monitor import __main__ as monitor
+
     stopped = threading.Event()
     closed = []
 

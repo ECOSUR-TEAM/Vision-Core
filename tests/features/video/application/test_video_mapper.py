@@ -29,13 +29,16 @@ def test_none_frame_roundtrip():
     assert dto_to_frame(response) is None
 
 
-@pytest.mark.parametrize('frame', [
-    None,
-    np.zeros((2, 2)),
-    np.zeros((2, 2, 4), dtype=np.uint8),
-    np.zeros((0, 2, 3), dtype=np.uint8),
-    FRAME.astype(float),
-])
+@pytest.mark.parametrize(
+    "frame",
+    [
+        None,
+        np.zeros((2, 2)),
+        np.zeros((2, 2, 4), dtype=np.uint8),
+        np.zeros((0, 2, 3), dtype=np.uint8),
+        FRAME.astype(float),
+    ],
+)
 def test_invalid_frames_rejected(frame):
     with pytest.raises(ValueError):
         validate_frame(frame)

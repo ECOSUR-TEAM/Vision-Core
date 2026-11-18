@@ -1,4 +1,5 @@
 """python -m vision_core.infrastructure.monitor --demo-zones --port 8080"""
+
 import argparse
 import logging
 import os
@@ -31,7 +32,7 @@ def main(*, state=None, build_runtime=None):
     if args.uncalibrated:
         args.zones = None
     elif args.demo_zones:
-        args.zones = str(Path(__file__).resolve().parents[4] / 'config/zones.example.json')
+        args.zones = str(Path(__file__).resolve().parents[4] / "config/zones.example.json")
     elif not args.zones:
         parser.error("Indica --zones o --demo-zones")
     logging.basicConfig(level=logging.INFO)

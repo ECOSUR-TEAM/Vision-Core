@@ -18,12 +18,8 @@ def validate_polygon(polygon):
         for j, (c, d) in enumerate(edges):
             if j <= i or j == i + 1 or (i == 0 and j == len(edges) - 1):
                 continue
-            if (
-                cross(a, b, c) * cross(a, b, d) < 0
-                and cross(c, d, a) * cross(c, d, b) < 0
-            ) or any(
-                [on_segment(a, b, c), on_segment(a, b, d),
-                 on_segment(c, d, a), on_segment(c, d, b)]
+            if (cross(a, b, c) * cross(a, b, d) < 0 and cross(c, d, a) * cross(c, d, b) < 0) or any(
+                [on_segment(a, b, c), on_segment(a, b, d), on_segment(c, d, a), on_segment(c, d, b)]
             ):
                 raise ValueError("El polígono se cruza consigo mismo")
 

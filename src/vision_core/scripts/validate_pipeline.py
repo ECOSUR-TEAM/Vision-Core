@@ -1,4 +1,5 @@
 """python -m vision_core.scripts.validate_pipeline --video recording.avi --zones zones.json"""
+
 import argparse
 import json
 import platform

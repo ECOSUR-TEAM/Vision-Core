@@ -36,6 +36,4 @@ def test_update_zone_maps_event_without_camera_or_adapter():
 def test_get_history_maps_observations():
     response = GetHistory(FakeDoorAnalytics()).execute(RequestGetHistory("person-1"))
 
-    assert response.observations == (
-        {"position": (1.0, 2.0), "zone": "exterior", "timestamp": 10.0},
-    )
+    assert response.observations == ({"position": (1.0, 2.0), "zone": "exterior", "timestamp": 10.0},)

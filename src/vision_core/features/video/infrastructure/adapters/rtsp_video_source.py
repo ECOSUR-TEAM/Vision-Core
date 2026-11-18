@@ -1,4 +1,5 @@
 """RTSP ingestion with bounded retries and FFmpeg timeouts."""
+
 import logging
 import math
 import os
@@ -9,7 +10,6 @@ import cv2
 import numpy as np
 
 from ...domain.ports.video_source import VideoSource
-
 from ..frame_validation import validate_frame
 
 logger = logging.getLogger(__name__)
@@ -20,9 +20,16 @@ class RtspVideoSource(VideoSource):
 
     """Single-consumer source. Exhausted retries raise ConnectionError, not EOF."""
 
-    def __init__(self, rtsp_url: str, *, open_timeout_ms: int = 5000,
-                 read_timeout_ms: int = 5000, reconnect_attempts: int = 5,
-                 reconnect_delay_seconds: float = 2.0, decoder_threads: int = 1) -> None:
+    def __init__(
+        self,
+        rtsp_url: str,
+        *,
+        open_timeout_ms: int = 5000,
+        read_timeout_ms: int = 5000,
+        reconnect_attempts: int = 5,
+        reconnect_delay_seconds: float = 2.0,
+        decoder_threads: int = 1,
+    ) -> None:
         try:
             parsed = urlsplit(rtsp_url)
             valid = parsed.scheme in {"rtsp", "rtsps"} and parsed.hostname and parsed.port != 0
@@ -34,7 +41,7 @@ class RtspVideoSource(VideoSource):
             raise ValueError("Los timeouts deben ser positivos")
         if reconnect_attempts < 0:
             raise ValueError("Los reintentos no pueden ser negativos")
-        if type(decoder_threads) is not int or decoder_threads < 0:
+        if not isinstance(decoder_threads, int) or isinstance(decoder_threads, bool) or decoder_threads < 0:
             raise ValueError("Los hilos de decodificación deben ser un entero no negativo")
         if not math.isfinite(reconnect_delay_seconds) or reconnect_delay_seconds < 0:
             raise ValueError("La espera debe ser finita y no negativa")
@@ -66,11 +73,18 @@ class RtspVideoSource(VideoSource):
         self.close()
         try:
             self._cap = cv2.VideoCapture()
-            opened = self._cap.open(self._url, cv2.CAP_FFMPEG, [
-                cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, self._open_timeout,
-                cv2.CAP_PROP_READ_TIMEOUT_MSEC, self._read_timeout,
-                cv2.CAP_PROP_N_THREADS, self._decoder_threads,
-            ])
+            opened = self._cap.open(
+                self._url,
+                cv2.CAP_FFMPEG,
+                [
+                    cv2.CAP_PROP_OPEN_TIMEOUT_MSEC,
+                    self._open_timeout,
+                    cv2.CAP_PROP_READ_TIMEOUT_MSEC,
+                    self._read_timeout,
+                    cv2.CAP_PROP_N_THREADS,
+                    self._decoder_threads,
+                ],
+            )
             if opened and self._cap.isOpened():
                 if not self._cap.set(cv2.CAP_PROP_CONVERT_RGB, 1):
                     raise RuntimeError("El backend no permite asegurar salida BGR")
@@ -91,7 +105,7 @@ class RtspVideoSource(VideoSource):
                 time.sleep(self._delay)
             if self._connect():
                 return
-        raise ConnectionError('No se pudo abrir RTSP')
+        raise ConnectionError("No se pudo abrir RTSP")
 
     def _read(self):
         try:
@@ -105,7 +119,7 @@ class RtspVideoSource(VideoSource):
 
     def read_frame(self) -> np.ndarray | None:
         if self._cap is None:
-            raise RuntimeError('Llama a open() antes de read_frame()')
+            raise RuntimeError("Llama a open() antes de read_frame()")
         frame = self._read()
         if frame is not None:
             return frame
@@ -118,7 +132,7 @@ class RtspVideoSource(VideoSource):
                     self.reconnections += 1
                     return frame
                 self.close()
-        raise ConnectionError('Se agotaron los reintentos del stream')
+        raise ConnectionError("Se agotaron los reintentos del stream")
 
     def close(self):
         cap, self._cap = self._cap, None

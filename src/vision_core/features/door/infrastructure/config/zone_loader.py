@@ -23,6 +23,12 @@ def load_zones(path: str | Path) -> ZoneConfig:
 
 def _parse_frame_size(data: dict[str, object]) -> tuple[int, int]:
     width, height = data["frame_size"]
-    if type(width) is not int or type(height) is not int or min(width, height) <= 0:
+    if (
+        not isinstance(width, int)
+        or isinstance(width, bool)
+        or not isinstance(height, int)
+        or isinstance(height, bool)
+        or min(width, height) <= 0
+    ):
         raise ValueError("frame_size debe ser [ancho, alto] positivo")
     return width, height

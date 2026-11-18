@@ -1,4 +1,5 @@
 """Run: python -m vision_core.scripts.check_stream --frames 100"""
+
 import argparse
 import json
 import os
@@ -116,8 +117,8 @@ def main():
             )
 
             detector = YoloDetectorManager()
-        report['measurement'] = measure(source, args.frames, detector)
-        report['status'] = 'ok' if report['probe']['status'] == 'ok' else 'incomplete'
+        report["measurement"] = measure(source, args.frames, detector)
+        report["status"] = "ok" if report["probe"]["status"] == "ok" else "incomplete"
     except Exception as error:  # noqa: BLE001 - limit CLI exposure to exception type
         # Avoid outputting URLs/credentials from native exception text.
         report.update(status="failed", error_type=type(error).__name__)

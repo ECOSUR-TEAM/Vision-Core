@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
     && pip install --no-cache-dir -r requirements.txt
 COPY src /app/src
 COPY main.py /app/main.py
+COPY config /app/config
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/src
 CMD ["python", "main.py", "--host", "0.0.0.0"]

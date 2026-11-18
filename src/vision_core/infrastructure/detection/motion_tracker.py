@@ -18,10 +18,7 @@ class MotionTracker:
         self._lost_ids: list[int] = []
 
     def update(self, detections: list[Detection]) -> None:
-        boxes = [
-            np.array([d.bbox.x1, d.bbox.y1, d.bbox.x2, d.bbox.y2], dtype=float)
-            for d in detections
-        ]
+        boxes = [np.array([d.bbox.x1, d.bbox.y1, d.bbox.x2, d.bbox.y2], dtype=float) for d in detections]
         candidates = []
         for track_id, track in self._tracks.items():
             prediction = track.predict()

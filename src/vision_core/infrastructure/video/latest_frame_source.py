@@ -1,4 +1,5 @@
 """Single capture owner; slow inference consumes the newest frame, not a queue."""
+
 import threading
 
 from vision_core.domain.ports import VideoSource

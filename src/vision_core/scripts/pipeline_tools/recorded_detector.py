@@ -11,13 +11,14 @@ class RecordedDetector(DetectorManager):
     def process(self, frame):
         self.frame += 1
         detections = self.detector.process(frame)
-        self.output.write(json.dumps({'kind': 'detections', 'frame': self.frame,
-                                     'detections': [asdict(d) for d in detections]}) + '\n')
+        self.output.write(
+            json.dumps({"kind": "detections", "frame": self.frame, "detections": [asdict(d) for d in detections]})
+            + "\n"
+        )
         return detections
 
     def pop_lost_track_ids(self):
         lost = self.detector.pop_lost_track_ids()
         if lost:
-            self.output.write(json.dumps({'kind': 'lost_tracks', 'frame': self.frame,
-                                          'ids': lost}) + '\n')
+            self.output.write(json.dumps({"kind": "lost_tracks", "frame": self.frame, "ids": lost}) + "\n")
         return lost

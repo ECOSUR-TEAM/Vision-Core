@@ -7,8 +7,7 @@ class VideoSource(ABC):
     """Contrato para cualquier origen de video (RTSP/Frigate, archivo, webcam)."""
 
     @abstractmethod
-    def open(self) -> None:
-        ...
+    def open(self) -> None: ...
 
     @abstractmethod
     def read_frame(self) -> Frame | None:
@@ -16,5 +15,4 @@ class VideoSource(ABC):
         ...
 
     @abstractmethod
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...

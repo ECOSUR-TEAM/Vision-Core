@@ -98,14 +98,14 @@ def test_boxes_clipped_to_original_frame(detector):
     assert (bbox.x1, bbox.y1, bbox.x2, bbox.y2) == (0, 0, 160, 80)
 
 
-@pytest.mark.parametrize('coords', [[5, 2, 5, 9], [10, 5, 1, 9], [200, 0, 220, 40], [0, 0, float('nan'), 10]])
+@pytest.mark.parametrize("coords", [[5, 2, 5, 9], [10, 5, 1, 9], [200, 0, 220, 40], [0, 0, float("nan"), 10]])
 def test_invalid_boxes_discarded(detector, coords):
     candidate = box(0)
     candidate.xyxy = np.array([coords])
     assert detector([candidate]) == []
 
 
-@pytest.mark.parametrize('confidence', [0.49, 0.5, float('nan'), float('inf'), 1.1])
+@pytest.mark.parametrize("confidence", [0.49, 0.5, float("nan"), float("inf"), 1.1])
 def test_invalid_or_low_confidence(detector, confidence):
     assert detector([box(0, confidence)]) == []
 
@@ -114,7 +114,7 @@ def test_above_threshold(detector):
     assert len(detector([box(0, 0.5001)])) == 1
 
 
-@pytest.mark.parametrize('frame', [None, np.zeros((10, 10, 3)), np.zeros((10, 10), dtype=np.uint8)])
+@pytest.mark.parametrize("frame", [None, np.zeros((10, 10, 3)), np.zeros((10, 10), dtype=np.uint8)])
 def test_invalid_frame(detector, frame):
     with pytest.raises(ValueError):
         detector.manager.process(frame)
@@ -122,11 +122,12 @@ def test_invalid_frame(detector, frame):
 
 def test_model_loaded_once_and_predict_settings(monkeypatch):
     from unittest.mock import Mock
+
     model = Mock()
     model.predict.return_value = [SimpleNamespace(boxes=[])]
     loader = Mock(return_value=model)
-    monkeypatch.setitem(sys.modules, 'ultralytics', SimpleNamespace(YOLO=loader))
-    manager = YoloDetectorManager('weights.pt')
+    monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=loader))
+    manager = YoloDetectorManager("weights.pt")
     frame = np.zeros((48, 64, 3), dtype=np.uint8)
     manager.process(frame)
     manager.process(frame)
@@ -134,19 +135,22 @@ def test_model_loaded_once_and_predict_settings(monkeypatch):
     assert model.predict.call_args.kwargs == {'verbose': False, 'classes': [0], 'conf': 0.5}
 
 
-@pytest.mark.parametrize('first,second,expected', [
-    ([0, 0, 10, 10], [0, 0, 10, 10], 1.0),
-    ([0, 0, 10, 10], [10, 0, 20, 10], 0.0),
-    ([0, 0, 10, 10], [5, 0, 15, 10], 1 / 3),
-    ([0, 0, 10, 10], [2, 2, 8, 8], 0.36),
-    ([0, 0, 0, 0], [0, 0, 0, 0], 0.0),
-])
+@pytest.mark.parametrize(
+    "first,second,expected",
+    [
+        ([0, 0, 10, 10], [0, 0, 10, 10], 1.0),
+        ([0, 0, 10, 10], [10, 0, 20, 10], 0.0),
+        ([0, 0, 10, 10], [5, 0, 15, 10], 1 / 3),
+        ([0, 0, 10, 10], [2, 2, 8, 8], 0.36),
+        ([0, 0, 0, 0], [0, 0, 0, 0], 0.0),
+    ],
+)
 def test_iou_geometry(first, second, expected):
     assert iou(np.array(first), np.array(second)) == pytest.approx(expected)
     assert iou(np.array(second), np.array(first)) == pytest.approx(expected)
 
 
-@pytest.mark.parametrize('width,retained', [(30, True), (29, False)])
+@pytest.mark.parametrize("width,retained", [(30, True), (29, False)])
 def test_iou_association_boundary(detector, width, retained):
     first = box(0)
     first.xyxy = np.array([[0, 0, 100, 40]])
@@ -159,9 +163,15 @@ def test_iou_association_boundary(detector, width, retained):
 
 def test_movement_turn_stop_and_partial_occlusion(detector):
     track_id = None
-    for x, y, width in [(20, 10, 20), (23, 12, 20), (26, 14, 20),
-                         (26, 14, 20), (24, 12, 20), (22, 10, 16),
-                         (20, 10, 20)]:
+    for x, y, width in [
+        (20, 10, 20),
+        (23, 12, 20),
+        (26, 14, 20),
+        (26, 14, 20),
+        (24, 12, 20),
+        (22, 10, 16),
+        (20, 10, 20),
+    ]:
         candidate = box(x)
         candidate.xyxy = np.array([[x, y, x + width, y + 40]])
         current = detector([candidate])[0].track_id
@@ -171,7 +181,7 @@ def test_movement_turn_stop_and_partial_occlusion(detector):
         assert detector.manager.pop_lost_track_ids() == []
 
 
-@pytest.mark.parametrize('absent', [1, 29, 30])
+@pytest.mark.parametrize("absent", [1, 29, 30])
 def test_occlusion_preserves_id_through_30_frames(detector, absent):
     track_id = detector([box(10)])[0].track_id
     for _ in range(absent):
@@ -247,12 +257,11 @@ def test_real_tracker_reports_loss_to_pipeline_once(detector):
     from vision_core.application.vision_core_app import VisionCoreApp
 
     reid = Mock()
-    reid.resolve.return_value = 'person-1'
+    reid.resolve.return_value = "person-1"
     door = Mock()
     door.update.return_value = None
     frame = np.zeros((80, 160, 3), dtype=np.uint8)
-    app = VisionCoreApp(Mock(), detector.manager, reid, door,
-                        lambda crop: np.ones(4), lambda event: None)
+    app = VisionCoreApp(Mock(), detector.manager, reid, door, lambda crop: np.ones(4), lambda event: None)
     # Feed simulated YOLO outputs through the real tracker and application.
     model = detector.manager._model
     model.boxes = [box(10)]
@@ -266,5 +275,5 @@ def test_real_tracker_reports_loss_to_pipeline_once(detector):
     for _ in range(5):
         app._process_frame(frame)
     reid.mark_lost.assert_called_once()
-    assert reid.mark_lost.call_args.args[0] == 'person-1'
+    assert reid.mark_lost.call_args.args[0] == "person-1"
     np.testing.assert_array_equal(reid.mark_lost.call_args.args[1], np.ones(4))

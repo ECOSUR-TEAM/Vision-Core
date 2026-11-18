@@ -15,13 +15,13 @@ def test_metrics_misses_false_positives_and_identity_changes():
             {'kind': 'resolved', 'frame': 3, 'persons': {'2': 'alice'}}]
     truth = [{'frame': i, 'persons': [{'id': 'A', 'bbox': [0, 0, 10, 10]}]} for i in (1, 2, 3)]
     result = evaluate(rows, truth)
-    assert result['true_positives'] == 2
-    assert result['false_positives'] == result['missed_detections'] == 1
-    assert result['precision'] == result['recall'] == pytest.approx(2/3)
-    assert result['local_id_changes'] == 1
-    assert result['person_id_changes'] == 0
-    rows[-1]['persons']['2'] = 'bob'
-    assert evaluate(rows, truth)['person_id_changes'] == 1
+    assert result["true_positives"] == 2
+    assert result["false_positives"] == result["missed_detections"] == 1
+    assert result["precision"] == result["recall"] == pytest.approx(2 / 3)
+    assert result["local_id_changes"] == 1
+    assert result["person_id_changes"] == 0
+    rows[-1]["persons"]["2"] = "bob"
+    assert evaluate(rows, truth)["person_id_changes"] == 1
 
 
 def test_missing_frame_is_not_silent_false_negative():

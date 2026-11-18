@@ -44,8 +44,10 @@ class TorchvisionEmbeddingExtractor:
 
     @classmethod
     def from_env(cls):
-        return cls(os.getenv("VISION_CORE_EMBEDDING_MODEL", "mobilenet_v3_small"),
-                   os.getenv("VISION_CORE_EMBEDDING_DEVICE") or None)
+        return cls(
+            os.getenv("VISION_CORE_EMBEDDING_MODEL", "mobilenet_v3_small"),
+            os.getenv("VISION_CORE_EMBEDDING_DEVICE") or None,
+        )
 
     def __call__(self, crop: np.ndarray) -> np.ndarray:
         if not isinstance(crop, np.ndarray) or crop.dtype != np.uint8:

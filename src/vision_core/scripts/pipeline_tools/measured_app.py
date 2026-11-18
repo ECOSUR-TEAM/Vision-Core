@@ -21,5 +21,14 @@ class MeasuredApp(VisionCoreApp):
             torch.cuda.synchronize()
         elapsed = time.perf_counter() - start
         self.durations.append(elapsed)
-        self.output.write(json.dumps({'kind': 'resolved', 'frame': self._video.frames,
-            'persons': self._person_by_track, 'processing_ms': elapsed * 1000}) + '\n')
+        self.output.write(
+            json.dumps(
+                {
+                    "kind": "resolved",
+                    "frame": self._video.frames,
+                    "persons": self._person_by_track,
+                    "processing_ms": elapsed * 1000,
+                }
+            )
+            + "\n"
+        )

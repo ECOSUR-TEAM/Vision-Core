@@ -1,4 +1,5 @@
 """Zone configuration model."""
+
 from dataclasses import dataclass
 
 from vision_core.domain.model.polygon import Polygon

@@ -88,7 +88,7 @@ class VisionCoreApp:
 
         # Optional for legacy adapters; concrete ReID reserves still-known IDs
         # before a new track can claim the same absent person's appearance.
-        begin_frame = getattr(self._reid, 'begin_frame', None)
+        begin_frame = getattr(self._reid, "begin_frame", None)
         if begin_frame is not None:
             begin_frame(visible_tracks)
 

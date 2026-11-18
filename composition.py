@@ -1,9 +1,12 @@
 """Single composition root: wire concrete adapters into the application."""
+
 import logging
 import os
 import threading
 
 from application.vision_core_app import VisionCoreApp
+
+logger = logging.getLogger(__name__)
 
 
 def build_zones(path):
@@ -26,7 +29,7 @@ def build_door_analytics(zones=None, *, confirmation_frames=None):
     from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 
     if confirmation_frames is None:
-        confirmation_frames = int(os.getenv('VISION_CORE_ZONE_CONFIRMATION_FRAMES', '3'))
+        confirmation_frames = int(os.getenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "3"))
     return PolygonDoorAnalytics(
         zones.exterior,
         zones.interior,
@@ -96,12 +99,12 @@ class MonitorRuntime:
     def _run(self):
         try:
             self._pipeline(self._stop.is_set)
-            self._state.set_status('stopped')
-        except Exception as error:
+            self._state.set_status("stopped")
+        except Exception as error:  # noqa: BLE001 - límite del hilo: cualquier fallo se refleja en el estado
             # Do not expose URLs, credentials or native exception messages in HTTP.
             kind = type(error).__name__
-            self._state.set_status('error', kind)
-            logging.error('Pipeline detenido (%s). Revisa stream, zonas y pesos locales.', kind)
+            self._state.set_status("error", kind)
+            logger.error("Pipeline detenido (%s). Revisa stream, zonas y pesos locales.", kind)
             if self._exit_on_error:
                 self.failed.set()
                 if self._on_failure is not None:
@@ -116,9 +119,9 @@ class MonitorRuntime:
 
 
 def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None):
+    from infrastructure.video.latest_frame_source import LatestFrameSource
     from vision_core.features.monitor.infrastructure.dependencies import build_monitor
     from vision_core.features.monitor.infrastructure.renderer import render_frame
-    from infrastructure.video.latest_frame_source import LatestFrameSource
     monitor = build_monitor(state=state)
 
     def pipeline(stop_requested):
@@ -144,5 +147,4 @@ def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_fai
             if source is not None:
                 source.close()
 
-    return MonitorRuntime(pipeline, state, exit_on_error=exit_on_error,
-                          on_failure=on_failure)
+    return MonitorRuntime(pipeline, state, exit_on_error=exit_on_error, on_failure=on_failure)

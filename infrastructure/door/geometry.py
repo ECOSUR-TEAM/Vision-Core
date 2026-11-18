@@ -6,6 +6,8 @@ def cross(a, b, c):
 
 
 def on_segment(a, b, p):
-    return (abs(cross(a, b, p)) <= 1e-9 and
-            min(a[0], b[0]) <= p[0] <= max(a[0], b[0]) and
-            min(a[1], b[1]) <= p[1] <= max(a[1], b[1]))
+    return (
+        abs(cross(a, b, p)) <= 1e-9
+        and min(a[0], b[0]) <= p[0] <= max(a[0], b[0])
+        and min(a[1], b[1]) <= p[1] <= max(a[1], b[1])
+    )

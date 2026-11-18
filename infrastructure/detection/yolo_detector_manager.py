@@ -4,7 +4,7 @@ from domain.model.bbox import BBox
 from domain.model.detection import Detection
 from domain.ports import DetectorManager
 
-from .motion_tracker import MAX_MISSED_FRAMES, MotionTracker
+from .motion_tracker import MotionTracker
 
 PERSON_CLASS_ID = 0  # COCO
 CONFIDENCE_THRESHOLD = 0.5
@@ -28,14 +28,20 @@ class YoloDetectorManager(DetectorManager):
         self._tracker = MotionTracker()
 
     def process(self, frame: np.ndarray) -> list[Detection]:
-        if (not isinstance(frame, np.ndarray) or frame.dtype != np.uint8
-                or frame.ndim != 3 or frame.shape[2] != 3
-                or min(frame.shape[:2]) <= 0):
+        if (
+            not isinstance(frame, np.ndarray)
+            or frame.dtype != np.uint8
+            or frame.ndim != 3
+            or frame.shape[2] != 3
+            or min(frame.shape[:2]) <= 0
+        ):
             raise ValueError("YOLO requiere un frame BGR uint8 de forma H x W x 3")
         height, width = frame.shape[:2]
         result = self._model.predict(
-            np.ascontiguousarray(frame), verbose=False,
-            classes=[PERSON_CLASS_ID], conf=CONFIDENCE_THRESHOLD,
+            np.ascontiguousarray(frame),
+            verbose=False,
+            classes=[PERSON_CLASS_ID],
+            conf=CONFIDENCE_THRESHOLD,
         )[0]
         detections: list[Detection] = []
         for box in result.boxes:

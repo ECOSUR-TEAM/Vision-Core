@@ -13,8 +13,7 @@ class DetectorManager(ABC):
     """
 
     @abstractmethod
-    def process(self, frame: Frame) -> list[Detection]:
-        ...
+    def process(self, frame: Frame) -> list[Detection]: ...
 
     @abstractmethod
     def pop_lost_track_ids(self) -> list[int]:

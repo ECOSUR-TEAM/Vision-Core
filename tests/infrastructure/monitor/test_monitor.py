@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 
 from application.vision_core_app import VisionCoreApp
-from domain.model.bbox import BBox
-from domain.model.event import Event
+from vision_core.shared.domain.bbox import BBox
+from vision_core.shared.domain.event import Event
 from domain.model.resolved_track import ResolvedTrack
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from infrastructure.door.zone_loader import load_zones

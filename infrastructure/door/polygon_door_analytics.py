@@ -2,8 +2,8 @@ import math
 import time
 from collections import deque
 
-from domain.model.event import Event
-from domain.model.polygon import Polygon
+from vision_core.shared.domain.event import Event
+from vision_core.shared.domain.polygon import Polygon
 from domain.ports import DoorAnalytics
 
 from .geometry import on_segment

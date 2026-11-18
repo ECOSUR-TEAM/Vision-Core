@@ -1,4 +1,4 @@
-from domain.model.bbox import BBox
+from vision_core.shared.domain.bbox import BBox
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.infrastructure.adapters.motion_tracker import MotionTracker
 

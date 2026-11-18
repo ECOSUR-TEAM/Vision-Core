@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from application.vision_core_app import VisionCoreApp
-from domain.model.bbox import BBox
+from vision_core.shared.domain.bbox import BBox
 from infrastructure.reid import memory_reid
 from infrastructure.reid.memory_reid import InMemoryReID
 from tests.fakes.fake_detector import FakeDetector

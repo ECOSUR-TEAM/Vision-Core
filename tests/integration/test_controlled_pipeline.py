@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from application.vision_core_app import VisionCoreApp
-from domain.model.polygon import Polygon
+from vision_core.shared.domain.polygon import Polygon
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from infrastructure.reid.memory_reid import InMemoryReID
 from infrastructure.video.file_video_source import FileVideoSource

@@ -1,4 +1,4 @@
-from domain.model.polygon import Polygon
+from vision_core.shared.domain.polygon import Polygon
 from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 
 ext_poly = Polygon(name="ext", points=((0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)))

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_zones(path):
-    from infrastructure.door.zone_loader import load_zones
+    from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 
     return load_zones(path)
 
@@ -23,10 +23,10 @@ def build_video_source():
 
 def build_door_analytics(zones=None, *, confirmation_frames=None):
     if zones is None:
-        from infrastructure.door.uncalibrated_analytics import UncalibratedAnalytics
+        from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics import UncalibratedAnalytics
 
         return UncalibratedAnalytics()
-    from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+    from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 
     if confirmation_frames is None:
         confirmation_frames = int(os.getenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "3"))
@@ -35,6 +35,17 @@ def build_door_analytics(zones=None, *, confirmation_frames=None):
         zones.interior,
         zones.door,
         confirmation_frames=confirmation_frames,
+    )
+
+
+def build_door(zones_path=None, *, confirmation_frames=3, history_limit=300, analytics=None):
+    from vision_core.features.door.infrastructure.dependencies import build_door as build_door_use_cases
+
+    return build_door_use_cases(
+        zones_path,
+        confirmation_frames=confirmation_frames,
+        history_limit=history_limit,
+        analytics=analytics,
     )
 
 

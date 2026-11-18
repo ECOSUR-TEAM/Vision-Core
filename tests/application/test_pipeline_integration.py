@@ -6,11 +6,11 @@ import numpy as np
 import pytest
 
 from application.vision_core_app import VisionCoreApp
+from vision_core.features.detection.domain.entities.detection import Detection
+from infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.shared.domain.bbox import BBox
 from vision_core.shared.domain.polygon import Polygon
-from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from infrastructure.reid.memory_reid import InMemoryReID
-from vision_core.features.detection.domain.entities.detection import Detection
 
 FRAME = np.zeros((40, 40, 3), dtype=np.uint8)
 

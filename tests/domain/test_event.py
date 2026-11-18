@@ -1,7 +1,6 @@
 import pytest
 
-from domain.model.event import Event
-from domain.model.event_type import EventType
+from vision_core.domain.model.event import Event
 
 
 def test_invalid_event_name_rejected():

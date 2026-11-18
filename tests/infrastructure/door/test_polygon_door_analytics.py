@@ -1,20 +1,32 @@
 import pytest
 
-from domain.model.polygon import Polygon
-from infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.domain.model.polygon import Polygon
+from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 
 ext_poly = Polygon(name="ext", points=((0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)))
 int_poly = Polygon(name="int", points=((3.0, 3.0), (7.0, 3.0), (7.0, 7.0), (3.0, 7.0)))
 
 
-@pytest.mark.parametrize('point,expected', [((5,5), True), ((-1,5), False),
-    ((0,0), True), ((10,0), True), ((0,10), True), ((10,10), True),
-    ((0,5), True), ((5,0), True), ((10,5), True), ((5,10), True),
-    ((10.001,5), False)])
+@pytest.mark.parametrize(
+    "point,expected",
+    [
+        ((5, 5), True),
+        ((-1, 5), False),
+        ((0, 0), True),
+        ((10, 0), True),
+        ((0, 10), True),
+        ((10, 10), True),
+        ((0, 5), True),
+        ((5, 0), True),
+        ((10, 5), True),
+        ((5, 10), True),
+        ((10.001, 5), False),
+    ],
+)
 def test_boundaries(point, expected):
-    pts = ((0,0), (10,0), (10,10), (0,10))
+    pts = ((0, 0), (10, 0), (10, 10), (0, 10))
     for order in (pts, pts[::-1]):
-        assert PolygonDoorAnalytics._point_in_polygon(point, Polygon('test', order)) == expected
+        assert PolygonDoorAnalytics._point_in_polygon(point, Polygon("test", order)) == expected
 
 
 def test_diferentes_poligonos_no_interfieren():
@@ -56,9 +68,9 @@ def test_zone_for_and_history():
 
     points_sequence = [
         (-1.0, -1.0),  # fuera
-        (1.0, 1.0),    # exterior
-        (5.0, 5.0),    # interior
-        (3.0, 3.0),    # vertice / borde
+        (1.0, 1.0),  # exterior
+        (5.0, 5.0),  # interior
+        (3.0, 3.0),  # vertice / borde
         (15.0, 15.0),  # fuera
     ]
 
@@ -78,7 +90,7 @@ def test_zone_for_and_history():
 
 def test_evento_person_entered():
     door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
-    door.update("p1", (1.0, 1.0))      # exterior
+    door.update("p1", (1.0, 1.0))  # exterior
     event = door.update("p1", (5.0, 5.0))  # interior
     assert event is not None
     assert event.event == "PERSON_ENTERED"
@@ -87,7 +99,7 @@ def test_evento_person_entered():
 
 def test_evento_person_exited():
     door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
-    door.update("p1", (5.0, 5.0))      # interior
+    door.update("p1", (5.0, 5.0))  # interior
     event = door.update("p1", (1.0, 1.0))  # exterior
     assert event is not None
     assert event.event == "PERSON_EXITED"
@@ -96,7 +108,7 @@ def test_evento_person_exited():
 
 def test_evento_false_alarm():
     door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
-    door.update("p1", (1.0, 1.0))       # exterior
+    door.update("p1", (1.0, 1.0))  # exterior
     event = door.update("p1", (15.0, 15.0))  # fuera
     assert event is not None
     assert event.event == "FALSE_ALARM"
@@ -112,8 +124,8 @@ def test_no_evento_en_zona_repetida():
 
 def test_evento_solo_se_emite_una_vez():
     door = PolygonDoorAnalytics(ext_poly, int_poly, confirmation_frames=1)
-    door.update("p1", (1.0, 1.0))       # exterior
+    door.update("p1", (1.0, 1.0))  # exterior
     primer_evento = door.update("p1", (5.0, 5.0))  # interior -> ENTERED
-    segundo_evento = door.update("p1", (5.5, 5.5)) # sigue interior
+    segundo_evento = door.update("p1", (5.5, 5.5))  # sigue interior
     assert primer_evento.event == "PERSON_ENTERED"
     assert segundo_evento is None

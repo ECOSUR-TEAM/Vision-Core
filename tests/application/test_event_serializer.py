@@ -2,14 +2,13 @@ import json
 
 import numpy as np
 
-from application.event_serializer import event_to_dict, event_to_json
-from domain.model.event import Event
-from domain.model.event_type import EventType
+from vision_core.application.event_serializer import event_to_dict, event_to_json
+from vision_core.domain.model.event import Event
+from vision_core.domain.model.event_type import EventType
 
 
 def test_event_to_dict_preserves_public_contract():
-    event = Event(EventType.PERSON_ENTERED, "abc", timestamp=12.5,
-                  metadata={"zone": "interior"})
+    event = Event(EventType.PERSON_ENTERED, "abc", timestamp=12.5, metadata={"zone": "interior"})
 
     assert event_to_dict(event) == {
         "event": "PERSON_ENTERED",

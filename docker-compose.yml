@@ -38,7 +38,7 @@ services:
       - "127.0.0.1:28554:8554"
     volumes:
       - ./config/frigate-camera-local:/config
-      - ./scripts/camera_bridge.py:/camera_bridge.py:ro
+      - ./src/vision_core/scripts/camera_bridge.py:/camera_bridge.py:ro
     tmpfs:
       - /tmp/cache:size=256m
       - /media/frigate:size=256m
@@ -56,6 +56,8 @@ services:
     env_file:
       - .env
     environment:
+      VISION_CORE_ENTRYPOINT: monitor
+      VISION_CORE_MONITOR_HOST: 0.0.0.0
       VISION_CORE_RTSP_URL: rtsp://frigate:8554/entrada
       VISION_CORE_MONITOR_UNCALIBRATED: ${VISION_CORE_MONITOR_UNCALIBRATED:-1}
       VISION_CORE_MONITOR_EXIT_ON_ERROR: "1"

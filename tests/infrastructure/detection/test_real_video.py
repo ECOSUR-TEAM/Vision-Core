@@ -6,10 +6,12 @@ from pathlib import Path
 import cv2
 import pytest
 
-from domain.model.detection import Detection
-from domain.ports import DetectorManager
-from scripts.benchmark import benchmark_video
-from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+from vision_core.domain.model.detection import Detection
+from vision_core.domain.ports import DetectorManager
+from vision_core.infrastructure.detection.yolo_detector_manager import (
+    YoloDetectorManager,
+)
+from vision_core.scripts.benchmark import benchmark_video
 
 
 def test_process_on_real_video():

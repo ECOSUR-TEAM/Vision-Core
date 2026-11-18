@@ -2,18 +2,22 @@ import ast
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-ROOTS = ["domain", "application", "infrastructure", "scripts", "tests", "main.py"]
+ROOTS = [
+    "src/vision_core",
+    "domain",
+    "application",
+    "infrastructure",
+    "scripts",
+    "tests",
+    "main.py",
+]
 
 
 def _python_files(root: str):
     path = PROJECT_ROOT / root
     if path.is_file():
         return [path] if path.suffix == ".py" else []
-    return [
-        candidate
-        for candidate in path.rglob("*.py")
-        if "__pycache__" not in candidate.parts
-    ]
+    return [candidate for candidate in path.rglob("*.py") if "__pycache__" not in candidate.parts]
 
 
 def _top_level_classes(path: Path) -> list[str]:
@@ -30,6 +34,4 @@ def test_one_class_per_file():
                 relative = path.relative_to(PROJECT_ROOT)
                 violations.append(f"{relative}: {classes}")
 
-    assert not violations, "Archivos con más de una clase de nivel superior:\n" + "\n".join(
-        violations
-    )
+    assert not violations, "Archivos con más de una clase de nivel superior:\n" + "\n".join(violations)

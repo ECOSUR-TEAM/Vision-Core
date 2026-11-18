@@ -8,8 +8,8 @@ from time import perf_counter
 
 import cv2
 
-from domain.ports import DetectorManager
-from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
+from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
 
 
 def benchmark_video(video_path: str, detector: DetectorManager, seconds: float = 30.0) -> dict:

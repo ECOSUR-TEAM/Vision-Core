@@ -4,9 +4,9 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from domain.model.detection import Detection
-from infrastructure.detection.motion_tracker import MAX_MISSED_FRAMES
-from infrastructure.detection.yolo_detector_manager import YoloDetectorManager
+from vision_core.features.detection.domain.entities.detection import Detection
+from vision_core.features.detection.infrastructure.adapters.motion_tracker import MAX_MISSED_FRAMES
+from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
 
 
 def box(x, confidence=0.9, class_id=0):

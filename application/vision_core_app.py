@@ -6,7 +6,7 @@ from collections.abc import Callable
 import numpy as np
 
 from domain.attendance import SessionAttendance
-from domain.model.event import Event
+from vision_core.shared.domain.event import Event
 from domain.model.resolved_track import ResolvedTrack
 from domain.ports import DetectorManager, ReIDMemory, VideoSource
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics

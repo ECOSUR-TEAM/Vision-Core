@@ -110,6 +110,6 @@ def test_only_composition_roots_import_multiple_feature_factories():
         if len(imported_factories) > 1:
             factory_importers.append((path, sorted(imported_factories)))
 
-    assert not factory_importers, (
-        f"Only the root main.py composition root may import feature factories: {factory_importers}"
-    )
+    assert (
+        not factory_importers
+    ), f"Only the root main.py composition root may import feature factories: {factory_importers}"

@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 import pytest
 
-from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.features.video.infrastructure.adapters.rtsp_video_source import (
+    RtspVideoSource,
+)
 
 URL = "rtsp://user:secret@frigate:8554/entrada"
 
@@ -48,7 +50,7 @@ def test_initial_retry_and_idempotent_open(monkeypatch):
     video.close()
 
 
-@pytest.mark.parametrize("during_read", [False, True])
+@pytest.mark.parametrize('during_read', [False, True])
 def test_exhaustion_releases_and_hides_credentials(monkeypatch, during_read):
     caps = [capture(during_read, [(False, None)]), capture(False), capture(False)]
     video = source(monkeypatch, caps, reconnect_attempts=2)
@@ -56,7 +58,7 @@ def test_exhaustion_releases_and_hides_credentials(monkeypatch, during_read):
         video.open()
         if during_read:
             video.read_frame()
-    assert "secret" not in str(error.value)
+    assert 'secret' not in str(error.value)
     for cap in caps:
         cap.release.assert_called_once()
 
@@ -64,7 +66,7 @@ def test_exhaustion_releases_and_hides_credentials(monkeypatch, during_read):
 def test_native_read_error_recovers(monkeypatch):
     frame = np.ones((2, 2, 3), dtype=np.uint8)
     bad, good = capture(), capture(frames=[(True, frame)])
-    bad.read.side_effect = cv2.error("native failure")
+    bad.read.side_effect = cv2.error('native failure')
     video = source(monkeypatch, [bad, good])
     video.open()
     assert video.read_frame() is frame
@@ -72,13 +74,13 @@ def test_native_read_error_recovers(monkeypatch):
 
 
 def test_env(monkeypatch):
-    monkeypatch.setenv("VISION_CORE_RTSP_URL", URL)
-    monkeypatch.setenv("VISION_CORE_RECONNECT_ATTEMPTS", "0")
+    monkeypatch.setenv('VISION_CORE_RTSP_URL', URL)
+    monkeypatch.setenv('VISION_CORE_RECONNECT_ATTEMPTS', '0')
     assert RtspVideoSource.from_env()._attempts == 0
-    monkeypatch.setenv("VISION_CORE_READ_TIMEOUT_MS", "-1")
+    monkeypatch.setenv('VISION_CORE_READ_TIMEOUT_MS', '-1')
     with pytest.raises(ValueError):
         RtspVideoSource.from_env()
-    monkeypatch.delenv("VISION_CORE_RTSP_URL")
+    monkeypatch.delenv('VISION_CORE_RTSP_URL')
     with pytest.raises(ValueError):
         RtspVideoSource.from_env()
 
@@ -95,9 +97,9 @@ def test_decoder_defaults_to_one_thread_and_allows_override(monkeypatch):
     params = cap.open.call_args.args[2]
     assert params[params.index(cv2.CAP_PROP_N_THREADS) + 1] == 1
     video.close()
-    monkeypatch.setenv("VISION_CORE_RTSP_URL", URL)
-    monkeypatch.setenv("VISION_CORE_DECODER_THREADS", "0")
+    monkeypatch.setenv('VISION_CORE_RTSP_URL', URL)
+    monkeypatch.setenv('VISION_CORE_DECODER_THREADS', '0')
     assert RtspVideoSource.from_env()._decoder_threads == 0
-    monkeypatch.setenv("VISION_CORE_DECODER_THREADS", "-1")
+    monkeypatch.setenv('VISION_CORE_DECODER_THREADS', '-1')
     with pytest.raises(ValueError):
         RtspVideoSource.from_env()

@@ -1,1 +1,1 @@
-"""Video source feature."""
+"""Video capture as a self-contained vertical slice."""

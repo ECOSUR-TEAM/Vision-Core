@@ -15,10 +15,14 @@ def build_zones(path):
     return load_zones(path)
 
 
-def build_video_source():
-    from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+def build_video_with(source=None, *, path=None, latest=False):
+    from vision_core.features.video.infrastructure.dependencies import build_video
 
-    return RtspVideoSource.from_env()
+    return build_video(source=source, path=path, latest=latest)
+
+
+def build_video_source():
+    return build_video_with()
 
 
 def build_door_analytics(zones=None, *, confirmation_frames=None):

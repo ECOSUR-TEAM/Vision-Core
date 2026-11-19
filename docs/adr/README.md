@@ -7,6 +7,7 @@ alternativas y verificación.
 | ADR | Título | Estado | Fecha |
 |---|---|---|---|
 | [0001](0001-screaming-architecture-vertical-slice.md) | Screaming Architecture + Vertical Slice con capas por feature y DTOs | Aceptada | 2026-11-17 |
+| [0002](0002-modelo-ejecucion-multi-camara.md) | Modelo de ejecución multi-cámara y estrategia de ReID compartido | Propuesta | 2026-11-18 |
 
 Convención: `NNNN-titulo-en-kebab.md`, un H1 por documento y tabla de metadatos
 (estado, fecha, tipo, ticket, dependencias). Las decisiones no se modifican: si

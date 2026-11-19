@@ -289,7 +289,9 @@ Las herramientas de diagnóstico y benchmark viven en `src/vision_core/scripts/`
 Ejecuta `python -m vision_core.scripts.check_stream` y
 `python -m vision_core.scripts.benchmark`.
 La estructura Vertical Slice y Screaming Architecture está registrada en
-[ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
+[ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md). El modelo de
+ejecución multi-cámara y la decisión condicional de ReID compartido están en
+[ADR 0002](docs/adr/0002-modelo-ejecucion-multi-camara.md).
 
 ## Convención: una clase por archivo
 
@@ -323,7 +325,7 @@ locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unit
 escenas controladas y pruebas reales optativas. Consulta:
 
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
-- [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
+- [Decisiones de arquitectura](docs/adr/README.md), [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md) y [ADR 0002](docs/adr/0002-modelo-ejecucion-multi-camara.md).
 - [Orquestación y cierre](docs/operations.md).
 - [Detección y tracking](docs/validation.md).
 - [Resultados, anotaciones y evaluación pendiente de la sala](reports/room-evaluation.md).

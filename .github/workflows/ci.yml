@@ -48,7 +48,7 @@ jobs:
           python -m pip check
 
       - name: Ejecutar suite completa
-        run: python -m pytest -q
+        run: make test
 
   build-and-test:
     name: Build and Test
@@ -88,7 +88,7 @@ jobs:
             main.py
 
       - name: Ejecutar pruebas
-        run: python -m pytest -q
+        run: make test
 
   lint:
     name: Lint
@@ -108,7 +108,7 @@ jobs:
         run: python -m pip install ruff==0.3.0
 
       - name: Ejecutar Ruff
-        run: ruff check .
+        run: make lint
 
   typecheck:
     name: Type Check
@@ -134,3 +134,4 @@ jobs:
 
       - name: Ejecutar mypy
         run: python -m mypy
+

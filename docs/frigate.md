@@ -6,7 +6,7 @@ Python al pasar de la webcam al servidor de la sala.
 
 ## Cámara Ethernet conectada a la laptop
 
-Para la Vivotek FD8134, ejecuta `docker compose up`. La [guía Ethernet](ethernet-camera.md)
+Para la Vivotek FD8134, ejecuta `docker compose --profile camera up`. La [guía Ethernet](ethernet-camera.md)
 y la [guía de arranque](startup.md) explican la preparación y el funcionamiento. La ruta comprobada
 es `/live.sdp`, pero la IP depende de la concesión DHCP de la laptop.
 
@@ -99,7 +99,7 @@ http://127.0.0.1:8080. No es necesario activar la detección en Frigate.
 
 En el arranque unificado, `FRIGATE_CAMERA_RTSP_URL` puede apuntar al restream del
 Frigate remoto en vez de a una cámara directa. Cambia ese valor en `.env` y
-vuelve a ejecutar `docker compose up -d`. El Frigate local conserva el nombre
+vuelve a ejecutar `docker compose --profile camera up -d`. El Frigate local conserva el nombre
 `entrada` para Vision Core. Verifica el video y recalibra las zonas si cambia
 el encuadre o la resolución.
 

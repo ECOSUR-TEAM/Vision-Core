@@ -3,7 +3,7 @@
 Desde la raíz del proyecto:
 
 ```bash
-docker compose up
+docker compose --profile camera up
 ```
 
 Abre **http://127.0.0.1:8080** para ver Vision Core. Frigate está en
@@ -16,7 +16,7 @@ separado ni añadir reglas con `iptables`.
 Para dejarlo en segundo plano y detenerlo después:
 
 ```bash
-docker compose up -d
+docker compose --profile camera up -d
 docker compose down
 ```
 
@@ -51,7 +51,7 @@ Esta sección se realiza una vez; no forma parte del arranque diario.
 - Copia `.env.example` a `.env` y configura `FRIGATE_CAMERA_RTSP_URL` con la URL real.
 - Prepara Ethernet/DHCP si la cámara se conecta directamente; consulta
   [la guía de la FD8134](ethernet-camera.md).
-- Ejecuta `docker compose up`. La primera vez construye las imágenes y puede
+- Ejecuta `docker compose --profile camera up`. La primera vez construye las imágenes y puede
   descargar dependencias y pesos. Los siguientes arranques reutilizan las imágenes.
 
 `.env` puede contener credenciales y no se incluye en Git ni en la imagen.
@@ -71,14 +71,14 @@ VISION_CORE_MONITOR_UNCALIBRATED=0
 VISION_CORE_ZONES_FILE=config/zones.json
 ```
 
-Vuelve a ejecutar `docker compose up -d`. Compose recrea el monitor con la nueva
+Vuelve a ejecutar `docker compose --profile camera up -d`. Compose recrea el monitor con la nueva
 configuración. Antes de calibrar se utiliza `VISION_CORE_MONITOR_UNCALIBRATED=1`,
 que admite la resolución nativa sin inventar entradas/salidas.
 
 Para actualizar código, reconstruye la imagen:
 
 ```bash
-docker compose up --build
+docker compose --profile camera up --build
 ```
 
 ## Diagnóstico

@@ -12,9 +12,14 @@ import ultralytics
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", help="Directorio nuevo para los archivos")
+    parser.add_argument(
+        "--allow-existing",
+        action="store_true",
+        help="Permite generar dentro de un directorio existente",
+    )
     args = parser.parse_args()
     folder = Path(args.directory)
-    folder.mkdir(parents=True, exist_ok=False)
+    folder.mkdir(parents=True, exist_ok=args.allow_existing)
     image = cv2.imread(str(Path(ultralytics.__file__).parent / "assets/bus.jpg"))
     if image is None:
         raise RuntimeError("La instalación de Ultralytics no incluye bus.jpg")

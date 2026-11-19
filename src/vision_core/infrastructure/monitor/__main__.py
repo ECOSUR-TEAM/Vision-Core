@@ -1,4 +1,4 @@
-"""python -m vision_core.infrastructure.monitor --demo-zones --port 8080"""
+"""python main.py --demo-zones --port 8080"""
 
 import argparse
 import logging
@@ -9,7 +9,7 @@ from pathlib import Path
 from vision_core.features.monitor.infrastructure.http.server import make_server
 
 
-def main(*, state=None, build_runtime=None):
+def main(*, state=None, build_state=None, build_runtime=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default=os.getenv("VISION_CORE_MONITOR_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=8080)
@@ -37,14 +37,12 @@ def main(*, state=None, build_runtime=None):
         parser.error("Indica --zones o --demo-zones")
     logging.basicConfig(level=logging.INFO)
 
-    if state is None or build_runtime is None:
-        # The composition root lives outside this infrastructure package.
-        from vision_core.composition import build_monitor_runtime, build_monitor_state
-
-        if state is None:
-            state = build_monitor_state(demo=args.demo_zones or args.uncalibrated)
-        if build_runtime is None:
-            build_runtime = build_monitor_runtime
+    if build_runtime is None:
+        raise RuntimeError("build_runtime es obligatorio")
+    if state is None:
+        if build_state is None:
+            raise RuntimeError("build_state es obligatorio")
+        state = build_state(demo=args.demo_zones or args.uncalibrated)
 
     server = make_server(args.host, args.port, state)
     runtime = build_runtime(

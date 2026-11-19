@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from vision_core.application.event_serializer import event_to_dict
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict
 from vision_core.infrastructure.detection.yolo_detector_manager import (
     YoloDetectorManager,
 )

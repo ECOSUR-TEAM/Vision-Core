@@ -323,6 +323,7 @@ escenas controladas y pruebas reales optativas. Consulta:
 - [Detección y tracking](docs/validation.md).
 - [Resultados, anotaciones y evaluación pendiente de la sala](reports/room-evaluation.md).
 - [Hardware y problemas conocidos](docs/operations.md).
+- [Proceso de releases, rollback y hotfixes](docs/releases.md).
 
 Con la cámara disponible: confirmar modelo/ruta RTSP, capturar referencia, calibrar
 zonas y ejecutar la evaluación de la sala. No hay aún cifras certificadas de precisión,

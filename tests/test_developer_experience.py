@@ -25,6 +25,9 @@ def test_compose_defines_default_and_optional_profiles():
     assert compose["services"], "El stack por defecto debe tener servicios"
     profiles = {profile for service in compose["services"].values() for profile in service.get("profiles", [])}
     assert "camera" in profiles
+    assert {"camera-bridge", "frigate-config", "frigate", "vision-core"} <= {
+        name for name, service in compose["services"].items() if "camera" in service.get("profiles", [])
+    }
     assert "vision-core-synthetic" in compose["services"]
     assert not compose["services"]["vision-core-synthetic"].get("profiles", [])
 

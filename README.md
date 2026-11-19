@@ -13,21 +13,29 @@ La calibración y aceptación en la sala quedan pendientes. Se identificó como 
 
 ## Arranque habitual
 
-Con la cámara encendida y conectada por Ethernet, desde esta carpeta:
+Stack por defecto, sin cámara:
 
 ```bash
 docker compose up
 ```
 
 - **Vision Core:** http://127.0.0.1:8080
-- **Frigate:** http://127.0.0.1:15000
-
-El comando prepara la configuración, levanta el puente de cámara y Frigate e
-inicia el monitor automáticamente. No ejecutes Python, `nmcli` ni reglas de
-firewall en cada arranque. La preparación de esta laptop ya está hecha.
 
 Para segundo plano: `docker compose up -d`. Para detener: `docker compose down`.
 La primera construcción descarga dependencias; después se reutilizan las imágenes.
+
+Con la cámara encendida y conectada por Ethernet, usa el perfil `camera`:
+
+```bash
+docker compose --profile camera up
+```
+
+- **Vision Core:** http://127.0.0.1:8080
+- **Frigate:** http://127.0.0.1:15000
+
+El perfil `camera` prepara la configuración, levanta el puente de cámara y Frigate
+e inicia el monitor automáticamente. No ejecutes Python, `nmcli` ni reglas de
+firewall en cada arranque. La preparación de esta laptop ya está hecha.
 Consulta [la guía de arranque único](docs/startup.md) para instalación en otro
 equipo, calibración, actualizaciones y diagnóstico.
 
@@ -36,7 +44,7 @@ Las siguientes secciones de Python son para desarrollo y validación manual.
 ## Desarrollo local reproducible
 
 Usa `make setup`, `make test`, `make lint`, `make format`, `make run` y
-`make docker-build`. Para el perfil sintético sin cámara:
+`make docker-build`. Para el stack sintético sin cámara:
 
 ```bash
 make setup
@@ -169,7 +177,7 @@ la analítica con la cámara definitiva.
 
 ## Ver detección de personas en vivo
 
-`docker compose up` inicia el monitor en **http://127.0.0.1:8080**, con video,
+`docker compose --profile camera up` inicia el monitor en **http://127.0.0.1:8080**, con video,
 recuadros, etiquetas «Persona 1» y conteo de personas visibles. Los IDs son
 temporales; no identifican nombres ni rostros. Mientras no calibremos la sala,
 `VISION_CORE_MONITOR_UNCALIBRATED=1` evita inventar cruces de puerta.
@@ -257,10 +265,11 @@ persona. El TTL opcional usa tiempo monotónico; los eventos llevan timestamp Un
 
 ## Docker
 
-El Compose principal incluye cámara por Ethernet, Frigate y monitor. Usa CPU,
-conserva la caché de modelos en un volumen y construye el código dentro de la
-imagen. `.dockerignore` excluye el entorno virtual, credenciales y datos locales.
-Para incorporar cambios de código: `docker compose up --build`.
+El Compose principal incluye un stack sintético por defecto y, en el perfil
+`camera`, cámara por Ethernet, Frigate y monitor. Usa CPU, conserva la caché de
+modelos en un volumen y construye el código dentro de la imagen. `.dockerignore`
+excluye el entorno virtual, credenciales y datos locales.
+Para incorporar cambios de código: `docker compose --profile camera up --build`.
 
 No se necesita combinar archivos Compose. Los antiguos complementos de cámara y
 monitor son alias vacíos de compatibilidad. El archivo de webcam es una alternativa

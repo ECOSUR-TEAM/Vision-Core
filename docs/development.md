@@ -48,26 +48,25 @@ La primera creación ejecuta `make setup`.
 
 El Dev Container es opcional: quien ya tenga `.venv` puede continuar con Make.
 
-## Perfiles de Compose
+## Stacks y perfiles de Compose
 
 ```bash
-docker compose --profile synthetic up
+docker compose up
 docker compose -f docker-compose.webcam.yml --profile webcam up
 docker compose --profile camera up
-docker compose --profile file up
 ```
 
-- `synthetic` / `file`: video sintético sin cámara.
+- El stack por defecto usa video sintético sin cámara.
 - `webcam`: usa el dispositivo configurado en `FRIGATE_WEBCAM_DEVICE`.
 - `camera`: inicia el puente Ethernet y Frigate para una cámara RTSP.
 
 Detén los servicios:
 
 ```bash
-docker compose --profile synthetic down
+docker compose down
 ```
 
-Ejecuta `make synthetic` antes de levantar el perfil sintético si falta
+Ejecuta `make synthetic` antes de levantar el stack por defecto si falta
 `dev-data/sample.avi`.
 
 ## Troubleshooting

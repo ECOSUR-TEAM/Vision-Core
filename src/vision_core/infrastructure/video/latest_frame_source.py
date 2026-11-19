@@ -62,3 +62,8 @@ class LatestFrameSource(VideoSource):
             self._condition.notify_all()
         if self._thread is not None:
             self._thread.join(timeout=1)
+
+    @property
+    def queue_size(self):
+        with self._condition:
+            return 1 if self._frame is not None else 0

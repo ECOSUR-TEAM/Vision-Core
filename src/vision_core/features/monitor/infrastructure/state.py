@@ -37,6 +37,7 @@ class MonitorState:
         self.demo = demo
         self.jpeg = None
         self.updated = None
+        self._updated_monotonic = None
         self.previous = None
         self.sequence = 0
         self.people = []
@@ -49,20 +50,19 @@ class MonitorState:
         self.health = health or HealthStatus()
         self.camera_id = "default"
         self.event_sequence = 0
+        self._last_dropped = 0
 
     def set_status(self, status, error=None):
         with self.lock:
             self.status, self.error = status, error
         self.health.set_ready(source_connected=status == "running")
-        if status == "error":
-            self.metrics.increment("vision_core_errors_total")
 
     def event(self, event):
         with self.lock:
             self.events.appendleft(self._event_serializer(event))
             self.counts[event.event] += 1
-        self.event_sequence += 1
-        event_id = f"{self.camera_id}-{self.event_sequence}"
+            self.event_sequence += 1
+            event_id = f"{self.camera_id}-{self.event_sequence}"
         logger.info(
             "Vision event emitted",
             extra={
@@ -80,7 +80,7 @@ class MonitorState:
             number = self._person_numbers.setdefault(person_id, len(self._person_numbers) + 1)
             return f"Persona {number}"
 
-    def publish(self, jpeg, people, processing_ms, dropped=0):
+    def publish(self, jpeg, people, processing_ms, dropped=0, queue_size=0):
         now = time.monotonic()
         with self.lock:
             if self.previous is not None:
@@ -88,19 +88,22 @@ class MonitorState:
                 self.fps = current if not self.fps else 0.8 * self.fps + 0.2 * current
             self.previous = now
             self.updated = time.time()
+            self._updated_monotonic = now
             self.sequence += 1
             self.jpeg = jpeg
             self.people = people
             self.processing_ms = processing_ms
             self.dropped = dropped
             self.status = "running"
+            dropped_delta = max(dropped - self._last_dropped, 0)
+            self._last_dropped = dropped
             self.changed.notify_all()
         self.health.set_ready(source_connected=True, model_loaded=True)
         self.metrics.increment("vision_core_frames_processed_total")
-        self.metrics.increment("vision_core_frames_discarded_total", dropped)
+        self.metrics.increment("vision_core_frames_discarded_total", dropped_delta)
         self.metrics.set_gauge("vision_core_fps", self.fps)
         self.metrics.set_gauge("vision_core_active_people", len(people))
-        self.metrics.set_gauge("vision_core_queue_size", 0)
+        self.metrics.set_gauge("vision_core_queue_size", queue_size)
         self.metrics.observe("vision_core_frame_processing_duration_ms", processing_ms)
 
     def next_frame(self, after):
@@ -116,8 +119,11 @@ class MonitorState:
 
     def snapshot(self):
         with self.lock:
-            age = time.time() - self.updated if self.updated is not None else None
+            age = time.monotonic() - self._updated_monotonic if self._updated_monotonic is not None else None
             status = "stale" if self.status == "running" and age > 5 else self.status
+            if status == "stale":
+                self.status = status
+                self.health.set_ready(source_connected=False)
             return {
                 "status": status,
                 "error": self.error,

@@ -223,18 +223,24 @@ El runner recibe zonas por `--zones` y pesos YOLO por `--model`; usa confirmaci�
 3 observaciones y no lee `VISION_CORE_ZONE_CONFIRMATION_FRAMES`. `check_stream`
 fija transporte con `--transport`, sustituyendo las opciones FFmpeg del proceso.
 
+`main.py` usa el modelo indicado por `VISION_CORE_MODEL_PATH` (por defecto
+`yolov8n.pt` si la variable no está definida). `VISION_CORE_DETECTION_DEVICE` y
+`VISION_CORE_DETECTION_CONFIDENCE` controlan el dispositivo y la confianza de YOLO;
+las variables `VISION_CORE_EMBEDDING_*` solo controlan el extractor.
+
+Parámetros de código, no variables: IoU mínimo **0.3**, expiración tras **31**
+frames ausentes (tolera 30), memoria ReID durante la sesión por defecto, similitud
+coseno **>0.85**, historial de zonas **300** observaciones por persona. El TTL
+opcional usa tiempo monotónico; los eventos llevan timestamp Unix.
+
 ## Observabilidad
 
-El monitor expone `/health`, `/ready` y `/metrics`. Los logs usan JSON estructurado
-por defecto y no incluyen frames, embeddings ni credenciales.
+El monitor expone `/health`, `/ready` y `/metrics`. `/health` solo indica que el
+servidor HTTP responde; Docker usa `/ready`, que verifica configuración, modelo,
+fuente y disco. Los logs redactan credenciales tanto en JSON como en texto y no
+incluyen frames ni embeddings.
 Consulta [docs/observability.md](docs/observability.md) para el catalogo de metricas
 y procedimientos de diagnostico.
-`main.py` usa `yolov8n.pt`; no hay variable de modelo YOLO ni de dispositivo YOLO.
-La variable del extractor solo controla el extractor.
-
-Parámetros de código, no variables: confianza de persona **>0.5**, IoU mínimo
-**0.3**, expiración tras **31** frames ausentes (tolera 30), memoria ReID durante la sesión por defecto, similitud coseno **>0.85**, historial de zonas **300** observaciones por
-persona. El TTL opcional usa tiempo monotónico; los eventos llevan timestamp Unix.
 
 ## Docker
 
@@ -278,13 +284,13 @@ docker pull ghcr.io/ecosur-team/vision-core:0.1.0
 
 | Componente | Responsabilidad |
 |---|---|
-| `src/vision_core/features/` | Features de detección, puerta, monitor, ReID y video |
-| `src/vision_core/application/` | Orquestación y serialización de eventos |
-| `src/vision_core/domain/` | Entidades, modelos y puertos compartidos |
-| `src/vision_core/infrastructure/` | Adaptadores concretos de video, detección, ReID, puerta y monitor |
-| `src/vision_core/composition.py` | Composición e inyección de dependencias |
+| `src/vision_core/features/` | Features de detección, puerta, monitor, pipeline, ReID y video |
+| `src/vision_core/features/pipeline/` | `RunPipeline`, DTOs, mappers y fábrica del pipeline |
+| `src/vision_core/application/` | Componentes de aplicación en migración |
+| `src/vision_core/domain/` | Modelos y puertos compartidos en migración |
+| `src/vision_core/infrastructure/` | Adaptadores concretos compartidos en migración |
 | `src/vision_core/scripts/` | Demostración, diagnóstico, ejecución medida y evaluación |
-| `main.py` | Entrypoint raíz de Docker y ejecución local |
+| `main.py` | Composition root único y entrypoint raíz de Docker y ejecución local |
 
 La aplicación depende de los ports, no de infraestructura. Los adaptadores no
 importan otras carpetas de infraestructura; los puntos de composición conectan

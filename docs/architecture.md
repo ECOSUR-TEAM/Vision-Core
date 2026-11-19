@@ -19,8 +19,8 @@ Los tests transversales están en `tests/integration/`, `tests/evaluation/` y
 - `application/` no importe `infrastructure`.
 - Un feature no importe la infraestructura de otro feature.
 - Los DTOs no dependan del dominio, infraestructura ni frameworks de visión.
-- Solo los composition roots `main.py` y `composition.py` puedan importar
-  factories de múltiples features.
+- Solo el composition root `main.py` de la raíz pueda importar factories de
+  múltiples features.
 
 `tests/architecture/test_one_class_per_file.py` mantiene la política de una
 clase de nivel superior por archivo.

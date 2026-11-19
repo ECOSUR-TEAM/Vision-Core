@@ -38,7 +38,7 @@ credenciales se redactan antes de emitir texto.
 | `vision_core_tracks_created_total` | counter | Tracks locales nuevos |
 | `vision_core_tracks_lost_total` | counter | Tracks perdidos por el detector |
 | `vision_core_events_emitted_total` | counter | Eventos de puerta emitidos |
-| `vision_core_errors_total` | counter | Errores de pipeline o estado |
+| `vision_core_errors_total` | counter | Errores de pipeline (se cuentan una sola vez) |
 | `vision_core_reconnections_total` | counter | Reconexiones exitosas del stream |
 | `vision_core_fps` | gauge | FPS suavizado del monitor |
 | `vision_core_active_people` | gauge | Personas actualmente resueltas |
@@ -47,8 +47,10 @@ credenciales se redactan antes de emitir texto.
 | `vision_core_reid_latency_ms` | histogram | Duracion de embedding y ReID |
 | `vision_core_frame_processing_duration_ms` | histogram | Duracion completa por frame |
 
-Las metricas conservan solo las ultimas 1000 observaciones por histograma. No usan
-`person_id`, rutas o URLs como labels.
+Cada histograma conserva una ventana de las ultimas 1000 muestras para `min` y `max`,
+mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan
+`person_id`, rutas o URLs como labels. `vision_core_frames_discarded_total` suma el
+delta del acumulado de la captura, no el total en cada frame.
 
 ## Diagnostico
 

@@ -42,6 +42,7 @@ def build_video(
     *,
     path: str | None = None,
     latest: bool = False,
+    metrics=None,
 ) -> VideoDependencies:
     if source is None:
         settings = Settings.from_env(validate_startup=False)
@@ -57,6 +58,7 @@ def build_video(
                 reconnect_attempts=settings.video.reconnect_attempts,
                 reconnect_delay_seconds=settings.video.reconnect_delay_seconds,
                 decoder_threads=settings.video.decoder_threads,
+                metrics=metrics,
             )
         else:
             raise ValueError("VISION_CORE_VIDEO_SOURCE debe ser rtsp o file")

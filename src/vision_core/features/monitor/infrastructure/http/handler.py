@@ -40,8 +40,9 @@ class Handler(BaseHTTPRequestHandler):
             body = json.dumps({"status": "alive", "live": True}, allow_nan=False).encode()
             kind, code = "application/json", 200
         elif path == "/ready":
+            self.server.get_snapshot.execute(RequestSnapshot())
             readiness = (
-                self.server.health.snapshot() if self.server.health is not None else {"ready": True, "checks": {}}
+                self.server.health.snapshot() if self.server.health is not None else {"ready": False, "checks": {}}
             )
             body = json.dumps(readiness, allow_nan=False).encode()
             kind, code = "application/json", 200 if readiness["ready"] else 503

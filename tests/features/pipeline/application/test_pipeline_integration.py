@@ -5,12 +5,12 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from vision_core.application.vision_core_app import VisionCoreApp
-from vision_core.domain.model.bbox import BBox
-from vision_core.domain.model.detection import Detection
-from vision_core.domain.model.polygon import Polygon
+from vision_core.features.detection.domain.entities.detection import Detection
+from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.shared.domain.bbox import BBox
+from vision_core.shared.domain.polygon import Polygon
 
 FRAME = np.zeros((40, 40, 3), dtype=np.uint8)
 
@@ -42,7 +42,7 @@ def test_stage_failure_closes_and_propagates(stage):
     error = RuntimeError("stage failure")
     target.side_effect = error
     with pytest.raises(RuntimeError) as caught:
-        VisionCoreApp(*args).run()
+        RunPipeline(*args).run()
     assert caught.value is error
     source.close.assert_called_once()
 
@@ -53,7 +53,7 @@ def test_cleanup_failure_preserves_original_error():
     args[0].read_frame.side_effect = error
     args[0].close.side_effect = RuntimeError("close failure")
     with pytest.raises(ConnectionError) as caught:
-        VisionCoreApp(*args).run()
+        RunPipeline(*args).run()
     assert caught.value is error
 
 
@@ -61,14 +61,14 @@ def test_interrupt_closes():
     args = components()
     args[0].read_frame.side_effect = KeyboardInterrupt
     with pytest.raises(KeyboardInterrupt):
-        VisionCoreApp(*args).run()
+        RunPipeline(*args).run()
     args[0].close.assert_called_once()
 
 
 def test_eof_closes_without_detection():
     args = components()
     args[0].read_frame.side_effect = [None]
-    VisionCoreApp(*args).run()
+    RunPipeline(*args).run()
     args[0].close.assert_called_once()
     args[1].process.assert_not_called()
 
@@ -76,7 +76,7 @@ def test_eof_closes_without_detection():
 def test_fractional_crop_has_pixels():
     args = components()
     args[1].process.return_value = [Detection(BBox(1.1, 2.1, 1.9, 2.9), 0, 0.9, 1)]
-    VisionCoreApp(*args).run()
+    RunPipeline(*args).run()
     assert args[4].call_args.args[0].shape == (1, 1, 3)
     args[3].update.assert_called_once_with("person", (1.5, 2.5))
 
@@ -97,7 +97,7 @@ def test_video_to_real_reid_and_zones_with_reappearance():
         confirmation_frames=1,
     )
     events = []
-    app = VisionCoreApp(source, detector, reid, door, embedder, events.append)
+    app = RunPipeline(source, detector, reid, door, embedder, events.append)
     app.run()
     assert len(events) == 1
     assert events[0].event == "PERSON_ENTERED"
@@ -107,8 +107,8 @@ def test_video_to_real_reid_and_zones_with_reappearance():
     source.close.assert_called_once()
 
 
-def test_application_has_no_infrastructure_imports():
-    tree = ast.parse(Path("src/vision_core/application/vision_core_app.py").read_text())
+def test_run_pipeline_has_no_infrastructure_imports():
+    tree = ast.parse(Path("src/vision_core/features/pipeline/application/use_cases/run_pipeline.py").read_text())
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
             assert not (node.module or "").startswith("infrastructure")
@@ -120,7 +120,7 @@ def test_close_failure_on_normal_completion_is_reported():
     args = components()
     args[0].close.side_effect = RuntimeError("close failure")
     with pytest.raises(RuntimeError, match="close failure"):
-        VisionCoreApp(*args).run()
+        RunPipeline(*args).run()
     args[0].close.assert_called_once()
 
 
@@ -129,6 +129,6 @@ def test_invalid_detector_box_stops_before_embedding(bbox):
     args = components()
     args[1].process.return_value = [Detection(bbox, 0, 0.9, 1)]
     with pytest.raises(ValueError):
-        VisionCoreApp(*args).run()
+        RunPipeline(*args).run()
     args[4].assert_not_called()
     args[0].close.assert_called_once()

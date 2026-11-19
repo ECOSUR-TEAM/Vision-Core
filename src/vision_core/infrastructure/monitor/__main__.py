@@ -1,4 +1,4 @@
-"""python -m vision_core.infrastructure.monitor --demo-zones --port 8080"""
+"""python main.py --demo-zones --port 8080"""
 
 import argparse
 import signal
@@ -9,7 +9,7 @@ from vision_core.settings import Settings
 from vision_core.shared.observability.structured_logging import configure_structured_logging
 
 
-def main(*, state=None, build_runtime=None):
+def main(*, state=None, build_state=None, build_runtime=None):
     settings = Settings.from_env(validate_startup=state is None or build_runtime is None)
     configure_structured_logging(
         settings.logging.level,
@@ -41,14 +41,12 @@ def main(*, state=None, build_runtime=None):
         args.zones = str(Path(__file__).resolve().parents[4] / "config/zones.example.json")
     elif not args.zones:
         parser.error("Indica --zones o --demo-zones")
-    if state is None or build_runtime is None:
-        # The composition root lives outside this infrastructure package.
-        from vision_core.composition import build_monitor_runtime, build_monitor_state
-
-        if state is None:
-            state = build_monitor_state(demo=args.demo_zones or args.uncalibrated, settings=settings)
-        if build_runtime is None:
-            build_runtime = build_monitor_runtime
+    if build_runtime is None:
+        raise RuntimeError("build_runtime es obligatorio")
+    if state is None:
+        if build_state is None:
+            raise RuntimeError("build_state es obligatorio")
+        state = build_state(demo=args.demo_zones or args.uncalibrated, settings=settings)
 
     server = make_server(args.host, args.port, state)
     runtime = build_runtime(
@@ -56,6 +54,7 @@ def main(*, state=None, build_runtime=None):
         zones_file=args.zones,
         exit_on_error=settings.monitor.exit_on_error,
         on_failure=server.shutdown,
+        settings=settings,
     )
     runtime.start()
 

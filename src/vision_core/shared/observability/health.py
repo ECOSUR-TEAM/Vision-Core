@@ -4,8 +4,9 @@ import shutil
 class HealthStatus:
     """Readiness checks kept separate from liveness."""
 
-    def __init__(self, minimum_free_disk_mb: int = 500) -> None:
+    def __init__(self, minimum_free_disk_mb: int = 500, disk_path: str = ".") -> None:
         self.minimum_free_disk_mb = minimum_free_disk_mb
+        self.disk_path = disk_path
         self.config_valid = True
         self.model_loaded = False
         self.source_connected = False
@@ -19,9 +20,13 @@ class HealthStatus:
             self.source_connected = source_connected
 
     def snapshot(self) -> dict:
-        usage = shutil.disk_usage(".")
-        free_mb = usage.free / (1024 * 1024)
-        disk_ok = free_mb >= self.minimum_free_disk_mb
+        try:
+            usage = shutil.disk_usage(self.disk_path)
+            free_mb = usage.free / (1024 * 1024)
+            disk_ok = free_mb >= self.minimum_free_disk_mb
+        except OSError:
+            free_mb = 0
+            disk_ok = False
         checks = {
             "configuration": self.config_valid,
             "model": self.model_loaded,

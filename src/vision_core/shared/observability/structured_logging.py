@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timezone
 
 from vision_core.settings import redact_sensitive
+from vision_core.shared.observability.redacted_text_formatter import RedactedTextFormatter
 
 
 class StructuredJsonFormatter(logging.Formatter):
@@ -28,13 +29,16 @@ class StructuredJsonFormatter(logging.Formatter):
 def configure_structured_logging(level: str, json_format: bool, camera_id: str) -> None:
     root = logging.getLogger()
     root.setLevel(getattr(logging, level, logging.INFO))
-    for handler in root.handlers:
+    for handler in list(root.handlers):
         root.removeHandler(handler)
+        handler.close()
     handler = logging.StreamHandler()
     if json_format:
         handler.setFormatter(StructuredJsonFormatter(camera_id))
     else:
         handler.setFormatter(
-            logging.Formatter("%(asctime)s %(levelname)s service=vision-core camera_id=" + camera_id + " %(message)s")
+            RedactedTextFormatter(
+                "%(asctime)s %(levelname)s service=vision-core camera_id=" + camera_id + " %(message)s"
+            )
         )
     root.addHandler(handler)

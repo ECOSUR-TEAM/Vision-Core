@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from vision_core.shared.application.dto.event_payload import EventPayload
@@ -14,7 +15,7 @@ class ResponseSnapshot:
     age_seconds: float | None
     people: tuple[MonitorPersonPayload, ...]
     events: tuple[EventPayload, ...]
-    counts: dict[str, int]
+    counts: Mapping[str, int]
     processing_ms: float
     fps: float
     dropped_frames: int

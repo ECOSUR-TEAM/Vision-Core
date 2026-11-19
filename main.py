@@ -9,7 +9,7 @@ from vision_core.features.door.infrastructure.dependencies import build_door
 from vision_core.features.monitor.infrastructure.dependencies import build_monitor
 from vision_core.features.monitor.infrastructure.renderer import render_frame
 from vision_core.features.monitor.infrastructure.runtime import MonitorRuntime
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict
 from vision_core.features.pipeline.infrastructure.dependencies import build_pipeline
 from vision_core.features.reid.infrastructure.dependencies import build_reid
 from vision_core.features.video.infrastructure.dependencies import build_video
@@ -21,7 +21,7 @@ def build_video_with(source=None, *, path=None, latest=False):
 
 
 def build_monitor_state(*, demo=False):
-    return build_monitor(demo=demo, event_serializer=event_to_dict).state
+    return build_monitor(demo=demo, event_serializer=event_to_json_dict).state
 
 
 def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None):

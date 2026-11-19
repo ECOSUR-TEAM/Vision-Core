@@ -27,13 +27,16 @@ slices comparten el contrato y el movimiento queda justificado.
   importan `numpy`, `cv2`, `torch`, `domain/` ni `infrastructure/`.
 - Contratos anidados: los payloads son `@dataclass(frozen=True, slots=True)`
   o alias concretos (`JSONValue`); no se usan `dict[str, object]` ni `Any`
-  como tipo del contrato. Los payloads compartidos por varios slices viven en
-  `shared/application/dto/` (bbox, detection, event, observation, resolved
-  track, monitor person y `FrameLike`) porque, de otro modo, cada feature
-  duplicaría el mismo contrato de transporte.
+  como tipo del contrato. Los mappings transportados se entregan como
+  `Mapping` inmutable (`MappingProxyType`) y las colecciones como tuplas, para
+  que `frozen=True` no deje dicts anidados mutables. Los payloads compartidos
+  por varios slices viven en `shared/application/dto/` (bbox, detection,
+  event, observation, resolved track, monitor person y `FrameLike`) porque,
+  de otro modo, cada feature duplicaría el mismo contrato de transporte.
 - Excepción documentada: el frame crudo cruza como `FrameLike`, un Protocol
   estructural. En producción es un `numpy.ndarray`, pero el DTO no importa
-  numpy: `video_mapper` valida dtype y forma en la frontera.
+  numpy: `validate_frame()` valida dtype y forma en la frontera del caso de uso
+  (y `video_mapper` al codificar/decodificar).
 - Imports permitidos en un DTO: stdlib/`typing`, re-exports de su propio
   paquete `application/dto` y `shared/application/dto`.
 - Mappers: `application/mappers/` convierte DTO ↔ dominio y devuelve payloads
@@ -41,8 +44,9 @@ slices comparten el contrato y el movimiento queda justificado.
   pesados viven ahí, no en el DTO.
 - Serialización: `shared/application/dto/serialization.py` expone
   `to_json_value`/`dumps_json`. Los payloads `bytes` son de transporte (JPEG/
-  PNG), se sirven como `image/jpeg` y se omiten en JSON; los floats no finitos
-  se rechazan con contexto.
+  PNG), se sirven como `image/jpeg` y `to_json_value` los sustituye por `null`
+  en JSON (nunca viaja su contenido binario); los floats no finitos se
+  rechazan con contexto.
 
 La convención normativa está en
 [ADR-0001, § Convención DTO](adr/0001-screaming-architecture-vertical-slice.md#convención-dto).
@@ -60,12 +64,13 @@ La convención normativa está en
 - Los DTOs solo importen stdlib/`typing`, su propio paquete `application/dto` y
   `shared/application/dto` (lista blanca).
 - Los archivos `request_*.py`/`response_*.py` tengan la clase esperada, usen
-  `@dataclass(frozen=True, slots=True)` y no contengan lógica.
+  `@dataclass(frozen=True, slots=True)`, no contengan lógica y no usen
+  `object`/`Any` en anotaciones de campo.
 - Solo `main.py` puede importar más de un `*.infrastructure.dependencies`
   (composition root); el resto de raíces no puede concentrar factories.
 
-`tests/architecture/test_dto_convention.py` verifica naming, decoradores y
-ausencia de lógica en todos los DTOs.
+`tests/architecture/test_dto_convention.py` verifica naming, decoradores,
+ausencia de lógica y tipos concretos en los campos de todos los DTOs.
 
 `tests/architecture/test_one_class_per_file.py` mantiene la política de una
 clase de nivel superior por archivo.

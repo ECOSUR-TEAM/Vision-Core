@@ -1,4 +1,5 @@
 import json
+from collections.abc import Mapping
 from dataclasses import MISSING, FrozenInstanceError, fields, is_dataclass
 from typing import get_type_hints
 
@@ -8,6 +9,7 @@ from vision_core.features.monitor.application.dto.request.request_frame import R
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
 from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
 from vision_core.features.monitor.application.dto.response.response_snapshot import ResponseSnapshot
+from vision_core.features.monitor.application.mappers.monitor_mapper import snapshot_to_response
 from vision_core.shared.application.dto import BBoxPayload, EventPayload, MonitorPersonPayload
 from vision_core.shared.application.dto.serialization import dumps_json
 
@@ -59,7 +61,7 @@ def test_response_fields_and_types():
         "age_seconds": float | None,
         "people": tuple[MonitorPersonPayload, ...],
         "events": tuple[EventPayload, ...],
-        "counts": dict[str, int],
+        "counts": Mapping[str, int],
         "processing_ms": float,
         "fps": float,
         "dropped_frames": int,
@@ -140,3 +142,36 @@ def test_frame_response_serializes_without_binary_payload():
 
     assert payload == {"jpeg": None, "sequence": 4}
     assert response.jpeg == b"jpeg"
+
+
+def test_nested_mappings_are_immutable():
+    response = snapshot_to_response(
+        {
+            "status": "running",
+            "error": None,
+            "demo_zones": False,
+            "frame": 4,
+            "updated_at": 10.0,
+            "age_seconds": 0.1,
+            "people": (),
+            "events": (
+                {
+                    "event": "PERSON_ENTERED",
+                    "person_id": "person-1",
+                    "timestamp": 10.0,
+                    "metadata": {"zone": {"name": "interior"}},
+                },
+            ),
+            "counts": {"interior": 1},
+            "processing_ms": 2.0,
+            "fps": 15.0,
+            "dropped_frames": 0,
+        }
+    )
+
+    with pytest.raises(TypeError):
+        response.counts["interior"] = 5
+    with pytest.raises(TypeError):
+        response.events[0].metadata["zone"] = "exterior"
+    with pytest.raises(TypeError):
+        response.events[0].metadata["zone"]["name"] = "exterior"

@@ -1,6 +1,7 @@
 """Mappers between monitor state snapshots and transport DTOs."""
 
 from collections.abc import Mapping
+from types import MappingProxyType
 from typing import Any
 
 from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
@@ -50,12 +51,12 @@ def _event_payload(value: Any) -> EventPayload:
     )
 
 
-def _counts(value: Any) -> dict[str, int]:
+def _counts(value: Any) -> Mapping[str, int]:
     if not isinstance(value, Mapping) or any(
         not isinstance(key, str) or not isinstance(count, int) for key, count in value.items()
     ):
         raise ValueError("counts must map event names to integer totals")
-    return dict(value)
+    return MappingProxyType(dict(value))
 
 
 def snapshot_to_response(snapshot: Mapping[str, object]) -> ResponseSnapshot:

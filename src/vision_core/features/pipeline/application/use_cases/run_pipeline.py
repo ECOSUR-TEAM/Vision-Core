@@ -17,6 +17,7 @@ from vision_core.features.pipeline.domain.ports.event_consumer import EventConsu
 from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
 from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 from vision_core.features.video.domain.ports.video_source import VideoSource
+from vision_core.shared.application.validation import validate_frame
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,7 @@ class RunPipeline:
             self._video.close()
 
     def process_frame(self, request: RequestProcessFrame) -> ResponseProcessFrame:
+        validate_frame(request.frame)
         return self._process_frame(request.frame)
 
     def _process_frame(self, frame: Any) -> ResponseProcessFrame:

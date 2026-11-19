@@ -18,6 +18,12 @@ def _dto_files() -> list[Path]:
     return files
 
 
+def _all_dto_files() -> list[Path]:
+    shared_dto = PROJECT_ROOT / "src" / "vision_core" / "shared" / "application" / "dto"
+    shared = [path for path in sorted(shared_dto.glob("*.py")) if path.name != "__init__.py"]
+    return _dto_files() + shared
+
+
 def _expected_class_name(path: Path) -> str:
     return "".join(part.capitalize() for part in path.stem.split("_"))
 
@@ -65,6 +71,21 @@ def test_dtos_have_no_business_logic(path):
     assert not [
         child for child in ast.walk(node) if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
     ]
+
+
+@pytest.mark.parametrize("path", _all_dto_files(), ids=lambda path: path.relative_to(PROJECT_ROOT).as_posix())
+def test_dto_fields_have_concrete_types(path):
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    erased = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.AnnAssign):
+            continue
+        for child in ast.walk(node.annotation):
+            if isinstance(child, ast.Name) and child.id in {"Any", "object"}:
+                erased.append(child.id)
+            elif isinstance(child, ast.Attribute) and child.attr in {"Any", "object"}:
+                erased.append(child.attr)
+    assert not erased, f"{path}: DTO fields must not use object/Any: {erased}"
 
 
 def test_dtos_live_only_in_request_or_response_directories():

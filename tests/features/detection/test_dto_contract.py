@@ -15,6 +15,7 @@ from vision_core.features.detection.application.mappers.detection_mapper import 
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.shared.application.dto import BBoxPayload, DetectionPayload, FrameLike
 from vision_core.shared.application.dto.serialization import dumps_json
+from vision_core.shared.application.validation import finite_bbox
 from vision_core.shared.domain.bbox import BBox
 
 
@@ -80,3 +81,9 @@ def test_detection_mapper_validates_at_the_boundary():
         response_to_detections(ResponseDetector(detections=(invalid_confidence,)))
     with pytest.raises(ValueError, match="track_id is required at the DTO boundary"):
         response_to_detections(ResponseDetector(detections=(missing_track,)))
+
+
+@pytest.mark.parametrize("coordinate", [float("nan"), float("inf"), float("-inf")])
+def test_finite_bbox_rejects_non_finite_bbox_payload(coordinate):
+    with pytest.raises(ValueError, match="bbox.x1 must be a finite number"):
+        finite_bbox(BBoxPayload(coordinate, 0, 2, 1))

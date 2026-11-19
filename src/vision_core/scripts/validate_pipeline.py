@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict
 from vision_core.infrastructure.detection.yolo_detector_manager import (
     YoloDetectorManager,
 )
@@ -42,7 +42,7 @@ def main():
             detector = RecordedDetector(YoloDetectorManager(args.model), output)
 
             def emit(event):
-                output.write(json.dumps({"kind": "event", "frame": source.frames, **event_to_dict(event)}) + "\n")
+                output.write(json.dumps({"kind": "event", "frame": source.frames, **event_to_json_dict(event)}) + "\n")
 
             app = MeasuredApp(
                 source,

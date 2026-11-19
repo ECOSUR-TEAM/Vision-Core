@@ -5,7 +5,7 @@ from dataclasses import dataclass
 class ResponseReadFrame:
     """Binary frame transport; ``frame_png`` is decoded by the video mapper.
 
-    Binary fields are excluded from JSON by ``dumps_json``; this DTO is not a
+    ``dumps_json`` replaces the binary value with ``null``; this DTO is not a
     JSON response and must not be serialized with plain ``json.dumps``.
     """
 

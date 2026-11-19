@@ -2,6 +2,7 @@ from vision_core.features.detection.application.dto.request.request_detector imp
 from vision_core.features.detection.application.dto.response.response_detector import ResponseDetector
 from vision_core.features.detection.application.mappers.detection_mapper import detections_to_response
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
+from vision_core.shared.application.validation import validate_frame
 
 
 class DetectPersons:
@@ -11,5 +12,6 @@ class DetectPersons:
         self._detector = detector
 
     def execute(self, request: RequestDetector) -> ResponseDetector:
+        validate_frame(request.frame)
         detections = self._detector.process(request.frame)
         return detections_to_response(detections)

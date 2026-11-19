@@ -1,7 +1,9 @@
+import json
 from dataclasses import asdict
 
 from vision_core.features.monitor.application.mappers.monitor_mapper import frame_to_response, snapshot_to_response
 from vision_core.shared.application.dto import BBoxPayload, EventPayload, MonitorPersonPayload
+from vision_core.shared.application.dto.serialization import dumps_json
 
 _PERSON = MonitorPersonPayload(
     person_id="person-1",
@@ -36,7 +38,7 @@ def test_snapshot_to_response_maps_every_field():
 
     response = snapshot_to_response(state)
 
-    assert asdict(response) == state
+    assert json.loads(dumps_json(response)) == json.loads(dumps_json(state))
     assert response.people == (_PERSON,)
     assert response.events == (_EVENT,)
 

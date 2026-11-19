@@ -77,7 +77,7 @@ class PolygonDoorAnalytics(DoorAnalytics):
     def update(self, person_id: str, position: tuple[float, float]) -> Optional[Event]:
         if len(position) != 2 or not all(math.isfinite(value) for value in position):
             raise ValueError("La posición debe tener dos coordenadas finitas")
-        position = tuple(position)
+        position = (float(position[0]), float(position[1]))
         zone = self._zone_for(position)
         timestamp = time.time()
         self._history.setdefault(person_id, deque(maxlen=self._history_limit)).append(
@@ -94,11 +94,12 @@ class PolygonDoorAnalytics(DoorAnalytics):
             return None
         self._pending.pop(person_id, None)
         self._last_zone[person_id] = zone
-        event_type = {
+        transitions: dict[tuple[str | None, str], str] = {
             ("exterior", "interior"): "PERSON_ENTERED",
             ("interior", "exterior"): "PERSON_EXITED",
             ("exterior", "fuera"): "FALSE_ALARM",
-        }.get((previous_zone, zone))
+        }
+        event_type = transitions.get((previous_zone, zone))
         if event_type is None:
             return None
         return Event(

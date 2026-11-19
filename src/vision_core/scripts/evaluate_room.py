@@ -36,7 +36,9 @@ def evaluate(rows, truth, threshold=0.5):
         elif row["kind"] == "resolved":
             identities[row["frame"]] = row["persons"]
     tp = fp = fn = switches = person_switches = identity_samples = 0
-    previous_track, previous_person, seen = {}, {}, set()
+    previous_track: dict[str, object] = {}
+    previous_person: dict[str, object] = {}
+    seen: set[object] = set()
     for frame in sorted(truth, key=lambda item: item["frame"]):
         index = frame["frame"]
         if index in seen or index not in predictions:

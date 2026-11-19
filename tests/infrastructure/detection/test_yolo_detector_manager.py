@@ -20,10 +20,18 @@ def box(x, confidence=0.9, class_id=0):
     )
 
 
+def fake_boxes(items):
+    return SimpleNamespace(
+        cls=np.array([item.cls[0] for item in items]),
+        conf=np.array([item.conf[0] for item in items]),
+        xyxy=np.array([item.xyxy[0] for item in items]).reshape(-1, 4),
+    )
+
+
 @pytest.fixture
 def detector(monkeypatch):
     model = SimpleNamespace(boxes=[])
-    model.predict = lambda frame, **kwargs: [SimpleNamespace(boxes=model.boxes)]
+    model.predict = lambda frame, **kwargs: [SimpleNamespace(boxes=fake_boxes(model.boxes))]
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))
     manager = YoloDetectorManager()
 
@@ -124,7 +132,7 @@ def test_model_loaded_once_and_predict_settings(monkeypatch):
     from unittest.mock import Mock
 
     model = Mock()
-    model.predict.return_value = [SimpleNamespace(boxes=[])]
+    model.predict.return_value = [SimpleNamespace(boxes=fake_boxes([]))]
     loader = Mock(return_value=model)
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=loader))
     manager = YoloDetectorManager("weights.pt")

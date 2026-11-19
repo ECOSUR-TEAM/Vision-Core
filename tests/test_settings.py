@@ -4,7 +4,6 @@ import pytest
 
 from vision_core.settings import Settings, SettingsError, redact_sensitive
 
-
 MODEL = str(Path("yolov8n.pt").resolve())
 
 

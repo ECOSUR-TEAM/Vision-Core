@@ -9,6 +9,7 @@ from torchvision.models import (
     mobilenet_v3_small,
     resnet50,
 )
+
 from vision_core.settings import Settings
 
 

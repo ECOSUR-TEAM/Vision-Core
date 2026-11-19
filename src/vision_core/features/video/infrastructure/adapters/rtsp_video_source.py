@@ -8,9 +8,10 @@ from urllib.parse import urlsplit
 import cv2
 import numpy as np
 
+from vision_core.settings import Settings
+
 from ...domain.ports.video_source import VideoSource
 from ..frame_validation import validate_frame
-from vision_core.settings import Settings
 
 logger = logging.getLogger(__name__)
 

@@ -5,10 +5,10 @@ import os
 import shutil
 import socket
 import sys
-
-from vision_core.settings import Settings, environment_with_relay_camera
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
+
+from vision_core.settings import Settings, environment_with_relay_camera
 
 RELAY_HOST = "host.docker.internal"
 RELAY_PORT = 15554

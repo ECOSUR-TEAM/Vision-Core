@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from vision_core.settings import Settings
+
 from ..application.dto.request.request_close_video import RequestCloseVideo
 from ..application.dto.request.request_open_video import RequestOpenVideo
 from ..application.dto.request.request_read_frame import RequestReadFrame
@@ -12,7 +14,6 @@ from ..domain.ports.video_source import VideoSource
 from .adapters.file_video_source import FileVideoSource
 from .adapters.latest_frame_source import LatestFrameSource
 from .adapters.rtsp_video_source import RtspVideoSource
-from vision_core.settings import Settings
 
 
 @dataclass

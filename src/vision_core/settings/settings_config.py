@@ -1,6 +1,6 @@
+import os
 from dataclasses import dataclass
 from math import isfinite
-import os
 from pathlib import Path
 from typing import Mapping
 
@@ -175,8 +175,18 @@ class Settings:
             raise SettingsError("Configuración inválida:\n- " + "\n- ".join(errors))
 
         return cls(
-            video=VideoSettings(source, rtsp_url, video_path, transport, open_timeout, read_timeout,
-                                reconnect_attempts, reconnect_delay, decoder_threads, ffmpeg_options),
+            video=VideoSettings(
+                source,
+                rtsp_url,
+                video_path,
+                transport,
+                open_timeout,
+                read_timeout,
+                reconnect_attempts,
+                reconnect_delay,
+                decoder_threads,
+                ffmpeg_options,
+            ),
             detection=DetectionSettings(model_path, detection_device, confidence, classes, tracking, max_missed),
             reid=ReIDSettings(reid_model, reid_device, reid_threshold, ambiguity_margin, reid_ttl, gallery_size),
             zones=ZonesSettings(zones_file, confirmation_frames, demo_zones, uncalibrated),

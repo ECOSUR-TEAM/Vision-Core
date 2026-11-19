@@ -143,6 +143,7 @@ class MonitorRuntime:
 def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None, settings=None):
     from vision_core.infrastructure.monitor.renderer import render_frame
     from vision_core.infrastructure.video.latest_frame_source import LatestFrameSource
+
     settings = settings or Settings.from_env()
 
     def pipeline(stop_requested):

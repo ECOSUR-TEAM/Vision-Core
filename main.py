@@ -2,6 +2,7 @@ import os
 from collections.abc import Callable
 
 from vision_core.features.detection.infrastructure.dependencies import build_detection
+from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics import UncalibratedAnalytics
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
@@ -29,6 +30,7 @@ def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_fai
         source = None
         try:
             zones = load_zones(zones_file) if zones_file else None
+            analytics: DoorAnalytics
             if zones is None:
                 analytics = UncalibratedAnalytics()
             else:

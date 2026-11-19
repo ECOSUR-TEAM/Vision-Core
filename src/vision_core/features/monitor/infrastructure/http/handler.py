@@ -1,9 +1,13 @@
 from http.server import BaseHTTPRequestHandler
+from typing import TYPE_CHECKING, cast
 from urllib.parse import parse_qs, urlsplit
 
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
 from vision_core.shared.application.dto.serialization import dumps_json
+
+if TYPE_CHECKING:
+    from vision_core.features.monitor.infrastructure.http.server import MonitorHTTPServer
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -11,10 +15,11 @@ class Handler(BaseHTTPRequestHandler):
         url = urlsplit(self.path)
         path = url.path
         sequence = None
+        server = cast("MonitorHTTPServer", self.server)
         if path == "/":
-            body, kind, code = self.server.page, "text/html; charset=utf-8", 200
+            body, kind, code = server.page, "text/html; charset=utf-8", 200
         elif path == "/api/state":
-            response = self.server.get_snapshot.execute(RequestSnapshot())
+            response = server.get_snapshot.execute(RequestSnapshot())
             body = dumps_json(response).encode()
             kind, code = "application/json", 200
         elif path == "/api/frame":
@@ -27,12 +32,12 @@ class Handler(BaseHTTPRequestHandler):
                 except ValueError:
                     self.send_error(400, "Invalid frame number")
                     return
-                response = self.server.get_frame.execute(RequestFrame(after))
+                response = server.get_frame.execute(RequestFrame(after))
                 body, sequence = response.jpeg, response.sequence
                 kind, code = "image/jpeg", 200 if body else 204
                 body = body or b""
             else:
-                response = self.server.get_frame.execute(RequestFrame())
+                response = server.get_frame.execute(RequestFrame())
                 body, sequence = response.jpeg, response.sequence
                 kind, code = "image/jpeg", 200 if body else 503
                 body = body or b"Esperando video"

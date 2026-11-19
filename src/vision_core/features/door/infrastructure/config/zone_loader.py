@@ -22,7 +22,10 @@ def load_zones(path: str | Path) -> ZoneConfig:
 
 
 def _parse_frame_size(data: dict[str, object]) -> tuple[int, int]:
-    width, height = data["frame_size"]
+    size = data.get("frame_size")
+    if not isinstance(size, (list, tuple)) or len(size) != 2:
+        raise ValueError("frame_size debe ser [ancho, alto]")
+    width, height = size
     if (
         not isinstance(width, int)
         or isinstance(width, bool)

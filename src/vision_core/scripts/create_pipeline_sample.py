@@ -19,12 +19,14 @@ def main():
     if image is None:
         raise RuntimeError("La instalación de Ultralytics no incluye bus.jpg")
     h, w = image.shape[:2]
-    writer = cv2.VideoWriter(str(folder / "sample.avi"), cv2.VideoWriter_fourcc(*"MJPG"), 10, (w, h))
+    fourcc = cv2.VideoWriter.fourcc(*"MJPG")
+    writer = cv2.VideoWriter(str(folder / "sample.avi"), fourcc, 10, (w, h))
     if not writer.isOpened():
         raise RuntimeError("No se pudo crear el video MJPEG")
     try:
         for shift in list(range(0, 151, 10)) + [150] * 3 + list(range(150, -1, -10)):
-            writer.write(cv2.warpAffine(image, np.float32([[1, 0, shift], [0, 1, 0]]), (w, h)))
+            matrix = np.array([[1, 0, shift], [0, 1, 0]], dtype=np.float32)
+            writer.write(cv2.warpAffine(image, matrix, (w, h)))
     finally:
         writer.release()
     (folder / "zones.json").write_text(

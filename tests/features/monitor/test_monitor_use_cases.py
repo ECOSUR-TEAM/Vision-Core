@@ -1,4 +1,5 @@
 import json
+from dataclasses import asdict
 
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
@@ -49,4 +50,4 @@ def test_publish_and_read_use_cases_use_injected_state():
     assert snapshot.frame == 4
     assert frame.jpeg == b"jpeg"
     assert next_frame.sequence == 5
-    json.dumps(snapshot.__dict__, allow_nan=False)
+    json.dumps(asdict(snapshot), allow_nan=False)

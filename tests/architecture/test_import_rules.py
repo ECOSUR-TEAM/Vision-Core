@@ -5,6 +5,20 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SRC = PROJECT_ROOT / "src" / "vision_core"
 FEATURES = SRC / "features"
 FORBIDDEN_DTO_IMPORTS = {"numpy", "cv2", "torch", "torchvision", "ultralytics"}
+ALLOWED_DTO_STDLIB_IMPORTS = {
+    "__future__",
+    "abc",
+    "collections",
+    "collections.abc",
+    "dataclasses",
+    "datetime",
+    "decimal",
+    "enum",
+    "types",
+    "typing",
+    "uuid",
+}
+ALLOWED_DTO_STDLIB_ROOTS = {module.split(".", 1)[0] for module in ALLOWED_DTO_STDLIB_IMPORTS}
 
 
 def _imports(path: Path) -> list[str]:
@@ -16,6 +30,28 @@ def _imports(path: Path) -> list[str]:
         elif isinstance(node, ast.ImportFrom) and node.module:
             modules.append(node.module)
     return modules
+
+
+def _import_records(path: Path) -> list[tuple[str, int]]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    records = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            records.extend((alias.name, 0) for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            records.append((node.module or "", node.level))
+    return records
+
+
+def _resolve_relative_import(path: Path, module: str, level: int) -> str:
+    if level == 0:
+        return module
+    package = path.parent.relative_to(SRC).parts
+    base = package[: len(package) - (level - 1)]
+    parts = ("vision_core", *base)
+    if module:
+        parts = (*parts, module)
+    return ".".join(parts)
 
 
 def _python_files(root: Path):
@@ -84,6 +120,32 @@ def test_dtos_do_not_import_domain_infrastructure_or_frameworks():
                 if ".domain" in module or ".infrastructure" in module or root in FORBIDDEN_DTO_IMPORTS:
                     violations.append((path.relative_to(SRC), module))
     assert not violations, f"DTO import boundary violated: {violations}"
+
+
+def test_dtos_only_import_allowed_modules():
+    violations = []
+    for feature in FEATURES.iterdir():
+        if not feature.is_dir():
+            continue
+        dto_root = feature / "application" / "dto"
+        if not dto_root.exists():
+            continue
+        own_dto = f"vision_core.features.{feature.name}.application.dto"
+        shared_dto = "vision_core.shared.application.dto"
+        for path in _python_files(dto_root):
+            for module, level in _import_records(path):
+                resolved = _resolve_relative_import(path, module, level)
+                allowed = (
+                    resolved in ALLOWED_DTO_STDLIB_IMPORTS
+                    or resolved.split(".", 1)[0] in ALLOWED_DTO_STDLIB_ROOTS
+                    or resolved == own_dto
+                    or resolved.startswith(f"{own_dto}.")
+                    or resolved == shared_dto
+                    or resolved.startswith(f"{shared_dto}.")
+                )
+                if not allowed:
+                    violations.append((path.relative_to(SRC), resolved))
+    assert not violations, f"DTO imports must use stdlib, own DTO package or shared DTO base: {violations}"
 
 
 def test_only_composition_roots_import_multiple_feature_factories():

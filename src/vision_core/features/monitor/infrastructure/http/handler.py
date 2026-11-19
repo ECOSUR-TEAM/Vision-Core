@@ -1,4 +1,5 @@
 import json
+from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlsplit
 
@@ -15,7 +16,7 @@ class Handler(BaseHTTPRequestHandler):
             body, kind, code = self.server.page, "text/html; charset=utf-8", 200
         elif path == "/api/state":
             response = self.server.get_snapshot.execute(RequestSnapshot())
-            body = json.dumps(response.__dict__, allow_nan=False).encode()
+            body = json.dumps(asdict(response), allow_nan=False).encode()
             kind, code = "application/json", 200
         elif path == "/api/frame":
             query = parse_qs(url.query)

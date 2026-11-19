@@ -47,7 +47,7 @@ def event_to_dict(event: Event) -> dict[str, Any]:
 
 
 def event_to_json(event: Event) -> str:
-    return json.dumps(event_to_dict(event))
+    return json.dumps(event_to_dict(event), allow_nan=False)
 
 
 def resolved_track_to_dto(track: ResolvedTrack) -> dict[str, Any]:

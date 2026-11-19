@@ -116,6 +116,23 @@ Para verificar sin modificar archivos, usa `ruff check .` y
 `compileall`; este job `lint` será un **requerimiento obligatorio** en los
 rulesets de `main` y `develop`, por lo que un PR no podrá mergearse si falla.
 
+## Type checking (mypy)
+
+El proyecto usa [mypy](https://mypy.readthedocs.io/) con Python 3.10 como
+objetivo y `check_untyped_defs`. La configuración está en `[tool.mypy]` de
+`pyproject.toml` y cubre `src/` y `main.py`:
+
+```bash
+python -m pip install -r requirements.txt -r requirements-dev.txt
+python -m mypy
+```
+
+El job **Type Check** de [CI Tests](.github/workflows/ci.yml) ejecuta el mismo
+comando y es independiente de Ruff y pytest. No introduzcas `Any` ni
+`# type: ignore` sin justificación. Consulta
+[Type checking con mypy](docs/type-checking.md) para el alcance, las excepciones
+y las fases de adopción.
+
 ## Primera prueba sin cámara
 
 ```bash
@@ -331,6 +348,7 @@ locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unit
 escenas controladas y pruebas reales optativas. Consulta:
 
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
+- [Type checking con mypy](docs/type-checking.md).
 - [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
 - [Orquestación y cierre](docs/operations.md).
 - [Detección y tracking](docs/validation.md).

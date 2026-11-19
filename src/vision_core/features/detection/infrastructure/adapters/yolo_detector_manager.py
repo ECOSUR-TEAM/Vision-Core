@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, cast
+
 import numpy as np
 
 from vision_core.features.detection.domain.entities.detection import Detection
@@ -6,6 +8,9 @@ from vision_core.features.detection.infrastructure.adapters.motion_tracker impor
     MotionTracker,
 )
 from vision_core.shared.domain.bbox import BBox
+
+if TYPE_CHECKING:
+    from ultralytics.engine.results import Results
 
 PERSON_CLASS_ID = 0
 CONFIDENCE_THRESHOLD = 0.5
@@ -32,22 +37,32 @@ class YoloDetectorManager(DetectorManager):
         ):
             raise ValueError("YOLO requiere un frame BGR uint8 de forma H x W x 3")
         height, width = frame.shape[:2]
-        result = self._model.predict(
-            np.ascontiguousarray(frame),
-            verbose=False,
-            classes=[PERSON_CLASS_ID],
-            conf=CONFIDENCE_THRESHOLD,
-        )[0]
+        results = cast(
+            "list[Results]",
+            self._model.predict(
+                np.ascontiguousarray(frame),
+                verbose=False,
+                classes=[PERSON_CLASS_ID],
+                conf=CONFIDENCE_THRESHOLD,
+            ),
+        )
+        if not results:
+            return []
+        boxes = results[0].boxes
+        if boxes is None:
+            return []
         detections: list[Detection] = []
-        for box in result.boxes:
-            class_id = int(box.cls[0])
-            confidence = float(box.conf[0])
+        for class_value, confidence_value, coordinates in zip(
+            boxes.cls.tolist(), boxes.conf.tolist(), boxes.xyxy.tolist()
+        ):
+            class_id = int(class_value)
+            confidence = float(confidence_value)
             if class_id != PERSON_CLASS_ID or not CONFIDENCE_THRESHOLD < confidence <= 1.0:
                 continue
-            coordinates = np.asarray(box.xyxy[0].tolist(), dtype=float)
-            if coordinates.shape != (4,) or not np.isfinite(coordinates).all():
+            values = np.asarray(coordinates, dtype=float)
+            if values.shape != (4,) or not np.isfinite(values).all():
                 continue
-            x1, y1, x2, y2 = coordinates.tolist()
+            x1, y1, x2, y2 = values.tolist()
             x1, x2 = max(0.0, min(x1, width)), max(0.0, min(x2, width))
             y1, y2 = max(0.0, min(y1, height)), max(0.0, min(y2, height))
             if x2 <= x1 or y2 <= y1:

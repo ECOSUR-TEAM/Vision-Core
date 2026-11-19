@@ -58,7 +58,7 @@ class RtspVideoSource(VideoSource):
     @classmethod
     def from_env(cls) -> "RtspVideoSource":
         """Compatibility entry point backed by centralized settings."""
-        settings = Settings.from_env().video
+        settings = Settings.from_env(validate_startup=False).video
         return cls(
             settings.rtsp_url or "",
             open_timeout_ms=settings.open_timeout_ms,

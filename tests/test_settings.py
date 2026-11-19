@@ -10,7 +10,6 @@ MODEL = str(Path("yolov8n.pt").resolve())
 def complete_env(**overrides):
     env = {
         "VISION_CORE_RTSP_URL": "rtsp://localhost:8554/entrada",
-        "VISION_CORE_MODEL_PATH": MODEL,
     }
     env.update(overrides)
     return env
@@ -53,6 +52,7 @@ def test_settings_overrides():
         ("VISION_CORE_DETECTION_CONFIDENCE", "2"),
         ("VISION_CORE_REID_THRESHOLD", "-0.1"),
         ("VISION_CORE_MONITOR_PORT", "70000"),
+        ("VISION_CORE_MODEL_PATH", "/missing/yolov8n.pt"),
     ],
 )
 def test_settings_reports_invalid_values(variable, value):

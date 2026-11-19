@@ -100,7 +100,8 @@ class Settings:
         if decoder_threads < 0:
             errors.append("VISION_CORE_DECODER_THREADS: debe ser mayor o igual que 0")
 
-        model_path = Path(env.get("VISION_CORE_MODEL_PATH", "yolov8n.pt")).expanduser()
+        configured_model_path = env.get("VISION_CORE_MODEL_PATH")
+        model_path = Path(configured_model_path or "yolov8n.pt").expanduser()
         detection_device = env.get("VISION_CORE_DETECTION_DEVICE", "").strip() or None
         confidence = floating("VISION_CORE_DETECTION_CONFIDENCE", 0.5)
         classes_raw = env.get("VISION_CORE_DETECTION_CLASSES", "0").strip()
@@ -112,7 +113,7 @@ class Settings:
                 errors.append("VISION_CORE_DETECTION_CLASSES: use enteros separados por comas")
         tracking = boolean("VISION_CORE_TRACKING_ENABLED", True)
         max_missed = integer("VISION_CORE_TRACK_MAX_MISSED_FRAMES", 30)
-        if not model_path.is_file():
+        if configured_model_path and not model_path.is_file():
             errors.append(f"VISION_CORE_MODEL_PATH: el archivo no existe: {model_path}")
         if detection_device not in {None, "cpu", "cuda"} and not detection_device.startswith("cuda:"):
             errors.append("VISION_CORE_DETECTION_DEVICE: use cpu, cuda o cuda:<indice>")

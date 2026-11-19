@@ -44,7 +44,7 @@ def build_video(
     latest: bool = False,
 ) -> VideoDependencies:
     if source is None:
-        settings = Settings.from_env()
+        settings = Settings.from_env(validate_startup=False)
         kind = settings.video.source
         if kind == "file":
             selected_path = path or (str(settings.video.video_path) if settings.video.video_path else "")

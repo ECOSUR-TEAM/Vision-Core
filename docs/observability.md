@@ -78,3 +78,4 @@ delta del acumulado de la captura, no el total en cada frame.
 - `VISION_CORE_LOG_JSON`: `1` para JSON; `0` para texto
 - `VISION_CORE_CAMERA_ID`: identificador estable de la camara
 - `VISION_CORE_MINIMUM_FREE_DISK_MB`: espacio libre minimo para readiness
+- `VISION_CORE_DISK_CHECK_PATH`: ruta comprobada por readiness (`.` por defecto; `/model-cache` en Compose)

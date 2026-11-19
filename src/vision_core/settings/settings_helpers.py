@@ -6,7 +6,14 @@ from urllib.parse import urlsplit
 def valid_rtsp_url(value: str) -> bool:
     try:
         parsed = urlsplit(value)
-        return parsed.scheme in {"rtsp", "rtsps"} and bool(parsed.hostname)
+        if parsed.scheme not in {"rtsp", "rtsps"}:
+            return False
+        if not parsed.hostname or " " in value:
+            return False
+        port = parsed.port  # ValueError si el puerto no es numerico
+        if port is not None and not 1 <= port <= 65535:
+            return False
+        return True
     except ValueError:
         return False
 
@@ -21,14 +28,23 @@ def redact_sensitive(value: object) -> str:
     )
     try:
         parsed = urlsplit(text)
-        if parsed.scheme in {"rtsp", "rtsps"} and parsed.username:
-            host = parsed.hostname or ""
+        if parsed.scheme not in {"http", "https", "rtsp", "rtsps"}:
+            return text
+        username = parsed.username or ""
+        password = parsed.password or ""
+        if not username and not password:
+            return text
+        host = parsed.hostname or ""
+        try:
             if parsed.port is not None:
                 host = f"{host}:{parsed.port}"
-            return parsed._replace(netloc=f"{parsed.username}:***@{host}").geturl()
+        except ValueError:
+            pass  # puerto invalido: se omite el puerto pero se siguen redactando credenciales
+        user_part = f"{username}:" if (username or password) else ""
+        netloc = f"{user_part}***@{host}"
+        return parsed._replace(netloc=netloc).geturl()
     except ValueError:
-        pass
-    return text
+        return text
 
 
 def apply_ffmpeg_capture_options(options: str) -> None:

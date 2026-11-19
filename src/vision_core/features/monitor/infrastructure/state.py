@@ -31,18 +31,18 @@ class MonitorState:
         self._event_serializer = event_serializer or _event_to_dict
         self.lock = threading.Lock()
         self.changed = threading.Condition(self.lock)
-        self._person_numbers = {}
+        self._person_numbers: dict[str, int] = {}
         self.status = "starting"
-        self.error = None
+        self.error: str | None = None
         self.demo = demo
-        self.jpeg = None
-        self.updated = None
-        self._updated_monotonic = None
-        self.previous = None
+        self.jpeg: bytes | None = None
+        self.updated: float | None = None
+        self._updated_monotonic: float | None = None
+        self.previous: float | None = None
         self.sequence = 0
-        self.people = []
-        self.events = deque(maxlen=100)
-        self.counts = Counter()
+        self.people: list[dict[str, object]] = []
+        self.events: deque[dict[str, object]] = deque(maxlen=100)
+        self.counts: Counter[str] = Counter()
         self.processing_ms = 0.0
         self.fps = 0.0
         self.dropped = 0
@@ -120,7 +120,7 @@ class MonitorState:
     def snapshot(self):
         with self.lock:
             age = time.monotonic() - self._updated_monotonic if self._updated_monotonic is not None else None
-            status = "stale" if self.status == "running" and age > 5 else self.status
+            status = "stale" if self.status == "running" and age is not None and age > 5 else self.status
             if status == "stale":
                 self.status = status
                 self.health.set_ready(source_connected=False)

@@ -20,6 +20,14 @@ from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 from vision_core.scripts.pipeline_tools.limited_source import LimitedSource
 
 
+def yolo_boxes(items):
+    return SimpleNamespace(
+        cls=np.array([item.cls[0] for item in items]),
+        conf=np.array([item.conf[0] for item in items]),
+        xyxy=np.array([item.xyxy[0] for item in items]).reshape(-1, 4),
+    )
+
+
 def scene(monkeypatch, count):
     # Three stable observations at each endpoint; short full occlusion in the middle.
     positions = [10] * 3 + list(range(12, 64, 2)) + [62] * 3 + [None] * 3 + [62] * 3 + list(range(60, 8, -2)) + [10] * 3
@@ -35,7 +43,7 @@ def scene(monkeypatch, count):
                 for i in range(count)
             ]
         )
-        outputs.append(SimpleNamespace(boxes=boxes))
+        outputs.append(SimpleNamespace(boxes=yolo_boxes(boxes)))
     model = Mock()
     model.predict.side_effect = [[output] for output in outputs]
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))

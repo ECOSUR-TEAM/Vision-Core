@@ -1,7 +1,9 @@
 numpy
 opencv-python
 pytest
+pytest-cov
 pillow
 torch
 torchvision
 ultralytics
+pyyaml==6.0.2

@@ -109,8 +109,11 @@ class RtspVideoSource(VideoSource):
         raise ConnectionError("No se pudo abrir RTSP")
 
     def _read(self):
+        cap = self._cap
+        if cap is None:
+            return None
         try:
-            ok, frame = self._cap.read()
+            ok, frame = cap.read()
         except cv2.error:
             return None
         if not ok or frame is None or frame.size == 0:

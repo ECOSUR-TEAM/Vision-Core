@@ -2,6 +2,7 @@
 
 import logging
 import math
+import os
 import time
 from urllib.parse import urlsplit
 
@@ -61,6 +62,7 @@ class RtspVideoSource(VideoSource):
     def from_env(cls) -> "RtspVideoSource":
         """Compatibility entry point backed by the centralized settings module."""
         settings = Settings.from_env(validate_startup=False).video
+        os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", f"rtsp_transport;{settings.transport}")
         return cls(
             settings.rtsp_url or "",
             open_timeout_ms=settings.open_timeout_ms,
@@ -111,8 +113,11 @@ class RtspVideoSource(VideoSource):
         raise ConnectionError("No se pudo abrir RTSP")
 
     def _read(self):
+        cap = self._cap
+        if cap is None:
+            return None
         try:
-            ok, frame = self._cap.read()
+            ok, frame = cap.read()
         except cv2.error:
             return None
         if not ok or frame is None or frame.size == 0:

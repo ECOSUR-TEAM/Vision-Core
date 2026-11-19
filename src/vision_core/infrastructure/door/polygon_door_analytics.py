@@ -5,7 +5,7 @@ from collections import deque
 from vision_core.domain.model.event import Event
 from vision_core.domain.model.polygon import Polygon
 from vision_core.domain.ports import DoorAnalytics
-from vision_core.shared.errors import ValidationError, ZoneConfigurationError
+from vision_core.shared.errors import ValidationError, ZoneConfigurationError, codes
 
 from .geometry import on_segment
 from .polygon_validation import validate_polygon
@@ -33,7 +33,10 @@ class PolygonDoorAnalytics(DoorAnalytics):
         if exterior_zone is None or interior_zone is None:
             raise ZoneConfigurationError("exterior_zone e interior_zone son obligatorios")
         if len(exterior_zone.points) < 3 or len(interior_zone.points) < 3:
-            raise ZoneConfigurationError("un polígono necesita al menos 3 puntos")
+            raise ZoneConfigurationError(
+                "un polígono necesita al menos 3 puntos",
+                code=codes.ZONE_GEOMETRY_INVALID,
+            )
         for polygon in (exterior_zone, interior_zone, door_zone):
             if polygon is not None:
                 validate_polygon(polygon)

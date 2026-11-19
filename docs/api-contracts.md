@@ -15,7 +15,16 @@ Versión actual: `v1`. Prefijo: `/api/v1/`. El panel en `/` no está versionado.
 | `GET /api/v1/frame?after=N` | 200 con imagen nueva, 204 sin imagen nueva tras 1 s. | 400 `VALIDATION_FAILED` si `N` no es entero no negativo. |
 | Cualquier otra ruta | — | 404 `REQUEST_NOT_FOUND`. |
 
-`N` debe ser un entero `>= 0`. Las respuestas exitosas de frame incluyen
+La API puede responder `400` (`VALIDATION_FAILED`, `VIDEO_FRAME_INVALID`,
+`MODEL_INPUT_INVALID`), `404` (`REQUEST_NOT_FOUND`), `409`
+(`PIPELINE_CALIBRATION_MISMATCH`), `422` (`ZONE_CONFIG_INVALID`,
+`ZONE_GEOMETRY_INVALID`), `500` (errores de configuración, modelo, ReID,
+pipeline o `INTERNAL_ERROR`) y `503` (`VIDEO_SOURCE_UNAVAILABLE`,
+`VIDEO_FRAME_PENDING`). El `code` del envelope es la fuente estable; el estado
+HTTP es una conveniencia para clientes.
+
+`N` debe ser un entero `>= 0`.
+ Las respuestas exitosas de frame incluyen
 `X-Frame-Sequence`. Todas las respuestas incluyen:
 
 - `Content-Type` (`application/json`, `image/jpeg` o `text/html; charset=utf-8`).

@@ -24,13 +24,15 @@ class VisionCoreError(Exception):
     def __init__(
         self,
         message: str | None = None,
-        *,
+        *args: Any,
         code: str | None = None,
         retryable: bool | None = None,
         context: Mapping[str, Any] | None = None,
     ) -> None:
+        if args:
+            raise TypeError("VisionCoreError accepts at most one positional message")
         self._code = code or type(self).default_code
-        self._message = message or type(self).default_message
+        self._message = type(self).default_message if message is None else message
         self._retryable = type(self).default_retryable if retryable is None else bool(retryable)
         self._context = sanitize_context(context)
         super().__init__(self._message)
@@ -59,6 +61,3 @@ class VisionCoreError(Exception):
             "retryable": self.retryable,
             "context": self.context,
         }
-
-    def __str__(self) -> str:
-        return f"{self.code}: {self.message}"

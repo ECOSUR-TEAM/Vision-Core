@@ -1,14 +1,22 @@
 import json
+import logging
 import threading
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
 import pytest
 
+from vision_core.features.monitor.infrastructure.http import handler as handler_module
 from vision_core.infrastructure.monitor.http_server import make_server
 from vision_core.infrastructure.monitor.state import MonitorState
 from vision_core.shared.domain.event import Event
-from vision_core.shared.errors import ConfigurationError, PipelineError, VideoSourceError, codes
+from vision_core.shared.errors import (
+    ConfigurationError,
+    PipelineError,
+    ReIDModelUnavailableError,
+    VideoSourceError,
+    codes,
+)
 from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 
@@ -96,6 +104,7 @@ def test_legacy_api_paths_are_deprecated_aliases(monitor_server):
     [
         (VideoSourceError("sin stream"), 503, codes.VIDEO_SOURCE_UNAVAILABLE),
         (ConfigurationError("config inválida"), 500, codes.CONFIGURATION_INVALID),
+        (ReIDModelUnavailableError("sin CUDA"), 500, codes.REID_MODEL_UNAVAILABLE),
         (
             PipelineError("resolución distinta", code=codes.PIPELINE_CALIBRATION_MISMATCH),
             409,
@@ -120,6 +129,38 @@ def test_application_errors_are_translated_at_the_http_boundary(error, status, c
         server.shutdown()
         server.server_close()
         thread.join()
+
+
+def test_http_errors_log_structured_details_and_traceback(caplog):
+    error = ConfigurationError(
+        "config inválida",
+        context={"variable": "VISION_CORE_RTSP_URL", "password": "secreto"},
+    )
+
+    class FailingState:
+        def snapshot(self):
+            raise error
+
+    server = make_server("127.0.0.1", 0, FailingState())
+    thread = threading.Thread(target=server.serve_forever)
+    thread.start()
+    try:
+        with caplog.at_level(logging.ERROR, logger=handler_module.__name__):
+            _, body = _error_response(f"http://127.0.0.1:{server.server_port}/api/v1/state")
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+    records = [record for record in caplog.records if record.name == handler_module.__name__]
+    assert records
+    record = records[-1]
+    assert error.code in record.getMessage()
+    assert error.message in record.getMessage()
+    assert "secreto" not in record.getMessage()
+    assert record.exc_info
+    assert body["error"]["code"] == error.code
+    assert "secreto" not in body["error"]["message"]
 
 
 def test_serialized_events_declare_schema_version(monitor_server):

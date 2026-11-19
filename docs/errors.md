@@ -20,8 +20,9 @@ de modo que los clientes existentes siguen capturando el tipo previo.
 - `context` solo acepta claves y valores simples. Se descartan claves que
   sugieran secretos, rutas, URLs o identidades (`password`, `token`, `url`,
   `path`, `person`, etc.) y se recortan cadenas largas.
-- El borde HTTP solo publica `code`, `message` y `request_id`. El resto se
-  conserva en logs internos; ver [contratos versionados](api-contracts.md).
+- El borde HTTP solo publica `code`, `message` y `request_id`. `retryable` y
+  `context` se registran con `error.as_dict()` y `exc_info=True`; ver
+  [contratos versionados](api-contracts.md).
 
 ## Jerarquía
 
@@ -35,7 +36,7 @@ de modo que los clientes existentes siguen capturando el tipo previo.
 | `ModelError` | `MODEL_UNAVAILABLE` | no | 500 |
 | `ZoneConfigurationError` | `ZONE_CONFIG_INVALID` | no | 422 |
 | `ReIDError` | `REID_MODEL_INVALID` | no | 500 |
-| `ReIDModelUnavailableError` | `REID_MODEL_INVALID` | no | 500 |
+| `ReIDModelUnavailableError` | `REID_MODEL_UNAVAILABLE` | no | 500 |
 | `PipelineError` | `PIPELINE_FAILED` | no | 500 |
 | `ValidationError` | `VALIDATION_FAILED` | no | 400 |
 
@@ -53,7 +54,8 @@ de modo que los clientes existentes siguen capturando el tipo previo.
 | `MODEL_INPUT_INVALID` | no | 400 | Frame enviado a YOLO con forma o tipo incorrectos. |
 | `ZONE_CONFIG_INVALID` | no | 422 | JSON de zonas ilegible, falta `frame_size` o algún polígono, parámetros de confirmación/historial no positivos. |
 | `ZONE_GEOMETRY_INVALID` | no | 422 | Polígono con menos de tres puntos, vértices repetidos, sin área, auto-cruzado o fuera de la imagen. |
-| `REID_MODEL_INVALID` | no | 500 | Embedding no finito o de norma cero; CUDA solicitado sin disponibilidad. |
+| `REID_MODEL_INVALID` | no | 500 | Embedding no finito o de norma cero. |
+| `REID_MODEL_UNAVAILABLE` | no | 500 | CUDA solicitado sin disponibilidad o pesos de ReID no cargables. |
 | `REID_INPUT_INVALID` | no | 400 | Recorte BGR inválido o embedding no normalizable. |
 | `PIPELINE_CALIBRATION_MISMATCH` | no | 409 | La resolución del stream no coincide con la calibración de zonas. |
 | `PIPELINE_FAILED` | no | 500 | Fallo de orquestación del pipeline distinto a los anteriores. |
@@ -71,5 +73,6 @@ eliminarlo solo en un cambio incompatible anunciado con anticipación.
   estado 500 (sin rutas ni valores de entorno sensibles).
 - Una cámara caída expone `VIDEO_SOURCE_UNAVAILABLE`, `retryable=True` y 503.
 - Los eventos serializados incluyen `schema_version`.
-- Los tests de contrato ejercitan adaptadores reales y fakes de los cinco
-  puertos críticos.
+- Los tests de contrato ejercitan fakes y adaptadores reales con dependencias
+  externas inyectadas (modelo YOLO simulado, `VideoCapture` simulado y URL RTSP
+  sin conexión); no requieren cámara, GPU ni red.

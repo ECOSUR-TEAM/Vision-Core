@@ -8,6 +8,7 @@ from vision_core.features.monitor.application.dto.response.response_snapshot imp
 from vision_core.shared.application.dto.bbox_payload import BBoxPayload
 from vision_core.shared.application.dto.event_payload import EventPayload
 from vision_core.shared.application.dto.monitor_person_payload import MonitorPersonPayload
+from vision_core.shared.application.dto.schema_version import EVENT_SCHEMA_VERSION
 from vision_core.shared.application.validation import (
     bounded_int,
     finite_bbox,
@@ -47,6 +48,7 @@ def _event_payload(value: Any) -> EventPayload:
         person_id=required_str(value.get("person_id"), "events.person_id"),
         timestamp=finite_float(value.get("timestamp"), "events.timestamp"),
         metadata=json_metadata(value.get("metadata")),
+        schema_version=required_str(value.get("schema_version", EVENT_SCHEMA_VERSION), "events.schema_version"),
     )
 
 

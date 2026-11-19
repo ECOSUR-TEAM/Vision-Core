@@ -27,9 +27,9 @@ def test_monitor_state_port_contract_with_fake_and_real_implementation(factory):
     assert frame is not None
 
 
-def test_real_monitor_serializes_events_with_current_schema_version():
+def test_real_monitor_events_expose_current_schema_version():
     state = MonitorState()
     state.event(Event(event="PERSON_ENTERED", person_id="persona-1"))
     snapshot = GetSnapshot(state).execute(RequestSnapshot())
     assert snapshot.events
-    assert snapshot.events[0]["schema_version"] == EVENT_SCHEMA_VERSION
+    assert snapshot.events[0].schema_version == EVENT_SCHEMA_VERSION

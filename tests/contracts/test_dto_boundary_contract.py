@@ -2,7 +2,7 @@ import importlib.util
 import sys
 from dataclasses import is_dataclass
 from pathlib import Path
-from typing import get_args, get_origin, get_type_hints
+from typing import Any, get_args, get_origin, get_type_hints
 
 ROOT = Path(__file__).resolve().parents[2]
 DTO_ROOT = ROOT / "src" / "vision_core" / "features"
@@ -33,6 +33,22 @@ def _annotation_modules(annotation):
         yield module
 
 
+def _dynamic_annotations(annotation):
+    if annotation is Any:
+        yield "Any"
+        return
+    if annotation is object:
+        yield "object"
+        return
+    origin = get_origin(annotation)
+    if origin in (dict, list, set, tuple) and not get_args(annotation):
+        yield origin.__name__
+        return
+    if origin is not None:
+        for argument in get_args(annotation):
+            yield from _dynamic_annotations(argument)
+
+
 def test_dto_type_hints_contain_no_infrastructure_or_domain_types():
     violations = []
     dto_count = 0
@@ -55,4 +71,18 @@ def test_dto_type_hints_contain_no_infrastructure_or_domain_types():
                         violations.append(f"{path.name}:{value.__name__}.{field_name} -> {module_name}")
 
     assert dto_count >= 20
+    assert not violations
+
+
+def test_dto_type_hints_reject_dynamic_and_unparameterized_containers():
+    violations = []
+    for path in _dto_paths():
+        module = _load_module(path)
+        for value in vars(module).values():
+            if not isinstance(value, type) or not is_dataclass(value) or value.__module__ != module.__name__:
+                continue
+            for field_name, annotation in get_type_hints(value).items():
+                for label in _dynamic_annotations(annotation):
+                    violations.append(f"{path.name}:{value.__name__}.{field_name} -> {label}")
+
     assert not violations

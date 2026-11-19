@@ -116,7 +116,11 @@ class Settings:
         max_missed = integer("VISION_CORE_TRACK_MAX_MISSED_FRAMES", 30)
         if configured_model_path and validate_startup and not model_path.is_file():
             errors.append(f"VISION_CORE_MODEL_PATH: el archivo no existe: {model_path}")
-        if detection_device not in {None, "cpu", "cuda"} and not detection_device.startswith("cuda:"):
+        if (
+            detection_device is not None
+            and detection_device not in {"cpu", "cuda"}
+            and not detection_device.startswith("cuda:")
+        ):
             errors.append("VISION_CORE_DETECTION_DEVICE: use cpu, cuda o cuda:<indice>")
         if not isfinite(confidence) or not 0 < confidence <= 1:
             errors.append("VISION_CORE_DETECTION_CONFIDENCE: debe estar entre 0 y 1")
@@ -133,7 +137,7 @@ class Settings:
         gallery_size = integer("VISION_CORE_REID_GALLERY_SIZE", 8)
         if reid_model not in {"mobilenet_v3_small", "resnet50"}:
             errors.append("VISION_CORE_EMBEDDING_MODEL: use mobilenet_v3_small o resnet50")
-        if reid_device not in {None, "cpu", "cuda"} and not reid_device.startswith("cuda:"):
+        if reid_device is not None and reid_device not in {"cpu", "cuda"} and not reid_device.startswith("cuda:"):
             errors.append("VISION_CORE_EMBEDDING_DEVICE: use cpu, cuda o cuda:<indice>")
         if not isfinite(reid_threshold) or not 0 < reid_threshold <= 1:
             errors.append("VISION_CORE_REID_THRESHOLD: debe estar entre 0 y 1")

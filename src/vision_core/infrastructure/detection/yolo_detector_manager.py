@@ -24,6 +24,7 @@ class YoloDetectorManager(DetectorManager):
         self,
         model_path: str = "yolov8n.pt",
         *,
+        device: str | None = None,
         confidence: float = CONFIDENCE_THRESHOLD,
         classes: tuple[int, ...] = (PERSON_CLASS_ID,),
         tracking_enabled: bool = True,
@@ -32,6 +33,7 @@ class YoloDetectorManager(DetectorManager):
         from ultralytics import YOLO
 
         self._model_path = model_path
+        self._device = device or "cpu"
         self._model = YOLO(model_path)
         self._confidence = confidence
         self._classes = classes

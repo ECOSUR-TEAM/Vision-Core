@@ -11,4 +11,10 @@ bus.jpg
 config/frigate-local/
 config/frigate-camera-local/
 *.egg-info/
+.coverage
+coverage.json
+coverage.xml
+coverage-*.json
+htmlcov/
+pytest*.log
 dev-data/*.avi

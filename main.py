@@ -25,8 +25,8 @@ def build_monitor_state(*, demo=False):
     return build_monitor(demo=demo, event_serializer=event_to_dict).state
 
 
-def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None, settings=None):
-    settings = settings or Settings.from_env()
+def build_monitor_pipeline(state, *, zones_file=None, settings=None):
+    settings = settings or Settings.from_env(validate_startup=False)
 
     def pipeline(stop_requested: Callable[[], bool]) -> None:
         source = None
@@ -72,7 +72,17 @@ def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_fai
             if source is not None:
                 source.close()
 
-    return MonitorRuntime(pipeline, state, exit_on_error=exit_on_error, on_failure=on_failure)
+    return pipeline
+
+
+def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None, settings=None):
+    settings = settings or Settings.from_env()
+    return MonitorRuntime(
+        build_monitor_pipeline(state, zones_file=zones_file, settings=settings),
+        state,
+        exit_on_error=exit_on_error,
+        on_failure=on_failure,
+    )
 
 
 def main() -> None:

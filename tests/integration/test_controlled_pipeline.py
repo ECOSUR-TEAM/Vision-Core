@@ -8,8 +8,8 @@ import cv2
 import numpy as np
 import pytest
 
-from vision_core.application.vision_core_app import VisionCoreApp
 from vision_core.domain.model.polygon import Polygon
+from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.infrastructure.detection.yolo_detector_manager import (
     YoloDetectorManager,
 )
@@ -59,7 +59,7 @@ def test_recorded_controlled_entries_exits_and_occlusion(tmp_path, monkeypatch, 
     writer.release()
     source = FileVideoSource(path)
     events = []
-    app = VisionCoreApp(source, detector, InMemoryReID(), analytics(), lambda crop: np.array([1.0, 0.0]), events.append)
+    app = RunPipeline(source, detector, InMemoryReID(), analytics(), lambda crop: np.array([1.0, 0.0]), events.append)
     app.run()
     assert source._cap is None
     assert [e.event for e in events].count("PERSON_ENTERED") == people
@@ -81,7 +81,7 @@ def test_pipeline_rtsp_outage(monkeypatch, recover):
     rtsp = RtspVideoSource("rtsp://test:8554/room", reconnect_attempts=1, reconnect_delay_seconds=0)
     source = LimitedSource(rtsp, frames)
     events = []
-    app = VisionCoreApp(source, detector, InMemoryReID(), analytics(), lambda crop: np.array([1.0, 0.0]), events.append)
+    app = RunPipeline(source, detector, InMemoryReID(), analytics(), lambda crop: np.array([1.0, 0.0]), events.append)
     if recover:
         app.run()
         assert rtsp.reconnections == 1

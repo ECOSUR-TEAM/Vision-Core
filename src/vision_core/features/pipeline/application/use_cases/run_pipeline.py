@@ -2,56 +2,56 @@ import logging
 import math
 import time
 from collections.abc import Callable
+from typing import Any
 
-import numpy as np
-
-from vision_core.domain.attendance import SessionAttendance
-from vision_core.domain.model.event import Event
-from vision_core.domain.model.resolved_track import ResolvedTrack
-from vision_core.domain.ports import (
-    DetectorManager,
-    DoorAnalytics,
-    ReIDMemory,
-    VideoSource,
-)
+from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
+from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
+from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
+from vision_core.features.pipeline.application.dto.request.request_run_pipeline import RequestRunPipeline
+from vision_core.features.pipeline.application.dto.response.response_process_frame import ResponseProcessFrame
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict, resolved_track_to_dto
+from vision_core.features.pipeline.domain.attendance import SessionAttendance
+from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
+from vision_core.features.pipeline.domain.ports.event_consumer import EventConsumer
+from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
+from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
+from vision_core.features.video.domain.ports.video_source import VideoSource
 
 logger = logging.getLogger(__name__)
 
 
-class VisionCoreApp:
-    """VC-APP (Fabricio): orquesta el pipeline completo.
-
-    video -> DetectorManager -> ReIDMemory -> DoorAnalytics -> Event
-
-    Depende solo de los ports (domain.ports), nunca de una implementación
-    concreta: eso permite testear con mocks y que cada módulo avance
-    en paralelo sin acoplarse a los demás.
-    """
-
+class RunPipeline:
     def __init__(
         self,
-        video_source: VideoSource,
+        video: VideoSource,
         detector: DetectorManager,
-        reid_memory: ReIDMemory,
-        door_analytics: DoorAnalytics,
-        embedder: Callable[[np.ndarray], np.ndarray],
-        on_event: Callable[[Event], None],
+        reid: ReIDMemory,
+        door: DoorAnalytics,
+        embedder: EmbeddingExtractor,
+        on_event: EventConsumer,
         expected_frame_size: tuple[int, int] | None = None,
-        on_frame: Callable[[np.ndarray, tuple[ResolvedTrack, ...], float], None] | None = None,
+        on_frame: Callable[[Any, tuple[ResolvedTrack, ...], float], None] | None = None,
     ) -> None:
         self._expected_frame_size = expected_frame_size
         self._on_frame = on_frame
-        self._video = video_source
+        self._video = video
         self._detector = detector
-        self._reid = reid_memory
-        self._door = door_analytics
+        self._reid = reid
+        self._door = door
         self._embed = embedder
         self._on_event = on_event
         self._attendance = SessionAttendance()
         self._person_by_track: dict[int, str] = {}
-        self._last_embedding_by_track: dict[int, np.ndarray] = {}
+        self._last_embedding_by_track: dict[int, Any] = {}
 
-    def run(self, stop_requested: Callable[[], bool] = lambda: False) -> None:
+    def run(
+        self,
+        stop_requested: Callable[[], bool] = lambda: False,
+        *,
+        request: RequestRunPipeline | None = None,
+    ) -> None:
+        if request is not None and request.expected_frame_size is not None:
+            self._expected_frame_size = request.expected_frame_size
         try:
             self._video.open()
             while not stop_requested():
@@ -60,7 +60,6 @@ class VisionCoreApp:
                     break
                 self._process_frame(frame)
         except BaseException:
-            # Preserve the original failure even when resource cleanup also fails.
             try:
                 self._video.close()
             except Exception as close_error:  # noqa: BLE001 - preserve pipeline failure
@@ -69,25 +68,25 @@ class VisionCoreApp:
         else:
             self._video.close()
 
-    def _process_frame(self, frame: np.ndarray) -> None:
+    def process_frame(self, request: RequestProcessFrame) -> ResponseProcessFrame:
+        return self._process_frame(request.frame)
+
+    def _process_frame(self, frame: Any) -> ResponseProcessFrame:
         started = time.perf_counter()
         resolved = []
+        events = []
         if self._expected_frame_size is not None and (frame.shape[1], frame.shape[0]) != self._expected_frame_size:
             raise ValueError("La resolución del stream no coincide con la calibración de zonas")
         detections = self._detector.process(frame)
         visible_tracks = {det.track_id for det in detections}
         absent_tracks = set(self._person_by_track) - visible_tracks
         expired_tracks = set(self._detector.pop_lost_track_ids())
-        # Release identities as soon as they are absent, even if the motion tracker
-        # retains its local track for another 30 frames. Visible IDs stay reserved.
         for track_id in (absent_tracks | expired_tracks) - visible_tracks:
             person_id = self._person_by_track.pop(track_id, None)
             embedding = self._last_embedding_by_track.pop(track_id, None)
             if person_id is not None and embedding is not None:
                 self._reid.mark_lost(person_id, embedding)
 
-        # Optional for legacy adapters; concrete ReID reserves still-known IDs
-        # before a new track can claim the same absent person's appearance.
         begin_frame = getattr(self._reid, "begin_frame", None)
         if begin_frame is not None:
             begin_frame(visible_tracks)
@@ -113,6 +112,14 @@ class VisionCoreApp:
             event = self._door.update(person_id, det.bbox.center)
             if event is not None:
                 event.metadata.update(self._attendance.apply(event))
+                events.append(event_to_dict(event))
                 self._on_event(event)
+
+        processing_ms = (time.perf_counter() - started) * 1000
         if self._on_frame is not None:
-            self._on_frame(frame, tuple(resolved), (time.perf_counter() - started) * 1000)
+            self._on_frame(frame, tuple(resolved), processing_ms)
+        return ResponseProcessFrame(
+            people=tuple(resolved_track_to_dto(track) for track in resolved),
+            events=tuple(events),
+            processing_ms=processing_ms,
+        )

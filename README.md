@@ -274,13 +274,13 @@ docker pull ghcr.io/ecosur-team/vision-core:0.1.0
 
 | Componente | Responsabilidad |
 |---|---|
-| `src/vision_core/features/` | Features de detección, puerta, monitor, ReID y video |
-| `src/vision_core/application/` | Orquestación y serialización de eventos |
-| `src/vision_core/domain/` | Entidades, modelos y puertos compartidos |
-| `src/vision_core/infrastructure/` | Adaptadores concretos de video, detección, ReID, puerta y monitor |
-| `src/vision_core/composition.py` | Composición e inyección de dependencias |
+| `src/vision_core/features/` | Features de detección, puerta, monitor, pipeline, ReID y video |
+| `src/vision_core/features/pipeline/` | `RunPipeline`, DTOs, mappers y fábrica del pipeline |
+| `src/vision_core/application/` | Componentes de aplicación en migración |
+| `src/vision_core/domain/` | Modelos y puertos compartidos en migración |
+| `src/vision_core/infrastructure/` | Adaptadores concretos compartidos en migración |
 | `src/vision_core/scripts/` | Demostración, diagnóstico, ejecución medida y evaluación |
-| `main.py` | Entrypoint raíz de Docker y ejecución local |
+| `main.py` | Composition root único y entrypoint raíz de Docker y ejecución local |
 
 La aplicación depende de los ports, no de infraestructura. Los adaptadores no
 importan otras carpetas de infraestructura; los puntos de composición conectan

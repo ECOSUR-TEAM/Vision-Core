@@ -1,6 +1,7 @@
-import os
 from dataclasses import dataclass
 from typing import Any
+
+from vision_core.settings import Settings
 
 from ..application.dto.request.request_close_video import RequestCloseVideo
 from ..application.dto.request.request_open_video import RequestOpenVideo
@@ -43,14 +44,22 @@ def build_video(
     latest: bool = False,
 ) -> VideoDependencies:
     if source is None:
-        kind = os.getenv("VISION_CORE_VIDEO_SOURCE", "rtsp").strip().lower()
+        settings = Settings.from_env(validate_startup=False)
+        kind = settings.video.source
         if kind == "file":
-            selected_path = path or os.getenv("VISION_CORE_VIDEO_PATH", "")
+            selected_path = path or (str(settings.video.video_path) if settings.video.video_path else "")
             if not selected_path:
-                raise ValueError("Configura VISION_CORE_VIDEO_PATH para el adaptador file")
+                raise ValueError("VISION_CORE_VIDEO_PATH: variable obligatoria para source=file")
             source = FileVideoSource(selected_path)
         elif kind == "rtsp":
-            source = RtspVideoSource.from_env()
+            source = RtspVideoSource(
+                settings.video.rtsp_url or "",
+                open_timeout_ms=settings.video.open_timeout_ms,
+                read_timeout_ms=settings.video.read_timeout_ms,
+                reconnect_attempts=settings.video.reconnect_attempts,
+                reconnect_delay_seconds=settings.video.reconnect_delay_seconds,
+                decoder_threads=settings.video.decoder_threads,
+            )
         else:
             raise ValueError("VISION_CORE_VIDEO_SOURCE debe ser rtsp o file")
     if latest:

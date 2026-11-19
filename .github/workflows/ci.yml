@@ -134,4 +134,3 @@ jobs:
 
       - name: Ejecutar mypy
         run: python -m mypy
-

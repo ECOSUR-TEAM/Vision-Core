@@ -1,4 +1,3 @@
-import os
 from collections.abc import Callable
 
 from vision_core.features.detection.infrastructure.dependencies import build_detection
@@ -15,6 +14,7 @@ from vision_core.features.pipeline.infrastructure.dependencies import build_pipe
 from vision_core.features.reid.infrastructure.dependencies import build_reid
 from vision_core.features.video.infrastructure.dependencies import build_video
 from vision_core.infrastructure.monitor import __main__ as monitor_cli
+from vision_core.settings import Settings
 
 
 def build_video_with(source=None, *, path=None, latest=False):
@@ -25,7 +25,9 @@ def build_monitor_state(*, demo=False):
     return build_monitor(demo=demo, event_serializer=event_to_dict).state
 
 
-def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None):
+def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None, settings=None):
+    settings = settings or Settings.from_env()
+
     def pipeline(stop_requested: Callable[[], bool]) -> None:
         source = None
         try:
@@ -34,15 +36,21 @@ def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_fai
             if zones is None:
                 analytics = UncalibratedAnalytics()
             else:
-                confirmation_frames = int(os.getenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "3"))
                 analytics = PolygonDoorAnalytics(
                     zones.exterior,
                     zones.interior,
                     zones.door,
-                    confirmation_frames=confirmation_frames,
+                    confirmation_frames=settings.zones.confirmation_frames,
                 )
             door = build_door(analytics=analytics)
-            detection = build_detection()
+            detection = build_detection(
+                model_path=str(settings.detection.model_path),
+                device=settings.detection.device,
+                confidence=settings.detection.confidence,
+                classes=settings.detection.classes,
+                tracking_enabled=settings.detection.tracking_enabled,
+                max_missed_frames=settings.detection.max_missed_frames,
+            )
             reid = build_reid()
             source = build_video(latest=True)
             app = build_pipeline(

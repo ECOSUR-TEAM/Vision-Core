@@ -6,15 +6,10 @@ All notable changes to this project are documented here using
 ## [Unreleased]
 
 ### Added
-- Typed, validated environment settings.
-- JSON structured logs, metrics and health/readiness endpoints.
-- Automated Dependabot, CodeQL and dependency-review supply-chain controls.
+- Automated semantic versioning, changelog extraction and GitHub Releases.
 
 ### Changed
 - Docker and CI workflows publish and validate versioned artifacts.
-
-### Fixed
-- Default model path validation no longer blocks tests and unrelated adapters.
 
 ### Security
 - Trivy image scanning and SARIF upload for fixable high and critical findings.

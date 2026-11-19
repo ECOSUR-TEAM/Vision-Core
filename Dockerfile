@@ -8,9 +8,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libglib2.0-0 ffmpeg \
     && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt .
-# CPU deployment: avoid pulling CUDA libraries for the laptop test stack.
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+COPY requirements.txt requirements-cpu.txt ./
+RUN pip install --no-cache-dir -r requirements-cpu.txt \
     && pip install --no-cache-dir -r requirements.txt
 COPY src /app/src
 COPY main.py /app/main.py

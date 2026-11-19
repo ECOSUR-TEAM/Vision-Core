@@ -1,7 +1,4 @@
 numpy==2.4.6
 opencv-python==5.0.0.93
-pytest==9.1.1
 pillow==12.3.0
-torch
-torchvision
 ultralytics==8.4.201

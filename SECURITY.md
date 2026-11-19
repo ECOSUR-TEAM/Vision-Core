@@ -34,16 +34,23 @@ corregibles bloquean** el PR o la publicación de la imagen.
 
 ## Excepciones
 
-No se bloquea una vulnerabilidad sin corrección disponible (`fixAvailable: false`
-en la revisión de dependencias o `ignore-unfixed` en Trivy). Toda excepción debe
-registrarse en [`.github/security-exceptions.yml`](.github/security-exceptions.yml)
-con:
+No se bloquea una vulnerabilidad sin corrección disponible: Trivy usa
+`ignore-unfixed: true` y Dependency Review solo evalúa el diff del grafo (no
+expone `fixAvailable`). Toda excepción debe registrarse en
+[`.github/security-exceptions.yml`](.github/security-exceptions.yml), validarse
+contra [`.github/security-exceptions.schema.json`](.github/security-exceptions.schema.json)
+y contener:
 
 - identificador (CVE/GHSA),
 - componente y versión,
 - justificación (por qué no hay fix o por qué no es explotable),
 - fecha de registro y fecha de revisión,
 - responsable.
+
+El archivo usa sintaxis JSON (YAML válido) para leerse con la biblioteca
+estándar de Python. `scripts/security_exceptions.py` valida el esquema, genera
+`.trivyignore` para Trivy y publica `allow-ghsas` para Dependency Review, de modo
+que ambos scanners consumen la misma lista.
 
 Las excepciones se revisan al menos cada mes y al actualizar dependencias.
 
@@ -52,10 +59,10 @@ Las excepciones se revisan al menos cada mes y al actualizar dependencias.
 | Control | Dónde | Resultado |
 |---|---|---|
 | [Dependabot](.github/dependabot.yml) semanal y agrupado (pip, Actions, Docker) | PRs | Actualizaciones revisables |
-| [Dependency Review](.github/workflows/dependency-review.yml) con `fail-on-severity: high` | PRs | Bloquea severidad alta/crítica corregible |
-| [CodeQL](.github/workflows/codeql.yml) para Python | Push, PR y semanal | Resultados en GitHub Security |
-| Ruff (primer filtro) | CI y pre-commit | Bloquea errores de código/imports |
-| [Trivy](.github/workflows/docker.yml) sobre la imagen construida | CD | SARIF en GitHub Security; falla en alta/crítica corregible |
+| [Dependency Review](.github/workflows/dependency-review.yml) con `fail-on-severity: high` | PRs, solo cuando `DEPENDENCY_GRAPH_ENABLED=true` | Bloquea severidad alta/crítica corregible |
+| [CodeQL](.github/workflows/codeql.yml) para Python | Push, PRs del repositorio y semanal | Resultados en GitHub Security |
+| Ruff (primer filtro) | CI y [pre-commit](.pre-commit-config.yaml) (`v0.3.0`) | Bloquea errores de código/imports |
+| [Trivy](.github/workflows/docker.yml) sobre la imagen construida | CD, antes de publicar | SARIF en GitHub Security; falla en alta/crítica corregible |
 | Secret scanning y push protection | Ajustes del repositorio (ver abajo) | Bloquea secretos antes del push |
 
 Todos los workflows usan `permissions` explícitos y `contents: read` por defecto;
@@ -68,14 +75,21 @@ Todos los workflows usan `permissions` explícitos y `contents: read` por defect
 Estos controles se configuran en el sitio web de GitHub y requieren permisos de
 administrador (no se pueden activar desde un archivo del repositorio):
 
-1. En **Settings → Code security and analysis** activa **Dependabot alerts**,
-   **Dependabot security updates**, **Secret scanning** y **Push protection**.
-2. Opcionalmente activa **Secret scanning for custom patterns** para patrones
+1. En **Settings → Code security and analysis** activa **Dependency graph**,
+   **Dependabot alerts**, **Dependabot security updates**, **Secret scanning** y
+   **Push protection**.
+2. En **Settings → Secrets and variables → Actions → Variables** crea
+   `DEPENDENCY_GRAPH_ENABLED=true` para habilitar el job de Dependency Review.
+3. Opcionalmente activa **Secret scanning for custom patterns** para patrones
    propios del proyecto.
-3. Verificación: al intentar hacer push de un secreto falso (por ejemplo un token
+4. Verificación: al intentar hacer push de un secreto falso (por ejemplo un token
    de prueba con formato válido), GitHub debe rechazar el push. Si el repositorio
    es un fork o la rama está protegida, comprueba el estado en la pestaña
    **Security → Secret scanning**.
+
+Hasta que el grafo de dependencias y la variable estén activos, el job de
+Dependency Review se omite. Marca ese check como requerido en branch protection
+solo después de habilitarlo, para evitar fallos artificiales en los PRs.
 
 Los hallazgos de los workflows se publican automáticamente en **Security → Code
 scanning** cuando el repositorio tiene habilitada esa pestaña; si no aparece,
@@ -87,6 +101,6 @@ No almacenes secretos en `.env`, imágenes ni logs. `.env` está excluido por
 ## Actualizaciones y referencias
 
 - [Guía de supply chain y actualización de dependencias](docs/security.md).
-- [Política de permisos y excepciones](.github/security-exceptions.yml).
+- [Excepciones y su esquema](.github/security-exceptions.yml).
 - Coordinación de SBOM/digests con el ticket de releases y revisión de licencias
   en su ticket correspondiente.

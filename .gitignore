@@ -11,3 +11,5 @@ bus.jpg
 config/frigate-local/
 config/frigate-camera-local/
 *.egg-info/
+requirements.lock.txt
+.trivyignore

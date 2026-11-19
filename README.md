@@ -47,7 +47,8 @@ sudo apt-get install -y python3-venv ffmpeg libgl1 libglib2.0-0
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-cpu.txt
+python -m pip install -r requirements-dev.txt
 python -m pip install -e .
 python -m pip check
 python -m pytest -q
@@ -65,9 +66,10 @@ instalar el resto de requirements. Comprueba el entorno:
 python -c "import torch, torchvision, cv2; print(torch.__version__, torchvision.__version__, cv2.__version__); print('CUDA disponible:', torch.cuda.is_available())"
 ```
 
-`requirements.txt` fija las versiones directas (excepto `torch`/`torchvision`,
-instalados desde el índice CPU). Conserva `python -m pip freeze` con cada
-medición para reproducirla. Consulta [seguridad y supply chain](docs/security.md).
+`requirements.txt` fija las versiones directas; `torch`/`torchvision` se instalan
+desde el índice CPU con `requirements-cpu.txt` y `pytest` está en
+`requirements-dev.txt`. Conserva `python -m pip freeze` con cada medición para
+reproducirla. Consulta [seguridad y supply chain](docs/security.md).
 No se requiere OSNet, torchreid ni `third_party/`.
 
 ## Ejecutar tests localmente
@@ -76,8 +78,8 @@ CI usa Python 3.11 con PyTorch de CPU en Ubuntu. Para reproducir el mismo
 entorno en local (tras crear y activar un entorno virtual):
 
 ```bash
-python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-cpu.txt
+python -m pip install -r requirements-dev.txt
 python -m pip check
 python -m pytest -q
 ```
@@ -85,8 +87,9 @@ python -m pytest -q
 ## Lint y Formato de Código (Ruff)
 
 El proyecto usa [Ruff](https://docs.astral.sh/ruff/) con las reglas `E`, `F`, `W`
-e `I` (imports), `line-length = 120` y Python 3.10 como objetivo. Instala la
-misma versión fijada que usa la CI (también disponible como hook de pre-commit):
+e `I` (imports), `line-length = 120` y Python 3.11 como objetivo. Instala la
+misma versión fijada que usa la CI (también disponible como hook de
+[pre-commit](.pre-commit-config.yaml)):
 
 ```bash
 python -m pip install ruff==0.3.0
@@ -255,8 +258,9 @@ El nombre se normaliza a minúsculas; para este repositorio son
 
 Tags disponibles: `main`, `develop`, el SHA corto del commit (`sha-<7>`), tags
 semánticos (al subir `v0.1.0` se genera la etiqueta `0.1.0`) y `latest` en la rama
-por defecto. Cada publicación escanea ambas imágenes con Trivy y sube el SARIF a
-GitHub Security; una vulnerabilidad alta/crítica corregible falla el job.
+por defecto. Antes de publicar, el job `scan-image` escanea ambas imágenes con
+Trivy y sube el SARIF a GitHub Security; `publish` depende de ese job, por lo que
+una vulnerabilidad alta/crítica corregible impide la publicación.
 
 ```bash
 # Si el paquete es privado, autentícate antes:

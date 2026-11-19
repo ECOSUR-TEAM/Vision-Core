@@ -16,13 +16,24 @@ jobs:
     name: Revisar dependencias del PR
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: vars.DEPENDENCY_GRAPH_ENABLED == 'true'
 
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Prepare exception lists
+        id: exceptions
+        run: python scripts/security_exceptions.py --github-output "$GITHUB_OUTPUT"
+
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
-          comment-summary-in-pr: always
+          comment-summary-in-pr: never
+          allow-ghsas: ${{ steps.exceptions.outputs.allow-ghsas }}

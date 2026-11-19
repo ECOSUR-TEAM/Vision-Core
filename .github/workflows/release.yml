@@ -4,40 +4,65 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag a validar (por ejemplo v0.1.0 o v0.1.0-rc.1+build.5)"
+        required: true
+        type: string
+      dry_run:
+        description: "Validar y escanear sin publicar ni crear el release"
+        required: false
+        default: true
+        type: boolean
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 concurrency:
-  group: release-${{ github.ref_name }}
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
   cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
 
 jobs:
   validate-and-test:
     name: Validate tag and CI
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
 
       - name: Validate SemVer tag
+        id: tag
         shell: bash
+        env:
+          TAG: ${{ env.RELEASE_TAG }}
         run: |
           python - <<'PY'
+          import os
           import re
           import tomllib
-          import os
 
-          tag = os.environ["GITHUB_REF_NAME"]
+          tag = os.environ["TAG"]
           semver = re.compile(
               r"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
-              r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
+              r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?"
+              r"(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
           )
           match = semver.fullmatch(tag)
-          if not match:
+          if match is None:
               raise SystemExit(f"Invalid SemVer tag: {tag}")
+          for identifier in (match.group(4) or "").split("."):
+              if identifier.isdigit() and len(identifier) > 1 and identifier.startswith("0"):
+                  raise SystemExit(f"Invalid prerelease identifier in tag: {tag}")
           with open("pyproject.toml", "rb") as source:
               project_version = tomllib.load(source)["project"]["version"]
           base = ".".join(match.group(1, 2, 3))
@@ -47,6 +72,30 @@ jobs:
               )
           print(f"Validated {tag}")
           PY
+          version="${TAG#v}"
+          version="${version%%+*}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag is integrated
+        shell: bash
+        env:
+          TAG: ${{ env.RELEASE_TAG }}
+        run: |
+          git fetch --no-tags origin main develop
+          tag_commit=$(git rev-parse "${TAG}^{commit}")
+          if git merge-base --is-ancestor "$tag_commit" origin/main; then
+            echo "Tag is integrated into main"
+          elif git merge-base --is-ancestor "$tag_commit" origin/develop; then
+            echo "Tag is integrated into develop"
+          else
+            echo "Tag ${TAG} is not an ancestor of main or develop" >&2
+            exit 1
+          fi
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libglib2.0-0 ffmpeg
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
@@ -74,33 +123,66 @@ jobs:
           ruff check .
           ruff format --check .
 
-  build-and-push:
-    name: Build ${{ matrix.target }}
+      - name: Generate release notes
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.tag.outputs.version }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+        run: |
+          python scripts/extract_changelog.py "$RELEASE_VERSION" CHANGELOG.md > changelog-section.md
+          {
+            echo "# $RELEASE_TAG"
+            echo
+            cat changelog-section.md
+          } > release-notes.md
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-notes
+          path: release-notes.md
+          if-no-files-found: error
+
+  publish-images:
+    name: Build, scan and publish ${{ matrix.target }}
     needs: validate-and-test
     runs-on: ubuntu-latest
     timeout-minutes: 45
+
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
     strategy:
       matrix:
         target: [runtime, camera-bridge]
+
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
 
       - name: Log in to GHCR
+        if: ${{ env.DRY_RUN != 'true' }}
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build tags
-        id: tags
+      - name: Resolve image
+        id: image
         shell: bash
+        env:
+          TAG: ${{ env.RELEASE_TAG }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${TAG#v}"
+          version="${version%%+*}"
           repository="${GITHUB_REPOSITORY,,}"
           if [ "${{ matrix.target }}" = "camera-bridge" ]; then
             image="ghcr.io/${repository}-camera-bridge"
@@ -109,31 +191,59 @@ jobs:
           fi
           echo "image=$image" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          tags="$image:$version"
-          if [[ "$version" != *-* ]]; then
-            tags="$tags"$'\n'"$image:latest"
-          fi
-          printf 'tags<<EOF\n%s\nEOF\n' "$tags" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push image
+      - name: Build image
         id: build
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: .
           target: ${{ matrix.target }}
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
+          push: false
+          load: true
+          tags: ${{ steps.image.outputs.image }}:scan-${{ matrix.target }}
           cache-from: type=gha,scope=release-${{ matrix.target }}
           cache-to: type=gha,mode=max,scope=release-${{ matrix.target }}
 
-      - name: Save digest
+      - name: Run Trivy vulnerability scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.image.outputs.image }}:scan-${{ matrix.target }}
+          format: sarif
+          output: trivy-${{ matrix.target }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Upload SARIF to GitHub Security
+        if: ${{ always() && steps.trivy.outcome != 'skipped' }}
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-${{ matrix.target }}.sarif
+          category: trivy-${{ matrix.target }}
+
+      - name: Push image
+        if: ${{ env.DRY_RUN != 'true' }}
         shell: bash
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+          VERSION: ${{ steps.image.outputs.version }}
+          TARGET: ${{ matrix.target }}
         run: |
+          tags="$IMAGE:$VERSION"
+          if [[ "$VERSION" != *-* ]]; then
+            tags="$tags"$'\n'"$IMAGE:latest"
+          fi
           mkdir -p digests
-          printf '%s@%s\n' "${{ steps.tags.outputs.image }}" "${{ steps.build.outputs.digest }}" \
-            > "digests/${{ matrix.target }}.txt"
+          while IFS= read -r tag; do
+            docker tag "$IMAGE:scan-$TARGET" "$tag"
+            docker push "$tag"
+          done <<< "$tags"
+          digest=$(docker buildx imagetools inspect "$IMAGE:$VERSION" --format '{{.Manifest.Digest}}')
+          printf '%s@%s\n' "$IMAGE" "$digest" > "digests/$TARGET.txt"
 
       - name: Upload digest
+        if: ${{ env.DRY_RUN != 'true' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: digest-${{ matrix.target }}
@@ -142,12 +252,20 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: build-and-push
+    needs: publish-images
+    if: ${{ env.DRY_RUN != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    permissions:
+      contents: write
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Download release notes
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-notes
+          path: notes
 
       - name: Download digests
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
@@ -156,31 +274,30 @@ jobs:
           merge-multiple: true
           path: digests
 
-      - name: Generate release notes
+      - name: Assemble notes
         shell: bash
         run: |
-          python scripts/extract_changelog.py "${GITHUB_REF_NAME#v}" CHANGELOG.md > changelog-section.md
           {
-            echo "# $GITHUB_REF_NAME"
+            cat notes/release-notes.md
             echo
             echo "## Image digests"
             echo
             echo '```text'
             cat digests/*.txt
             echo '```'
-            echo
-            cat changelog-section.md
           } > release-notes.md
           cat digests/*.txt > release-digests.txt
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
         shell: bash
         run: |
           args=(--repo "$GITHUB_REPOSITORY" --notes-file release-notes.md)
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+          version="${RELEASE_TAG#v}"
+          version="${version%%+*}"
+          if [[ "$version" == *-* ]]; then
             args+=(--prerelease)
           fi
-          gh release create "$GITHUB_REF_NAME" "${args[@]}" \
-            release-digests.txt
+          gh release create "$RELEASE_TAG" "${args[@]}" release-digests.txt

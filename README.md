@@ -240,7 +240,9 @@ independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 
 El workflow [Docker CD](.github/workflows/docker.yml) construye y publica las
 imágenes automáticamente en GitHub Container Registry (GHCR) en cada push a
-`main`, `develop` o un tag `v*`. En pull requests solo se construyen, sin publicar.
+`main` o manualmente con `workflow_dispatch`. En pull requests solo se
+construyen, sin publicar. Los tags `v*` los publica el workflow
+[Release](.github/workflows/release.yml).
 
 Se publican dos targets del `Dockerfile`:
 
@@ -251,9 +253,11 @@ El nombre se normaliza a minúsculas; para este repositorio son
 `ghcr.io/ecosur-team/vision-core` y
 `ghcr.io/ecosur-team/vision-core-camera-bridge`.
 
-Tags disponibles: `main`, `develop`, el SHA corto del commit (`sha-<7>`), tags
-semánticos (al subir `v0.1.0` se genera la etiqueta `0.1.0`) y `latest` en la rama
-por defecto.
+Tags disponibles: `main` y el SHA corto del commit (`sha-<7>`) desde Docker CD;
+`X.Y.Z` y `latest` para releases estables, y solo `X.Y.Z-rc.N` para
+prereleases, publicados por el workflow de Release. Cada release escanea ambas
+imágenes con Trivy antes de publicarlas y sube el SARIF a GitHub Security; una
+vulnerabilidad alta/crítica corregible falla el job.
 
 ```bash
 # Si el paquete es privado, autentícate antes:

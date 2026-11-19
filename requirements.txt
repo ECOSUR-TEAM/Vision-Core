@@ -5,3 +5,4 @@ pillow
 torch
 torchvision
 ultralytics
+tomli==2.2.1; python_version < "3.11"

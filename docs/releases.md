@@ -3,8 +3,11 @@
 ## Branch and tag strategy
 
 Develop work is integrated in `develop`. Releases are created from an immutable
-tag in the form `vMAJOR.MINOR.PATCH` pointing to a commit already merged into
-`develop` or `main`. Do not create release branches for normal releases.
+tag in the form `vMAJOR.MINOR.PATCH`, optionally with a prerelease suffix such as
+`-rc.1` and build metadata such as `+build.5`. The tag must point to a commit
+that is an ancestor of `develop` or `main`; the workflow enforces this. Numeric
+prerelease identifiers with leading zeros (for example `v1.2.3-01`) are
+rejected. Do not create release branches for normal releases.
 
 Use a short-lived `release/vX.Y.Z` branch only when a changelog or release
 candidate needs final stabilization. Merge it into `main` and delete it after
@@ -34,10 +37,20 @@ git tag -s vX.Y.Z -m "Vision Core vX.Y.Z"
 git push origin vX.Y.Z
 ```
 
-The release workflow validates SemVer, runs tests and lint, builds both images,
-scans Trivy results, and creates the GitHub Release only after those checks pass.
-Stable tags publish `X.Y.Z` and `latest`; prerelease tags publish only the
-semantic version tags.
+The release workflow validates SemVer and tag ancestry, verifies that the
+CHANGELOG section exists, runs tests and lint, then builds and scans both images
+with Trivy. Images are published only after the scan passes, and the GitHub
+Release is created only after both digests are available. Stable tags publish
+`X.Y.Z` and `latest`; prerelease tags publish only the version tag (build
+metadata is stripped from Docker tags). The release workflow is the only
+publisher for `v*` tags; Docker CD publishes `main` and `sha-<7>` only.
+
+## Dry run
+
+Use `gh workflow run release.yml -f tag=vX.Y.Z -f dry_run=true` to validate the
+tag, changelog, tests, lint and image scans without publishing or creating a
+GitHub Release. The same workflow is triggered automatically by pushing a `v*`
+tag, with `dry_run=false`.
 
 ## Rollback
 

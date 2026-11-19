@@ -23,7 +23,9 @@ def extract_changelog_section(changelog: str, version: str) -> str:
 def main() -> None:
     if len(sys.argv) != 3:
         raise SystemExit("usage: extract_changelog.py VERSION CHANGELOG")
-    version = sys.argv[1].split("-", 1)[0]
+    version = sys.argv[1]
+    if version.startswith("v"):
+        version = version[1:]
     changelog = Path(sys.argv[2]).read_text(encoding="utf-8")
     print(extract_changelog_section(changelog, version))
 

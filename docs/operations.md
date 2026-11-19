@@ -2,7 +2,7 @@
 
 ## Arranque diario
 
-`docker compose up` inicia todo; `docker compose down` lo detiene. El perfil de
+`docker compose --profile camera up` inicia todo; `docker compose down` lo detiene. El perfil de
 Ethernet se activa automáticamente y el puente incluido evita la regla manual
 de firewall. Consulta [la guía de arranque](startup.md).
 
@@ -65,7 +65,7 @@ FPS: consulta la [prueba de latencia](monitor.md#implementación-y-acceso).
 ## Monitor web
 
 La analítica en vivo se ve en http://127.0.0.1:8080 al ejecutar
-`docker compose up`. Consulta [la guía](monitor.md).
+`docker compose --profile camera up`. Consulta [la guía](monitor.md).
 Si el panel muestra error, revisa stream, pesos y resolución de zonas, y reinicia
 el monitor. Si 8080 está ocupado, usa `--port 8081`. El monitor no muestra mensajes
 nativos de error ni URLs RTSP en HTTP para evitar exponer credenciales.

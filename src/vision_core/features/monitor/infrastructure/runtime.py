@@ -25,7 +25,11 @@ class MonitorRuntime:
         except Exception as error:  # noqa: BLE001 - límite del hilo: cualquier fallo se refleja en el estado
             kind = type(error).__name__
             self._state.set_status("error", kind)
-            logger.error("Pipeline detenido (%s). Revisa stream, zonas y pesos locales.", kind)
+            logger.error(
+                "Pipeline detenido (%s). Revisa stream, zonas y pesos locales.",
+                kind,
+                extra={"error_code": kind},
+            )
             if self._exit_on_error:
                 self.failed.set()
                 if self._on_failure is not None:

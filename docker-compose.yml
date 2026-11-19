@@ -60,6 +60,7 @@ services:
       VISION_CORE_MONITOR_HOST: 0.0.0.0
       VISION_CORE_RTSP_URL: rtsp://frigate:8554/entrada
       VISION_CORE_MONITOR_UNCALIBRATED: ${VISION_CORE_MONITOR_UNCALIBRATED:-1}
+      VISION_CORE_DISK_CHECK_PATH: /model-cache
       VISION_CORE_MONITOR_EXIT_ON_ERROR: "1"
       TORCH_HOME: /model-cache/torch
     ports:

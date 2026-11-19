@@ -156,6 +156,7 @@ class Settings:
         monitor_host = env.get("VISION_CORE_MONITOR_HOST", "127.0.0.1").strip()
         monitor_port = integer("VISION_CORE_MONITOR_PORT", 8080)
         exit_on_error = boolean("VISION_CORE_MONITOR_EXIT_ON_ERROR", False)
+        disk_check_path = env.get("VISION_CORE_DISK_CHECK_PATH", ".").strip() or "."
         if not monitor_host:
             errors.append("VISION_CORE_MONITOR_HOST: no puede estar vacío")
         if not 1 <= monitor_port <= 65535:
@@ -198,7 +199,7 @@ class Settings:
             detection=DetectionSettings(model_path, detection_device, confidence, classes, tracking, max_missed),
             reid=ReIDSettings(reid_model, reid_device, reid_threshold, ambiguity_margin, reid_ttl, gallery_size),
             zones=ZonesSettings(zones_file, confirmation_frames, demo_zones, uncalibrated),
-            monitor=MonitorSettings(monitor_host, monitor_port, exit_on_error, minimum_free_disk_mb),
+            monitor=MonitorSettings(monitor_host, monitor_port, exit_on_error, minimum_free_disk_mb, disk_check_path),
             logging=LoggingSettings(log_level, log_json, camera_id),
             performance=PerformanceSettings(performance_interval),
             camera=CameraSettings(camera_url),

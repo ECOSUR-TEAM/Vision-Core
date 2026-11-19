@@ -36,6 +36,10 @@ class VideoDependencies(VideoSource):
     def dropped_frames(self) -> int:
         return getattr(self.source, "dropped_frames", 0)
 
+    @property
+    def queue_size(self) -> int:
+        return getattr(self.source, "queue_size", 0)
+
 
 def build_video(
     source: VideoSource | None = None,

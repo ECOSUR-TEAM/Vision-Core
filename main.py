@@ -27,7 +27,7 @@ def build_monitor_state(*, demo=False, settings=None):
     metrics = get_observability_metrics()
     health = HealthStatus(
         minimum_free_disk_mb=settings.monitor.minimum_free_disk_mb,
-        disk_path="/model-cache",
+        disk_path=settings.monitor.disk_check_path,
     )
     health.set_ready(config_valid=True)
     return build_monitor(

@@ -56,6 +56,7 @@ class RunPipeline:
     ) -> None:
         if request is not None and request.expected_frame_size is not None:
             self._expected_frame_size = request.expected_frame_size
+        failed = False
         try:
             self._video.open()
             while not stop_requested():
@@ -63,16 +64,18 @@ class RunPipeline:
                 if frame is None:
                     break
                 self._process_frame(frame)
-        except BaseException:
+        except Exception:  # noqa: BLE001 - preserve pipeline failure
+            failed = True
             if self._metrics is not None:
                 self._metrics.increment("vision_core_errors_total")
+            raise
+        finally:
             try:
                 self._video.close()
             except Exception as close_error:  # noqa: BLE001 - preserve pipeline failure
                 logger.error("Falló el cierre de video (%s)", type(close_error).__name__)
-            raise
-        else:
-            self._video.close()
+                if not failed:
+                    raise
 
     def process_frame(self, request: RequestProcessFrame) -> ResponseProcessFrame:
         return self._process_frame(request.frame)

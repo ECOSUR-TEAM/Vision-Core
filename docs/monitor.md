@@ -97,6 +97,14 @@ una inferencia adicional por navegador. La API expone:
 | `/api/frame` | Último JPEG anotado; 503 mientras no haya frames |
 | `/api/frame?after=N` | Espera hasta 1 s por una imagen posterior a N; 204 si aún no llega. Incluye `X-Frame-Sequence`. |
 
+El contrato es estricto: solo `GET`; `/` y `/api/state` rechazan cualquier query,
+y `/api/frame` solo acepta un `after` único (sin duplicados ni parámetros
+desconocidos). Los errores son JSON, excepto en `HEAD`, que por RFC 9110 solo
+devuelve estado y cabeceras (405 con `Allow: GET`). Un 204 no incluye cuerpo,
+`Content-Type` ni `Content-Length`; un 503 sin frame usa JSON con
+`Retry-After: 1`. Todas las respuestas llevan las mismas cabeceras de seguridad
+y una CSP con nonce por request.
+
 Un hilo posee la captura RTSP y conserva únicamente el frame más reciente. Si
 la inferencia tarda, reemplaza los frames intermedios en lugar de crear una cola
 creciente. El contador de descartados incluye ese reemplazo, no pérdida de red.

@@ -8,8 +8,6 @@ import sys
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
-from vision_core.settings import Settings, environment_with_relay_camera
-
 RELAY_HOST = "host.docker.internal"
 RELAY_PORT = 15554
 
@@ -71,11 +69,13 @@ def main():
         if not destination.exists():
             shutil.copyfile("/defaults/config.yml", destination)
         return
-    url = Settings.from_env().camera.rtsp_url
+    url = os.environ.get("FRIGATE_CAMERA_RTSP_URL", "").strip() or None
     if url is None:
         raise ValueError("FRIGATE_CAMERA_RTSP_URL es obligatoria para este modo")
     if mode == "frigate":
-        os.execve("/init", ["/init"], environment_with_relay_camera(relay_url(url)))
+        environment = dict(os.environ)
+        environment["FRIGATE_CAMERA_RTSP_URL"] = relay_url(url)
+        os.execve("/init", ["/init"], environment)
     target = camera_target(url)
     bind = socket.gethostbyname(RELAY_HOST)
     if mode == "check":

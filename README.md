@@ -222,12 +222,15 @@ variables necesarias y no incluyas credenciales reales en Git.
 El runner recibe zonas por `--zones` y pesos YOLO por `--model`; usa confirmación de
 3 observaciones y no lee `VISION_CORE_ZONE_CONFIRMATION_FRAMES`. `check_stream`
 fija transporte con `--transport`, sustituyendo las opciones FFmpeg del proceso.
-`main.py` usa `yolov8n.pt`; no hay variable de modelo YOLO ni de dispositivo YOLO.
-La variable del extractor solo controla el extractor.
+`main.py` lee el modelo y el dispositivo YOLO de `VISION_CORE_MODEL_PATH` y
+`VISION_CORE_DETECTION_DEVICE` (por defecto `yolov8n.pt` y `cpu`), y la confianza
+de `VISION_CORE_DETECTION_CONFIDENCE`. La variable del extractor solo controla el
+extractor.
 
-Parámetros de código, no variables: confianza de persona **>0.5**, IoU mínimo
-**0.3**, expiración tras **31** frames ausentes (tolera 30), memoria ReID durante la sesión por defecto, similitud coseno **>0.85**, historial de zonas **300** observaciones por
-persona. El TTL opcional usa tiempo monotónico; los eventos llevan timestamp Unix.
+Parámetros de código, no variables: IoU mínimo **0.3**, expiración tras **31**
+frames ausentes (tolera 30), memoria ReID durante la sesión por defecto, similitud
+coseno **>0.85**, historial de zonas **300** observaciones por persona. El TTL
+opcional usa tiempo monotónico; los eventos llevan timestamp Unix.
 
 ## Docker
 

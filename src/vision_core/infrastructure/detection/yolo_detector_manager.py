@@ -37,6 +37,7 @@ class YoloDetectorManager(DetectorManager):
         self._classes = classes
         self._tracking_enabled = tracking_enabled
         self._tracker = MotionTracker(max_missed_frames)
+        self._next_track_id = 0
 
     def process(self, frame: np.ndarray) -> list[Detection]:
         if (
@@ -78,6 +79,10 @@ class YoloDetectorManager(DetectorManager):
             )
         if self._tracking_enabled:
             self._tracker.update(detections)
+        else:
+            for detection in detections:
+                detection.track_id = self._next_track_id
+                self._next_track_id += 1
         return detections
 
     def pop_lost_track_ids(self) -> list[int]:

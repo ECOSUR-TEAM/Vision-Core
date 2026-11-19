@@ -48,6 +48,8 @@ def build_video(
         kind = settings.video.source
         if kind == "file":
             selected_path = path or (str(settings.video.video_path) if settings.video.video_path else "")
+            if not selected_path:
+                raise ValueError("VISION_CORE_VIDEO_PATH: variable obligatoria para source=file")
             source = FileVideoSource(selected_path)
         elif kind == "rtsp":
             source = RtspVideoSource(

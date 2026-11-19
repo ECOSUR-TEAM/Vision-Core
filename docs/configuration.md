@@ -50,7 +50,7 @@ Los valores invalidos producen `SettingsError` con la variable exacta y una acci
 | `VISION_CORE_ZONES_FILE` | Ninguno | Archivo existente si se usan zonas reales |
 | `VISION_CORE_ZONE_CONFIRMATION_FRAMES` | `3` | Entero positivo |
 | `VISION_CORE_MONITOR_DEMO_ZONES` | `0` | Booleano |
-| `VISION_CORE_MONITOR_UNCALIBRATED` | `1` | Booleano |
+| `VISION_CORE_MONITOR_UNCALIBRATED` | `0` | Booleano |
 | `VISION_CORE_MONITOR_HOST` | `127.0.0.1` | Host no vacio |
 | `VISION_CORE_MONITOR_PORT` | `8080` | Puerto entre 1 y 65535 |
 | `VISION_CORE_MONITOR_EXIT_ON_ERROR` | `0` | Booleano |

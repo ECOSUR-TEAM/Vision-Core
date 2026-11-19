@@ -20,6 +20,7 @@ from vision_core.shared.application.dto.serialization import dumps_json
 from vision_core.shared.domain.bbox import BBox
 from vision_core.shared.domain.event import Event
 from vision_core.shared.domain.event_type import EventType
+from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 DTO_CLASSES = (
     RequestProcessFrame,
@@ -128,6 +129,7 @@ def test_response_process_frame_contains_people_and_processing_metrics():
             "person_id": "person-1",
             "timestamp": 12.5,
             "metadata": {"zone": "interior"},
+            "schema_version": EVENT_SCHEMA_VERSION,
         }
     ]
     assert payload["processing_ms"] == 1.25

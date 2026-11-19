@@ -6,6 +6,7 @@ from vision_core.features.detection.infrastructure.adapters.motion_tracker impor
     MotionTracker,
 )
 from vision_core.shared.domain.bbox import BBox
+from vision_core.shared.errors import ModelError, ValidationError, codes
 
 PERSON_CLASS_ID = 0
 CONFIDENCE_THRESHOLD = 0.5
@@ -16,10 +17,18 @@ class YoloDetectorManager(DetectorManager):
     """Person detection with local motion/IoU tracking for one video stream."""
 
     def __init__(self, model_path: str = "yolov8n.pt") -> None:
-        from ultralytics import YOLO
-
+        try:
+            from ultralytics import YOLO
+        except ImportError as error:
+            raise ModelError("La librería de detección no está instalada.") from error
         self._model_path = model_path
-        self._model = YOLO(model_path)
+        try:
+            self._model = YOLO(model_path)
+        except Exception as error:
+            raise ModelError(
+                "No se pudo cargar el modelo de detección.",
+                context={"operation": "load_model"},
+            ) from error
         self._tracker = MotionTracker()
 
     def process(self, frame: np.ndarray) -> list[Detection]:
@@ -30,7 +39,10 @@ class YoloDetectorManager(DetectorManager):
             or frame.shape[2] != 3
             or min(frame.shape[:2]) <= 0
         ):
-            raise ValueError("YOLO requiere un frame BGR uint8 de forma H x W x 3")
+            raise ValidationError(
+                "YOLO requiere un frame BGR uint8 de forma H x W x 3",
+                code=codes.MODEL_INPUT_INVALID,
+            )
         height, width = frame.shape[:2]
         result = self._model.predict(
             np.ascontiguousarray(frame),

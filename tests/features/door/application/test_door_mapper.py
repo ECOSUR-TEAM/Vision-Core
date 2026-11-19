@@ -6,6 +6,7 @@ from vision_core.features.door.application.mappers.door_mapper import (
 from vision_core.features.door.domain.entities.zone_observation import ZoneObservation
 from vision_core.shared.application.dto import EventPayload, ObservationPayload
 from vision_core.shared.domain.event import Event
+from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 
 def test_event_to_dto_handles_missing_event():
@@ -22,6 +23,7 @@ def test_event_to_dto_copies_public_event_fields():
         person_id="person-1",
         timestamp=10.0,
         metadata={"zone": "interior"},
+        schema_version=EVENT_SCHEMA_VERSION,
     )
     event.metadata["zone"] = "exterior"
     assert payload.metadata == {"zone": "interior"}

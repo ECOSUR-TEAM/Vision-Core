@@ -1,10 +1,5 @@
 """Mappers between pipeline domain entities and transport DTOs."""
 
-from enum import Enum
-from typing import Any
-
-import numpy as np
-
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 from vision_core.shared.application.dto.bbox_payload import BBoxPayload
@@ -29,28 +24,12 @@ __all__ = [
 ]
 
 
-def _jsonable(value: Any) -> Any:
-    if isinstance(value, Enum):
-        return value.value
-    if isinstance(value, np.generic):
-        return value.item()
-    if isinstance(value, np.ndarray):
-        return value.tolist()
-    if isinstance(value, dict):
-        return {str(key): _jsonable(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple, set)):
-        return [_jsonable(item) for item in value]
-    if value is None or isinstance(value, (str, int, float, bool)):
-        return value
-    return str(value)
-
-
 def event_to_dto(event: Event) -> ResponsePipelineEvent:
     return ResponsePipelineEvent(
         event=required_str(event.event, "event"),
         person_id=required_str(event.person_id, "person_id"),
         timestamp=finite_float(event.timestamp, "timestamp"),
-        metadata=json_metadata(_jsonable(event.metadata)),
+        metadata=json_metadata(event.metadata),
     )
 
 

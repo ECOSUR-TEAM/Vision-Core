@@ -320,6 +320,7 @@ escenas controladas y pruebas reales optativas. Consulta:
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
 - [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
 - [Orquestación y cierre](docs/operations.md).
+- [Catálogo de errores](docs/errors.md) y [contratos versionados](docs/api-contracts.md).
 - [Detección y tracking](docs/validation.md).
 - [Resultados, anotaciones y evaluación pendiente de la sala](reports/room-evaluation.md).
 - [Hardware y problemas conocidos](docs/operations.md).

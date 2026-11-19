@@ -341,14 +341,14 @@
             el('emptyPeople').textContent = live ? 'No hay personas a la vista.' : 'Esperando la imagen…';
         }
         async function pollState() {
-            try { const response = await fetch('/api/state', { cache: 'no-store', signal: AbortSignal.timeout(3000) }); if (!response.ok) throw new Error(); state = await response.json(); if (state.frame < lastFrame) lastFrame = 0; }
+            try { const response = await fetch('/api/v1/state', { cache: 'no-store', signal: AbortSignal.timeout(3000) }); if (!response.ok) throw new Error(); state = await response.json(); if (state.frame < lastFrame) lastFrame = 0; }
             catch { state = null; }
             render(); setTimeout(pollState, 500);
         }
         async function videoLoop() {
             while (true) {
                 try {
-                    const response = await fetch(`/api/frame?after=${lastFrame}`, { cache: 'no-store', signal: AbortSignal.timeout(3000) });
+                    const response = await fetch(`/api/v1/frame?after=${lastFrame}`, { cache: 'no-store', signal: AbortSignal.timeout(3000) });
                     if (response.status === 204) continue;
                     if (!response.ok) throw new Error();
                     const next = URL.createObjectURL(await response.blob());

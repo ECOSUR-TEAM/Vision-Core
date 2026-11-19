@@ -1,8 +1,9 @@
 from vision_core.features.detection.domain.entities.detection import Detection
+from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.shared.domain.bbox import BBox
 
 
-class FakeDetector:
+class FakeDetector(DetectorManager):
     def __init__(self, detections_per_frame=None, lost_ids_per_call=None):
         self._detections_per_frame = detections_per_frame
         self._lost_ids_per_call = list(lost_ids_per_call or [])

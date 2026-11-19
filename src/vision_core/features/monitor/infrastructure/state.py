@@ -4,14 +4,18 @@ import threading
 import time
 from collections import Counter, deque
 
+from vision_core.shared.events import with_schema_version
+
 
 def _event_to_dict(event):
-    return {
-        "event": event.event,
-        "person_id": event.person_id,
-        "timestamp": event.timestamp,
-        "metadata": dict(event.metadata),
-    }
+    return with_schema_version(
+        {
+            "event": event.event,
+            "person_id": event.person_id,
+            "timestamp": event.timestamp,
+            "metadata": dict(event.metadata),
+        }
+    )
 
 
 class MonitorState:

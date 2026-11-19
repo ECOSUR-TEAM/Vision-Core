@@ -2,6 +2,8 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
+from vision_core.shared.errors import ConfigurationError
+
 from ..application.dto.request.request_close_video import RequestCloseVideo
 from ..application.dto.request.request_open_video import RequestOpenVideo
 from ..application.dto.request.request_read_frame import RequestReadFrame
@@ -47,12 +49,18 @@ def build_video(
         if kind == "file":
             selected_path = path or os.getenv("VISION_CORE_VIDEO_PATH", "")
             if not selected_path:
-                raise ValueError("Configura VISION_CORE_VIDEO_PATH para el adaptador file")
+                raise ConfigurationError(
+                    "Configura VISION_CORE_VIDEO_PATH para el adaptador file",
+                    context={"variable": "VISION_CORE_VIDEO_PATH"},
+                )
             source = FileVideoSource(selected_path)
         elif kind == "rtsp":
             source = RtspVideoSource.from_env()
         else:
-            raise ValueError("VISION_CORE_VIDEO_SOURCE debe ser rtsp o file")
+            raise ConfigurationError(
+                "VISION_CORE_VIDEO_SOURCE debe ser rtsp o file",
+                context={"variable": "VISION_CORE_VIDEO_SOURCE"},
+            )
     if latest:
         source = LatestFrameSource(source)
     return VideoDependencies(

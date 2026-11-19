@@ -17,6 +17,7 @@ from vision_core.features.pipeline.domain.ports.event_consumer import EventConsu
 from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
 from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 from vision_core.features.video.domain.ports.video_source import VideoSource
+from vision_core.shared.errors import PipelineError, ValidationError, codes
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,11 @@ class RunPipeline:
         resolved = []
         events: list[ResponsePipelineEvent] = []
         if self._expected_frame_size is not None and (frame.shape[1], frame.shape[0]) != self._expected_frame_size:
-            raise ValueError("La resolución del stream no coincide con la calibración de zonas")
+            raise PipelineError(
+                "La resolución del stream no coincide con la calibración de zonas",
+                code=codes.PIPELINE_CALIBRATION_MISMATCH,
+                context={"operation": "frame_size"},
+            )
         detections = self._detector.process(frame)
         visible_tracks = {det.track_id for det in detections}
         absent_tracks = set(self._person_by_track) - visible_tracks
@@ -95,14 +100,14 @@ class RunPipeline:
         for det in detections:
             coordinates = (det.bbox.x1, det.bbox.y1, det.bbox.x2, det.bbox.y2)
             if not all(math.isfinite(value) for value in coordinates):
-                raise ValueError("El detector devolvió coordenadas no finitas")
+                raise ValidationError("El detector devolvió coordenadas no finitas")
             if det.bbox.x2 <= det.bbox.x1 or det.bbox.y2 <= det.bbox.y1:
-                raise ValueError("El detector devolvió una caja sin área")
+                raise ValidationError("El detector devolvió una caja sin área")
             height, width = frame.shape[:2]
             x1, y1 = max(0, math.floor(det.bbox.x1)), max(0, math.floor(det.bbox.y1))
             x2, y2 = min(width, math.ceil(det.bbox.x2)), min(height, math.ceil(det.bbox.y2))
             if x2 <= x1 or y2 <= y1:
-                raise ValueError("La caja del detector está fuera del frame")
+                raise ValidationError("La caja del detector está fuera del frame")
             crop = frame[y1:y2, x1:x2]
             embedding = self._embed(crop)
             person_id = self._reid.resolve(det.track_id, embedding, det.bbox)

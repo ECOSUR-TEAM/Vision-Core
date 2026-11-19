@@ -14,6 +14,7 @@ from vision_core.features.pipeline.infrastructure.dependencies import build_pipe
 from vision_core.features.reid.infrastructure.dependencies import build_reid
 from vision_core.features.video.infrastructure.dependencies import build_video
 from vision_core.infrastructure.monitor import __main__ as monitor_cli
+from vision_core.shared.errors import ConfigurationError
 
 
 def build_video_with(source=None, *, path=None, latest=False):
@@ -32,7 +33,13 @@ def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_fai
             if zones is None:
                 analytics = UncalibratedAnalytics()
             else:
-                confirmation_frames = int(os.getenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "3"))
+                try:
+                    confirmation_frames = int(os.getenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "3"))
+                except (TypeError, ValueError) as error:
+                    raise ConfigurationError(
+                        "VISION_CORE_ZONE_CONFIRMATION_FRAMES debe ser un entero positivo.",
+                        context={"variable": "VISION_CORE_ZONE_CONFIRMATION_FRAMES"},
+                    ) from error
                 analytics = PolygonDoorAnalytics(
                     zones.exterior,
                     zones.interior,

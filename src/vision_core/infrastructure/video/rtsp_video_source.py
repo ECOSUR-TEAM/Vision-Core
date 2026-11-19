@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 
 from vision_core.domain.ports import VideoSource
+from vision_core.shared.errors import ConfigurationError, VideoSourceError, VideoSourceStateError
 
 from .frame_validation import validate_frame
 
@@ -37,15 +38,15 @@ class RtspVideoSource(VideoSource):
         except ValueError:
             valid = False
         if not valid:
-            raise ValueError("VISION_CORE_RTSP_URL debe ser una URL RTSP válida")
+            raise ConfigurationError("VISION_CORE_RTSP_URL debe ser una URL RTSP válida")
         if open_timeout_ms <= 0 or read_timeout_ms <= 0:
-            raise ValueError("Los timeouts deben ser positivos")
+            raise ConfigurationError("Los timeouts deben ser positivos")
         if reconnect_attempts < 0:
-            raise ValueError("Los reintentos no pueden ser negativos")
+            raise ConfigurationError("Los reintentos no pueden ser negativos")
         if not isinstance(decoder_threads, int) or isinstance(decoder_threads, bool) or decoder_threads < 0:
-            raise ValueError("Los hilos de decodificación deben ser un entero no negativo")
+            raise ConfigurationError("Los hilos de decodificación deben ser un entero no negativo")
         if not math.isfinite(reconnect_delay_seconds) or reconnect_delay_seconds < 0:
-            raise ValueError("La espera debe ser finita y no negativa")
+            raise ConfigurationError("La espera debe ser finita y no negativa")
         self._url = rtsp_url
         self._open_timeout = open_timeout_ms
         self._read_timeout = read_timeout_ms
@@ -60,7 +61,7 @@ class RtspVideoSource(VideoSource):
         """Read process environment; a local .env must be exported by the caller."""
         url = os.environ.get("VISION_CORE_RTSP_URL", "").strip()
         if not url:
-            raise ValueError("Configura VISION_CORE_RTSP_URL antes de iniciar")
+            raise ConfigurationError("Configura VISION_CORE_RTSP_URL antes de iniciar")
         return cls(
             url,
             open_timeout_ms=int(os.getenv("VISION_CORE_OPEN_TIMEOUT_MS", "5000")),
@@ -90,7 +91,7 @@ class RtspVideoSource(VideoSource):
             )
             if opened and self._cap.isOpened():
                 if not self._cap.set(cv2.CAP_PROP_CONVERT_RGB, 1):
-                    raise RuntimeError("El backend no permite asegurar salida BGR")
+                    raise VideoSourceStateError("El backend no permite asegurar salida BGR")
                 return True
         except cv2.error:
             pass  # Native errors may contain credentials; do not log their text.
@@ -108,7 +109,7 @@ class RtspVideoSource(VideoSource):
                 time.sleep(self._delay)
             if self._connect():
                 return
-        raise ConnectionError("No se pudo abrir RTSP")
+        raise VideoSourceError("No se pudo abrir RTSP")
 
     def _read(self):
         try:
@@ -122,7 +123,7 @@ class RtspVideoSource(VideoSource):
 
     def read_frame(self) -> np.ndarray | None:
         if self._cap is None:
-            raise RuntimeError("Llama a open() antes de read_frame()")
+            raise VideoSourceStateError("Llama a open() antes de read_frame()")
         frame = self._read()
         if frame is not None:
             return frame
@@ -135,7 +136,7 @@ class RtspVideoSource(VideoSource):
                     self.reconnections += 1
                     return frame
                 self.close()
-        raise ConnectionError("Se agotaron los reintentos del stream")
+        raise VideoSourceError("Se agotaron los reintentos del stream")
 
     def close(self):
         cap, self._cap = self._cap, None

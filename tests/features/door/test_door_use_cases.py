@@ -6,6 +6,7 @@ from vision_core.features.door.domain.entities.zone_observation import ZoneObser
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.shared.application.dto import EventPayload, ObservationPayload
 from vision_core.shared.domain.event import Event
+from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 
 class FakeDoorAnalytics(DoorAnalytics):
@@ -31,6 +32,7 @@ def test_update_zone_maps_event_without_camera_or_adapter():
         person_id="person-1",
         timestamp=10.0,
         metadata={"to_zone": "interior"},
+        schema_version=EVENT_SCHEMA_VERSION,
     )
 
 

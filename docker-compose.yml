@@ -72,7 +72,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import json,urllib.request; s=json.load(urllib.request.urlopen('http://127.0.0.1:8080/api/state',timeout=3)); raise SystemExit(0 if s['status']=='running' else 1)"]
+      test: ["CMD", "python", "-c", "import json,urllib.request; s=json.load(urllib.request.urlopen('http://127.0.0.1:8080/api/v1/state',timeout=3)); raise SystemExit(0 if s['status']=='running' else 1)"]
       interval: 15s
       timeout: 5s
       start_period: 180s

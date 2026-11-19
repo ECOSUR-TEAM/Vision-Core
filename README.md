@@ -318,7 +318,8 @@ locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unit
 escenas controladas y pruebas reales optativas. Consulta:
 
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
-- [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
+- [Decisiones de arquitectura](docs/adr/README.md), [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md) y [ADR 0002](docs/adr/0002-persistence-and-retention.md).
+- [Persistencia, retención y backup](docs/persistence.md).
 - [Orquestación y cierre](docs/operations.md).
 - [Detección y tracking](docs/validation.md).
 - [Resultados, anotaciones y evaluación pendiente de la sala](reports/room-evaluation.md).

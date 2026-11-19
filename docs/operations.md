@@ -81,9 +81,12 @@ La región puerta se configura y dibuja, pero no restringe los eventos: se usan
 transiciones exterior/interior/fuera. Interior tiene prioridad en solapamientos.
 FALSE_ALARM significa exterior→fuera, incluso tras una salida previa. El historial
 se acota por persona, pero no se eliminan automáticamente todas las personas antiguas
-de la analítica. Estado e identidades viven en memoria y se pierden al reiniciar.
+de la analítica. Con `VISION_CORE_DB_PATH` definido, eventos, zonas, tracks e
+identidades se conservan entre reinicios; sin esa variable todo sigue en memoria.
+La retención se aplica en segundo plano según los TTL de
+[persistencia](persistence.md).
 
-`main.py` no persiste eventos ni tiene supervisor. Un fallo no recuperable detiene
+`main.py` (runner JSONL) no persiste eventos en la base ni tiene supervisor. Un fallo no recuperable detiene
 el proceso tras intentar cerrar el video. El runner JSONL es la salida estructurada
 para pruebas. Los logs nativos pueden contener URLs; revisar antes de compartir.
 

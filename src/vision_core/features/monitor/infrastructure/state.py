@@ -33,10 +33,15 @@ class MonitorState:
         self.processing_ms = 0.0
         self.fps = 0.0
         self.dropped = 0
+        self.persistence = None
 
     def set_status(self, status, error=None):
         with self.lock:
             self.status, self.error = status, error
+
+    def set_persistence(self, health):
+        with self.lock:
+            self.persistence = health
 
     def event(self, event):
         with self.lock:
@@ -92,4 +97,5 @@ class MonitorState:
                 "processing_ms": self.processing_ms,
                 "fps": self.fps,
                 "dropped_frames": self.dropped,
+                "persistence": self.persistence,
             }

@@ -3,8 +3,15 @@
 import logging
 import os
 import threading
+import time
+import uuid
 
 from vision_core.application.vision_core_app import VisionCoreApp
+from vision_core.infrastructure.persistence.persistence_service import PersistenceService
+from vision_core.infrastructure.persistence.persisting_reid_memory import PersistingReIDMemory
+from vision_core.infrastructure.persistence.retention_job import RetentionJob
+from vision_core.infrastructure.persistence.retention_worker import RetentionWorker
+from vision_core.settings.persistence import PersistenceSettings
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +63,7 @@ def build_vision_core_app(
     detector=None,
     reid_memory=None,
     embedder=None,
+    persistence=None,
 ) -> VisionCoreApp:
     if detector is None:
         from vision_core.infrastructure.detection.yolo_detector_manager import (
@@ -73,6 +81,8 @@ def build_vision_core_app(
         )
 
         embedder = TorchvisionEmbeddingExtractor.from_env()
+    if persistence is not None and getattr(getattr(persistence, "settings", None), "enabled", False):
+        reid_memory = PersistingReIDMemory(reid_memory, persistence.save_identity)
     return VisionCoreApp(
         video_source=video_source,
         detector=detector,
@@ -83,6 +93,12 @@ def build_vision_core_app(
         expected_frame_size=expected_frame_size,
         on_frame=on_frame,
     )
+
+
+def build_persistence(settings=None) -> PersistenceService:
+    if settings is None:
+        settings = PersistenceSettings.from_env()
+    return PersistenceService(settings)
 
 
 def build_monitor_state(*, demo=False):
@@ -130,31 +146,83 @@ class MonitorRuntime:
             self._thread.join(timeout)
 
 
-def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None):
+def build_monitor_runtime(
+    state,
+    *,
+    zones_file=None,
+    exit_on_error=False,
+    on_failure=None,
+    persistence=None,
+    start_retention=True,
+):
     from vision_core.infrastructure.monitor.renderer import render_frame
     from vision_core.infrastructure.video.latest_frame_source import LatestFrameSource
 
+    if persistence is None:
+        persistence = build_persistence()
+    session_id = str(uuid.uuid4())
+    set_persistence = getattr(state, "set_persistence", None)
+    if set_persistence is not None:
+        health = persistence.health() if hasattr(persistence, "health") else {"enabled": False}
+        set_persistence(health)
+
     def pipeline(stop_requested):
         source = None
+        retention_worker = None
         try:
+            persistence.start_session(session_id, time.time())
             # Adapters load models lazily so the monitor can report startup failures.
             zones = build_zones(zones_file) if zones_file else None
+            if zones is not None:
+                persistence.save_zones((zones.door, zones.exterior, zones.interior))
             analytics = build_door_analytics(zones)
             source = LatestFrameSource(build_video_source())
-            app = build_vision_core_app(
-                video_source=source,
-                door_analytics=analytics,
-                on_event=state.event,
-                expected_frame_size=(zones.width, zones.height) if zones else None,
-                on_frame=lambda frame, tracks, ms: state.publish(
+
+            def on_event(event):
+                state.event(event)
+                persistence.append_event(event, session_id)
+                persistence.record_metric(session_id, event.event, 1.0, event.timestamp)
+
+            def on_frame(frame, tracks, ms):
+                for track in tracks:
+                    if track.track_id is None:
+                        continue
+                    bbox = track.bbox
+                    persistence.append_track(
+                        session_id,
+                        track.track_id,
+                        track.person_id,
+                        (bbox.x1, bbox.y1, bbox.x2, bbox.y2),
+                        time.time(),
+                    )
+                state.publish(
                     *render_frame(frame, tracks, zones, analytics, state.person_label, demo=state.demo),
                     ms,
                     source.dropped_frames,
-                ),
+                )
+
+            app = build_vision_core_app(
+                video_source=source,
+                door_analytics=analytics,
+                on_event=on_event,
+                expected_frame_size=(zones.width, zones.height) if zones else None,
+                on_frame=on_frame,
+                persistence=persistence,
             )
+            settings = getattr(persistence, "settings", None)
+            if start_retention and settings is not None and settings.enabled:
+                retention_worker = RetentionWorker(
+                    RetentionJob(persistence),
+                    interval_seconds=settings.prune_interval_seconds,
+                )
+                retention_worker.start()
             app.run(stop_requested)
         finally:
+            if retention_worker is not None:
+                retention_worker.stop()
+            persistence.finish_session(session_id, time.time())
             if source is not None:
                 source.close()
+            persistence.close()
 
     return MonitorRuntime(pipeline, state, exit_on_error=exit_on_error, on_failure=on_failure)

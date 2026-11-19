@@ -61,12 +61,16 @@ services:
       VISION_CORE_RTSP_URL: rtsp://frigate:8554/entrada
       VISION_CORE_MONITOR_UNCALIBRATED: ${VISION_CORE_MONITOR_UNCALIBRATED:-1}
       VISION_CORE_MONITOR_EXIT_ON_ERROR: "1"
+      VISION_CORE_DB_ENABLED: ${VISION_CORE_DB_ENABLED:-1}
+      VISION_CORE_DB_PATH: ${VISION_CORE_DB_PATH:-/app/data/vision-core.sqlite3}
+      VISION_CORE_DB_FAIL_OPEN: ${VISION_CORE_DB_FAIL_OPEN:-1}
       TORCH_HOME: /model-cache/torch
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./config:/app/config:ro
       - vision-model-cache:/model-cache
+      - vision-data:/app/data
     depends_on:
       frigate:
         condition: service_healthy
@@ -80,3 +84,4 @@ services:
 
 volumes:
   vision-model-cache:
+  vision-data:

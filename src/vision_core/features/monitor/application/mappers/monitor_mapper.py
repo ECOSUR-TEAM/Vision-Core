@@ -16,6 +16,7 @@ def snapshot_to_response(snapshot: dict[str, object]) -> ResponseSnapshot:
         processing_ms=snapshot["processing_ms"],
         fps=snapshot["fps"],
         dropped_frames=snapshot["dropped_frames"],
+        persistence=snapshot.get("persistence"),
     )
 
 

@@ -15,3 +15,4 @@ class ResponseSnapshot:
     processing_ms: float
     fps: float
     dropped_frames: int
+    persistence: dict[str, object] | None = None

@@ -52,7 +52,7 @@ El Dev Container es opcional: quien ya tenga `.venv` puede continuar con Make.
 
 ```bash
 docker compose --profile synthetic up
-docker compose --profile webcam up
+docker compose -f docker-compose.webcam.yml --profile webcam up
 docker compose --profile camera up
 docker compose --profile file up
 ```
@@ -94,7 +94,7 @@ python -c "import cv2; print(cv2.__version__, cv2.getBuildInformation())"
 
 CPU funciona para desarrollo. Para CUDA, instala una pareja torch/torchvision
 compatible con el driver antes de `make setup` y configura
-`VISION_CORE_DETECTION_DEVICE=cuda` o `VISION_CORE_EMBEDDING_DEVICE=cuda`.
+`VISION_CORE_EMBEDDING_DEVICE=cuda`.
 
 ### Permisos de cámara
 
@@ -106,8 +106,8 @@ sudo usermod -aG video "$USER"
 
 ### Puertos ocupados
 
-El monitor usa `8080`, Frigate `15000` y RTSP `8554`. Comprueba procesos:
+El monitor usa `8080`, Frigate `15000` y RTSP `28554`. Comprueba procesos:
 
 ```bash
-lsof -nP -iTCP:8080 -iTCP:15000 -iTCP:8554 -sTCP:LISTEN
+lsof -nP -iTCP:8080 -iTCP:15000 -iTCP:28554 -sTCP:LISTEN
 ```

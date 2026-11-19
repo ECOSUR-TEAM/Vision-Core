@@ -1,10 +1,10 @@
 PYTHON = $(if $(wildcard .venv/bin/python),.venv/bin/python,python)
-PIP = $(if $(wildcard .venv/bin/python),.venv/bin/python -m pip,python -m pip)
+PIP = .venv/bin/python -m pip
 
 .PHONY: setup test lint format format-check run docker-build synthetic clean
 
 setup:
-	@python3.11 -m venv .venv
+	@python3 -m venv .venv
 	@$(PIP) install --upgrade pip
 	@$(PIP) install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 	@$(PIP) install -r requirements.txt
@@ -39,7 +39,8 @@ synthetic:
 	@test -f dev-data/sample.avi || $(PYTHON) -m vision_core.scripts.create_pipeline_sample --allow-existing dev-data
 
 docker-build:
+	@docker compose --profile synthetic config -q
 	@docker compose --profile synthetic build
 
 clean:
-	@rm -rf dev-data
+	@rm -f dev-data/sample.avi

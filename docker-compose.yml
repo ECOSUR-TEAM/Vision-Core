@@ -8,7 +8,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      FRIGATE_CAMERA_RTSP_URL: ${FRIGATE_CAMERA_RTSP_URL:?Configura la URL de la cámara en .env}
+      FRIGATE_CAMERA_RTSP_URL: ${FRIGATE_CAMERA_RTSP_URL:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "/app/camera_bridge.py", "check"]
@@ -35,7 +35,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      FRIGATE_CAMERA_RTSP_URL: ${FRIGATE_CAMERA_RTSP_URL:?Configura la URL de la cámara en .env}
+      FRIGATE_CAMERA_RTSP_URL: ${FRIGATE_CAMERA_RTSP_URL:-}
     ports:
       - "127.0.0.1:15000:5000"
       - "127.0.0.1:28554:8554"
@@ -83,7 +83,6 @@ services:
       retries: 4
 
   vision-core-synthetic:
-    profiles: ["synthetic", "file"]
     build:
       context: .
       target: runtime

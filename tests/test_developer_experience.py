@@ -20,10 +20,13 @@ def test_devcontainer_recommends_python_ruff_and_docker():
     assert "ms-azuretools.vscode-docker" in extensions
 
 
-def test_compose_defines_camera_webcam_and_synthetic_profiles():
+def test_compose_defines_default_and_optional_profiles():
     compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
+    assert compose["services"], "El stack por defecto debe tener servicios"
     profiles = {profile for service in compose["services"].values() for profile in service.get("profiles", [])}
-    assert {"camera", "synthetic", "file"} <= profiles
+    assert "camera" in profiles
+    assert "vision-core-synthetic" in compose["services"]
+    assert not compose["services"]["vision-core-synthetic"].get("profiles", [])
 
     webcam = yaml.safe_load((ROOT / "docker-compose.webcam.yml").read_text(encoding="utf-8"))
     assert any("webcam" in service.get("profiles", []) for service in webcam["services"].values())

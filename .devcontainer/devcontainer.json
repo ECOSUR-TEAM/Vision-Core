@@ -20,7 +20,7 @@
       }
     }
   },
-  "forwardPorts": [8080, 15000, 8554],
+  "forwardPorts": [8080, 15000, 28554],
   "portsAttributes": {
     "8080": {
       "label": "Vision Core Monitor"

@@ -65,8 +65,10 @@ instalar el resto de requirements. Comprueba el entorno:
 python -c "import torch, torchvision, cv2; print(torch.__version__, torchvision.__version__, cv2.__version__); print('CUDA disponible:', torch.cuda.is_available())"
 ```
 
-`requirements.txt` no fija versiones. Conserva `python -m pip freeze` con cada
-medición para reproducirla. No se requiere OSNet, torchreid ni `third_party/`.
+`requirements.txt` fija las versiones directas (excepto `torch`/`torchvision`,
+instalados desde el índice CPU). Conserva `python -m pip freeze` con cada
+medición para reproducirla. Consulta [seguridad y supply chain](docs/security.md).
+No se requiere OSNet, torchreid ni `third_party/`.
 
 ## Ejecutar tests localmente
 
@@ -253,7 +255,8 @@ El nombre se normaliza a minúsculas; para este repositorio son
 
 Tags disponibles: `main`, `develop`, el SHA corto del commit (`sha-<7>`), tags
 semánticos (al subir `v0.1.0` se genera la etiqueta `0.1.0`) y `latest` en la rama
-por defecto.
+por defecto. Cada publicación escanea ambas imágenes con Trivy y sube el SARIF a
+GitHub Security; una vulnerabilidad alta/crítica corregible falla el job.
 
 ```bash
 # Si el paquete es privado, autentícate antes:
@@ -262,6 +265,15 @@ docker pull ghcr.io/ecosur-team/vision-core:main
 docker pull ghcr.io/ecosur-team/vision-core-camera-bridge:main
 docker pull ghcr.io/ecosur-team/vision-core:0.1.0
 ```
+
+## Seguridad y supply chain
+
+Dependabot revisa semanalmente `pip`, GitHub Actions y Docker con PRs agrupados;
+Dependency Review y CodeQL protegen los PRs; Trivy escanea las imágenes en CD.
+La política de respuesta, las excepciones y la activación de secret scanning y
+push protection están en [SECURITY.md](SECURITY.md). Los procedimientos de
+actualización de dependencias y regeneración del lockfile están en
+[docs/security.md](docs/security.md).
 
 ## Módulos y responsabilidades
 

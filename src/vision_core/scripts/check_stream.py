@@ -44,10 +44,13 @@ def probe(url, transport):
 
 
 def measure(source, count, detector=None):
-    reads, intervals, processing = [], [], []
-    size = None
+    reads: list[float] = []
+    intervals: list[float] = []
+    processing: list[float] = []
+    size: tuple[int, int] | None = None
     previous = None
     start = time.perf_counter()
+    opened = start
     try:
         source.open()
         opened = time.perf_counter()
@@ -68,17 +71,18 @@ def measure(source, count, detector=None):
     finally:
         source.close()
 
-    def stats(values):
-        return (
-            {
-                key: float(value) * 1000
-                for key, value in zip(
-                    ("mean_ms", "p95_ms", "max_ms"), (np.mean(values), np.percentile(values, 95), max(values))
-                )
-            }
-            if values
-            else None
+    if size is None:
+        raise RuntimeError("No se recibieron frames durante la medición")
+
+    def stats(values: list[float]) -> dict[str, float] | None:
+        if not values:
+            return None
+        statistics = (
+            float(np.mean(values)),
+            float(np.percentile(values, 95)),
+            float(max(values)),
         )
+        return {key: value * 1000 for key, value in zip(("mean_ms", "p95_ms", "max_ms"), statistics)}
 
     return {
         "frames": count,

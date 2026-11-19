@@ -4,6 +4,7 @@ import math
 import time
 import uuid
 from collections import deque
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -43,7 +44,7 @@ class InMemoryReID(ReIDMemory):
         self.gallery_size = gallery_size
         self._active: dict[int, str] = {}
         self._lost: dict[str, tuple[np.ndarray, float]] = {}
-        self._gallery: dict[str, deque] = {}
+        self._gallery: dict[str, deque[np.ndarray]] = {}
         self._retired_tracks: dict[int, str] = {}
         self._reserved: set[str] = set()
 
@@ -82,7 +83,7 @@ class InMemoryReID(ReIDMemory):
         if not gallery or max(float(np.dot(v, vector)) for v in gallery) < 0.98:
             gallery.append(vector.copy())
 
-    def resolve(self, track_id: int, embedding: np.ndarray, bbox: BBox) -> str:
+    def resolve(self, track_id: int, embedding: Sequence[float], bbox: BBox) -> str:
         self._purge(time.monotonic())
         vector = self._normalize(embedding)
         if track_id in self._active:
@@ -121,7 +122,7 @@ class InMemoryReID(ReIDMemory):
         self._remember(person, vector)
         return person
 
-    def mark_lost(self, person_id: str, embedding: np.ndarray) -> None:
+    def mark_lost(self, person_id: str, embedding: Sequence[float]) -> None:
         now = time.monotonic()
         self._purge(now)
         vector = self._normalize(embedding)

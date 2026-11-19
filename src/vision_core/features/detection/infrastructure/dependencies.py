@@ -37,4 +37,3 @@ def build_detection(
             max_missed_frames=max_missed_frames if max_missed_frames is not None else settings.max_missed_frames,
         )
     return DetectionDependencies(detector=detector, detect_persons=DetectPersons(detector))
-    return DetectionDependencies(detector=detector, detect_persons=DetectPersons(detector))

@@ -1,6 +1,9 @@
 # Configuracion tipada
 
-La configuracion se carga una sola vez al arranque con `vision_core.settings.Settings.from_env()`.
+La configuracion se normaliza y valida con `vision_core.settings.Settings.from_env()`.
+El composition root carga `Settings` al arranque y pasa esos valores a los adaptadores;
+los puntos de entrada heredados pueden reconstruir su seccion con `validate_startup=False`
+para no exigir archivos o URLs presentes solo en despliegues completos.
 Todas las variables se convierten a tipos Python y se validan antes de construir la aplicacion.
 Los valores invalidos producen `SettingsError` con la variable exacta y una accion correctiva.
 
@@ -26,7 +29,7 @@ Los valores invalidos producen `SettingsError` con la variable exacta y una acci
 | Variable | Predeterminado | Validacion |
 |---|---|---|
 | `VISION_CORE_MODEL_PATH` | `yolov8n.pt` | Archivo existente |
-| `VISION_CORE_DETECTION_DEVICE` | Automatico | `cpu`, `cuda` o `cuda:<indice>` |
+| `VISION_CORE_DETECTION_DEVICE` | `cpu` | `cpu`, `cuda` o `cuda:<indice>` |
 | `VISION_CORE_DETECTION_CONFIDENCE` | `0.5` | Mayor que 0 y menor o igual a 1 |
 | `VISION_CORE_DETECTION_CLASSES` | `0` | Clases COCO separadas por comas |
 | `VISION_CORE_TRACKING_ENABLED` | `1` | Booleano |
@@ -50,7 +53,7 @@ Los valores invalidos producen `SettingsError` con la variable exacta y una acci
 | `VISION_CORE_ZONES_FILE` | Ninguno | Archivo existente si se usan zonas reales |
 | `VISION_CORE_ZONE_CONFIRMATION_FRAMES` | `3` | Entero positivo |
 | `VISION_CORE_MONITOR_DEMO_ZONES` | `0` | Booleano |
-| `VISION_CORE_MONITOR_UNCALIBRATED` | `0` | Booleano |
+| `VISION_CORE_MONITOR_UNCALIBRATED` | `0` (Compose: `1`) | Booleano |
 | `VISION_CORE_MONITOR_HOST` | `127.0.0.1` | Host no vacio |
 | `VISION_CORE_MONITOR_PORT` | `8080` | Puerto entre 1 y 65535 |
 | `VISION_CORE_MONITOR_EXIT_ON_ERROR` | `0` | Booleano |

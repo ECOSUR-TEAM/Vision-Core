@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 
 from tests.fakes.fake_detector import FakeDetector
@@ -7,6 +9,7 @@ from tests.fakes.fake_video_source import FakeVideoSource
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.features.pipeline.infrastructure.dependencies import build_pipeline
+from vision_core.shared.application.dto.serialization import dumps_json
 
 
 def test_build_pipeline_wires_all_port_fakes():
@@ -57,6 +60,10 @@ def test_process_frame_returns_serializable_response():
 
     response = app.process_frame(RequestProcessFrame(np.zeros((20, 20, 3), dtype=np.uint8)))
 
-    assert response.people[0]["person_id"] == "person-1"
-    assert response.events[0]["event"] == "PERSON_ENTERED"
+    payload = json.loads(dumps_json(response))
+
+    assert response.people[0].person_id == "person-1"
+    assert response.events[0].event == "PERSON_ENTERED"
+    assert payload["people"][0]["person_id"] == "person-1"
+    assert payload["events"][0]["event"] == "PERSON_ENTERED"
     assert response.processing_ms >= 0

@@ -1,6 +1,8 @@
 import ast
 from pathlib import Path
 
+import pytest
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SRC = PROJECT_ROOT / "src" / "vision_core"
 FEATURES = SRC / "features"
@@ -21,17 +23,6 @@ ALLOWED_DTO_STDLIB_IMPORTS = {
 ALLOWED_DTO_STDLIB_ROOTS = {module.split(".", 1)[0] for module in ALLOWED_DTO_STDLIB_IMPORTS}
 
 
-def _imports(path: Path) -> list[str]:
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-    modules = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            modules.extend(alias.name for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            modules.append(node.module)
-    return modules
-
-
 def _import_records(path: Path) -> list[tuple[str, int]]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
     records = []
@@ -46,12 +37,21 @@ def _import_records(path: Path) -> list[tuple[str, int]]:
 def _resolve_relative_import(path: Path, module: str, level: int) -> str:
     if level == 0:
         return module
-    package = path.parent.relative_to(SRC).parts
+    try:
+        package = path.parent.relative_to(SRC).parts
+    except ValueError:
+        return f"{'.' * level}{module}"
+    if level - 1 > len(package):
+        return f"{'.' * level}{module}"
     base = package[: len(package) - (level - 1)]
     parts = ("vision_core", *base)
     if module:
         parts = (*parts, module)
     return ".".join(parts)
+
+
+def _imports(path: Path) -> list[str]:
+    return [_resolve_relative_import(path, module, level) for module, level in _import_records(path)]
 
 
 def _python_files(root: Path):
@@ -172,6 +172,39 @@ def test_only_composition_roots_import_multiple_feature_factories():
         if len(imported_factories) > 1:
             factory_importers.append((path, sorted(imported_factories)))
 
-    assert (
-        not factory_importers
-    ), f"Only the root main.py composition root may import feature factories: {factory_importers}"
+    assert not factory_importers, (
+        f"Only the root main.py composition root may import feature factories: {factory_importers}"
+    )
+
+
+def test_imports_resolve_relative_modules():
+    path = FEATURES / "detection" / "domain" / "sample.py"
+
+    assert _resolve_relative_import(path, "application.use_cases", 2) == (
+        "vision_core.features.detection.application.use_cases"
+    )
+    assert _resolve_relative_import(path, "", 1) == "vision_core.features.detection.domain"
+
+
+def test_domain_rule_detects_relative_imports(tmp_path, monkeypatch):
+    domain = tmp_path / "features" / "detection" / "domain"
+    domain.mkdir(parents=True)
+    (domain / "bad.py").write_text("from ..application.use_cases import Foo\n", encoding="utf-8")
+    monkeypatch.setitem(globals(), "SRC", tmp_path)
+    monkeypatch.setitem(globals(), "FEATURES", tmp_path / "features")
+
+    with pytest.raises(AssertionError, match="domain import boundary violated"):
+        test_domain_does_not_import_application_or_infrastructure()
+
+
+def test_cross_feature_rule_detects_relative_imports(tmp_path, monkeypatch):
+    domain = tmp_path / "features" / "door" / "domain"
+    domain.mkdir(parents=True)
+    (domain / "bad.py").write_text(
+        "from ...pipeline.infrastructure.dependencies import build_pipeline\n", encoding="utf-8"
+    )
+    monkeypatch.setitem(globals(), "SRC", tmp_path)
+    monkeypatch.setitem(globals(), "FEATURES", tmp_path / "features")
+
+    with pytest.raises(AssertionError, match="cross-feature infrastructure import violated"):
+        test_features_do_not_import_another_features_infrastructure()

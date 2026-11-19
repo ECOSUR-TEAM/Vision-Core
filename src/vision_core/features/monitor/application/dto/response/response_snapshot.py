@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 
+from vision_core.shared.application.dto.event_payload import EventPayload
+from vision_core.shared.application.dto.monitor_person_payload import MonitorPersonPayload
+
 
 @dataclass(frozen=True, slots=True)
 class ResponseSnapshot:
@@ -9,8 +12,8 @@ class ResponseSnapshot:
     frame: int
     updated_at: float | None
     age_seconds: float | None
-    people: tuple[dict[str, object], ...]
-    events: tuple[dict[str, object], ...]
+    people: tuple[MonitorPersonPayload, ...]
+    events: tuple[EventPayload, ...]
     counts: dict[str, int]
     processing_ms: float
     fps: float

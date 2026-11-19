@@ -1,5 +1,5 @@
 import json
-from dataclasses import MISSING, FrozenInstanceError, asdict, fields, is_dataclass
+from dataclasses import MISSING, FrozenInstanceError, fields, is_dataclass
 from typing import get_type_hints
 
 import pytest
@@ -8,6 +8,8 @@ from vision_core.features.door.application.dto.request.request_get_history impor
 from vision_core.features.door.application.dto.request.request_update import RequestUpdate
 from vision_core.features.door.application.dto.response.response_get_history import ResponseGetHistory
 from vision_core.features.door.application.dto.response.response_update import ResponseUpdate
+from vision_core.shared.application.dto import EventPayload, ObservationPayload
+from vision_core.shared.application.dto.serialization import dumps_json
 
 DTO_CLASSES = (RequestGetHistory, RequestUpdate, ResponseGetHistory, ResponseUpdate)
 
@@ -25,10 +27,10 @@ def test_request_fields_and_types():
 
 def test_response_fields_and_types():
     assert [field.name for field in fields(ResponseGetHistory)] == ["observations"]
-    assert get_type_hints(ResponseGetHistory) == {"observations": tuple[dict[str, object], ...]}
+    assert get_type_hints(ResponseGetHistory) == {"observations": tuple[ObservationPayload, ...]}
 
     assert [field.name for field in fields(ResponseUpdate)] == ["event"]
-    assert get_type_hints(ResponseUpdate) == {"event": dict[str, object] | None}
+    assert get_type_hints(ResponseUpdate) == {"event": EventPayload | None}
 
     for dto in (ResponseGetHistory, ResponseUpdate):
         assert all(field.default is MISSING and field.default_factory is MISSING for field in fields(dto))
@@ -52,11 +54,18 @@ def test_dtos_are_immutable_and_slotted():
 
 
 def test_responses_are_json_serializable():
-    update = ResponseUpdate(event={"event": "PERSON_ENTERED", "person_id": "person-1", "timestamp": 10.0})
-    history = ResponseGetHistory(observations=({"position": (1.0, 2.0), "zone": "exterior", "timestamp": 10.0},))
+    update = ResponseUpdate(event=EventPayload("PERSON_ENTERED", "person-1", 10.0, {"zone": "interior"}))
+    history = ResponseGetHistory(observations=(ObservationPayload((1.0, 2.0), "exterior", 10.0),))
 
-    update_payload = json.loads(json.dumps(asdict(update), allow_nan=False))
-    history_payload = json.loads(json.dumps(asdict(history), allow_nan=False))
+    update_payload = json.loads(dumps_json(update))
+    history_payload = json.loads(dumps_json(history))
 
     assert update_payload["event"]["person_id"] == "person-1"
     assert history_payload["observations"][0]["zone"] == "exterior"
+
+
+def test_nested_payloads_are_immutable():
+    observation = ObservationPayload((1.0, 2.0), "exterior", 10.0)
+
+    with pytest.raises(FrozenInstanceError):
+        observation.zone = "interior"

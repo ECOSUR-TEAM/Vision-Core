@@ -203,18 +203,25 @@ son código del feature y permanecen fuera de `src/vision_core/`.
   etc. Un DTO por operación y sentido.
 - Inmutables: `@dataclass(frozen=True, slots=True)`, sin lógica de negocio.
 - Solo tipos serializables y transportables (stdlib y `typing`). Sin `numpy`,
-  `cv2`, `torch`, ni imports de `domain/` o `infrastructure/`.
-- Los mappers viven en `application/mappers/` y convierten DTO ↔ dominio. Un
-  mapper no importa adaptadores concretos.
+  `cv2`, `torch`, ni imports de `domain/` o `infrastructure/`. Los campos
+  anidados son payloads inmutables (`@dataclass(frozen=True, slots=True)`) o
+  alias concretos (`JSONValue`); `dict[str, object]` y `Any` no forman parte del
+  contrato.
+- Excepción documentada: el frame crudo se anota como `FrameLike` (Protocol
+  estructural). En producción es un `numpy.ndarray`, pero el DTO no importa
+  numpy: `video_mapper` valida dtype y forma en la frontera.
+- Los mappers viven en `application/mappers/` y convierten DTO ↔ dominio,
+  devolviendo payloads tipados. Un mapper no importa adaptadores concretos y
+  valida finitud/rango antes de convertir.
 - La lista blanca de imports es: stdlib/`typing`, re-exports del propio paquete
-  `application/dto` y, si se materializa, `shared/application/dto/base.py`.
-  Todo lo demás (dominio, infraestructura, frameworks de visión u otros
-  features) queda fuera del DTO.
-- La serialización JSON usa `dataclasses.asdict(...)` y
-  `json.dumps(..., allow_nan=False)`. Los payloads binarios viajan como `bytes`
-  y no se serializan como JSON.
-- No existe un `dto/` global. Si un DTO llega a ser compartido por varios
-  features, se mueve a `shared/application/dto/` con justificación explícita.
+  `application/dto` y `shared/application/dto`. Todo lo demás (dominio,
+  infraestructura, frameworks de visión u otros features) queda fuera del DTO.
+- La serialización JSON usa `shared/application/dto/serialization.py`
+  (`to_json_value`/`dumps_json`, con `allow_nan=False`). Los payloads binarios
+  viajan como `bytes`, se sirven como `image/jpeg` y se omiten del JSON.
+- No existe un `dto/` global de operaciones. Los payloads compartidos por
+  varios slices (bbox, event, observation, track, monitor person) viven en
+  `shared/application/dto/` para no duplicar el contrato en cada feature.
 
 La guía practica y los ejemplos de esta convención están en
 [`docs/architecture.md`](../architecture.md#convención-dto).

@@ -1,10 +1,9 @@
-import json
-from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlsplit
 
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
+from vision_core.shared.application.dto.serialization import dumps_json
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -16,7 +15,7 @@ class Handler(BaseHTTPRequestHandler):
             body, kind, code = self.server.page, "text/html; charset=utf-8", 200
         elif path == "/api/state":
             response = self.server.get_snapshot.execute(RequestSnapshot())
-            body = json.dumps(asdict(response), allow_nan=False).encode()
+            body = dumps_json(response).encode()
             kind, code = "application/json", 200
         elif path == "/api/frame":
             query = parse_qs(url.query)

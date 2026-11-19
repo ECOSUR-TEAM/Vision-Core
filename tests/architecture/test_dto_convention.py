@@ -14,7 +14,7 @@ def _dto_files() -> list[Path]:
             continue
         dto_root = feature / "application" / "dto"
         for direction in ("request", "response"):
-            files.extend(sorted((dto_root / direction).glob(f"{direction}_*.py")))
+            files.extend(path for path in sorted((dto_root / direction).glob("*.py")) if path.name != "__init__.py")
     return files
 
 
@@ -54,8 +54,8 @@ def test_dto_file_name_matches_class_name(path):
 def test_dtos_are_frozen_and_slotted(path):
     keywords = _dataclass_keywords(_class_definition(path))
 
-    assert _is_true(keywords["frozen"])
-    assert _is_true(keywords["slots"])
+    assert _is_true(keywords.get("frozen")), f"{path}: missing frozen=True"
+    assert _is_true(keywords.get("slots")), f"{path}: missing slots=True"
 
 
 @pytest.mark.parametrize("path", _dto_files(), ids=lambda path: path.relative_to(PROJECT_ROOT).as_posix())

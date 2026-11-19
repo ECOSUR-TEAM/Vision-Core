@@ -1,5 +1,5 @@
 import json
-from dataclasses import MISSING, FrozenInstanceError, asdict, fields, is_dataclass, replace
+from dataclasses import MISSING, FrozenInstanceError, fields, is_dataclass
 from typing import get_type_hints
 
 import pytest
@@ -8,8 +8,18 @@ from vision_core.features.monitor.application.dto.request.request_frame import R
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
 from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
 from vision_core.features.monitor.application.dto.response.response_snapshot import ResponseSnapshot
+from vision_core.shared.application.dto import BBoxPayload, EventPayload, MonitorPersonPayload
+from vision_core.shared.application.dto.serialization import dumps_json
 
 DTO_CLASSES = (RequestFrame, RequestSnapshot, ResponseFrame, ResponseSnapshot)
+PERSON = MonitorPersonPayload(
+    person_id="person-1",
+    bbox=BBoxPayload(1, 2, 3, 4),
+    confidence=0.9,
+    track_id=7,
+    zone="interior",
+    display_name="Persona 1",
+)
 
 
 def test_request_fields_and_types():
@@ -47,8 +57,8 @@ def test_response_fields_and_types():
         "frame": int,
         "updated_at": float | None,
         "age_seconds": float | None,
-        "people": tuple[dict[str, object], ...],
-        "events": tuple[dict[str, object], ...],
+        "people": tuple[MonitorPersonPayload, ...],
+        "events": tuple[EventPayload, ...],
         "counts": dict[str, int],
         "processing_ms": float,
         "fps": float,
@@ -99,24 +109,34 @@ def test_snapshot_response_is_json_serializable():
         frame=4,
         updated_at=10.0,
         age_seconds=0.1,
-        people=({"person_id": "person-1"},),
-        events=(),
+        people=(PERSON,),
+        events=(EventPayload("PERSON_ENTERED", "person-1", 10.0, {"zone": "interior"}),),
         counts={"interior": 1},
         processing_ms=2.0,
         fps=15.0,
         dropped_frames=0,
     )
 
-    payload = json.loads(json.dumps(asdict(response), allow_nan=False))
+    payload = json.loads(dumps_json(response))
 
     assert payload["status"] == "running"
     assert payload["counts"] == {"interior": 1}
-    assert payload["people"] == [{"person_id": "person-1"}]
+    assert payload["people"] == [
+        {
+            "person_id": "person-1",
+            "bbox": {"x1": 1, "y1": 2, "x2": 3, "y2": 4},
+            "confidence": 0.9,
+            "track_id": 7,
+            "zone": "interior",
+            "display_name": "Persona 1",
+        }
+    ]
 
 
 def test_frame_response_serializes_without_binary_payload():
-    response = replace(ResponseFrame(jpeg=b"jpeg", sequence=4), jpeg=None)
+    response = ResponseFrame(jpeg=b"jpeg", sequence=4)
 
-    payload = json.loads(json.dumps(asdict(response), allow_nan=False))
+    payload = json.loads(dumps_json(response))
 
     assert payload == {"jpeg": None, "sequence": 4}
+    assert response.jpeg == b"jpeg"

@@ -1,6 +1,17 @@
 from dataclasses import asdict
 
 from vision_core.features.monitor.application.mappers.monitor_mapper import frame_to_response, snapshot_to_response
+from vision_core.shared.application.dto import BBoxPayload, EventPayload, MonitorPersonPayload
+
+_PERSON = MonitorPersonPayload(
+    person_id="person-1",
+    bbox=BBoxPayload(1.0, 2.0, 11.0, 22.0),
+    confidence=0.9,
+    track_id=7,
+    zone="exterior",
+    display_name="Persona 1",
+)
+_EVENT = EventPayload("PERSON_ENTERED", "person-1", 10.0, {"zone": "exterior"})
 
 
 def _state():
@@ -11,8 +22,8 @@ def _state():
         "frame": 4,
         "updated_at": 10.0,
         "age_seconds": 0.1,
-        "people": ({"person_id": "person-1"},),
-        "events": ({"event": "PERSON_ENTERED"},),
+        "people": (asdict(_PERSON),),
+        "events": (asdict(_EVENT),),
         "counts": {"interior": 1},
         "processing_ms": 2.0,
         "fps": 15.0,
@@ -26,16 +37,18 @@ def test_snapshot_to_response_maps_every_field():
     response = snapshot_to_response(state)
 
     assert asdict(response) == state
+    assert response.people == (_PERSON,)
+    assert response.events == (_EVENT,)
 
 
 def test_snapshot_to_response_copies_mutable_collections():
     state = _state()
     response = snapshot_to_response(state)
 
-    state["people"] += ({"person_id": "person-2"},)
+    state["people"] += (asdict(_PERSON),)
     state["counts"]["interior"] = 5
 
-    assert response.people == ({"person_id": "person-1"},)
+    assert response.people == (_PERSON,)
     assert response.counts == {"interior": 1}
 
 

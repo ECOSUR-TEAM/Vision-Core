@@ -8,8 +8,9 @@ from vision_core.features.detection.domain.ports.detector_manager import Detecto
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.dto.request.request_run_pipeline import RequestRunPipeline
+from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
 from vision_core.features.pipeline.application.dto.response.response_process_frame import ResponseProcessFrame
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict, resolved_track_to_dto
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dto, resolved_track_to_dto
 from vision_core.features.pipeline.domain.attendance import SessionAttendance
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 from vision_core.features.pipeline.domain.ports.event_consumer import EventConsumer
@@ -74,7 +75,7 @@ class RunPipeline:
     def _process_frame(self, frame: Any) -> ResponseProcessFrame:
         started = time.perf_counter()
         resolved = []
-        events = []
+        events: list[ResponsePipelineEvent] = []
         if self._expected_frame_size is not None and (frame.shape[1], frame.shape[0]) != self._expected_frame_size:
             raise ValueError("La resolución del stream no coincide con la calibración de zonas")
         detections = self._detector.process(frame)
@@ -112,7 +113,7 @@ class RunPipeline:
             event = self._door.update(person_id, det.bbox.center)
             if event is not None:
                 event.metadata.update(self._attendance.apply(event))
-                events.append(event_to_dict(event))
+                events.append(event_to_dto(event))
                 self._on_event(event)
 
         processing_ms = (time.perf_counter() - started) * 1000

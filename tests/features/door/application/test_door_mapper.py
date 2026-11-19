@@ -4,6 +4,7 @@ from vision_core.features.door.application.mappers.door_mapper import (
     observations_to_dto,
 )
 from vision_core.features.door.domain.entities.zone_observation import ZoneObservation
+from vision_core.shared.application.dto import EventPayload, ObservationPayload
 from vision_core.shared.domain.event import Event
 
 
@@ -16,18 +17,18 @@ def test_event_to_dto_copies_public_event_fields():
 
     payload = event_to_dto(event)
 
-    assert payload == {
-        "event": "PERSON_ENTERED",
-        "person_id": "person-1",
-        "timestamp": 10.0,
-        "metadata": {"zone": "interior"},
-    }
+    assert payload == EventPayload(
+        event="PERSON_ENTERED",
+        person_id="person-1",
+        timestamp=10.0,
+        metadata={"zone": "interior"},
+    )
     event.metadata["zone"] = "exterior"
-    assert payload["metadata"] == {"zone": "interior"}
+    assert payload.metadata == {"zone": "interior"}
 
 
 def test_observation_and_collection_mappers_preserve_domain_data():
     observation = ZoneObservation((1.0, 2.0), "exterior", 10.0)
 
-    assert observation_to_dto(observation) == {"position": (1.0, 2.0), "zone": "exterior", "timestamp": 10.0}
+    assert observation_to_dto(observation) == ObservationPayload((1.0, 2.0), "exterior", 10.0)
     assert observations_to_dto((observation,)) == (observation_to_dto(observation),)

@@ -25,13 +25,24 @@ slices comparten el contrato y el movimiento queda justificado.
 - Declaración: `@dataclass(frozen=True, slots=True)`, sin lógica de negocio.
 - Contenido: solo datos y tipos transportables de stdlib o `typing`. No se
   importan `numpy`, `cv2`, `torch`, `domain/` ni `infrastructure/`.
+- Contratos anidados: los payloads son `@dataclass(frozen=True, slots=True)`
+  o alias concretos (`JSONValue`); no se usan `dict[str, object]` ni `Any`
+  como tipo del contrato. Los payloads compartidos por varios slices viven en
+  `shared/application/dto/` (bbox, detection, event, observation, resolved
+  track, monitor person y `FrameLike`) porque, de otro modo, cada feature
+  duplicaría el mismo contrato de transporte.
+- Excepción documentada: el frame crudo cruza como `FrameLike`, un Protocol
+  estructural. En producción es un `numpy.ndarray`, pero el DTO no importa
+  numpy: `video_mapper` valida dtype y forma en la frontera.
 - Imports permitidos en un DTO: stdlib/`typing`, re-exports de su propio
-  paquete `application/dto` y, si existe, `shared/application/dto/base.py`.
-- Mappers: `application/mappers/` convierte DTO ↔ dominio. La validación de
-  formato y la conversión de tipos pesados viven ahí, no en el DTO.
-- Serialización: `dataclasses.asdict(...)` y `json.dumps(..., allow_nan=False)`
-  cuando el contrato viaja como JSON. Los payloads binarios se transportan como
-  `bytes` y se excluyen de la serialización JSON.
+  paquete `application/dto` y `shared/application/dto`.
+- Mappers: `application/mappers/` convierte DTO ↔ dominio y devuelve payloads
+  tipados. La validación de formato, finitud y rango, y la conversión de tipos
+  pesados viven ahí, no en el DTO.
+- Serialización: `shared/application/dto/serialization.py` expone
+  `to_json_value`/`dumps_json`. Los payloads `bytes` son de transporte (JPEG/
+  PNG), se sirven como `image/jpeg` y se omiten en JSON; los floats no finitos
+  se rechazan con contexto.
 
 La convención normativa está en
 [ADR-0001, § Convención DTO](adr/0001-screaming-architecture-vertical-slice.md#convención-dto).
@@ -43,11 +54,15 @@ La convención normativa está en
 - `shared/` no importe features ni infraestructura.
 - El dominio de un feature no importe `application` ni `infrastructure`.
 - `application/` no importe `infrastructure`.
-- Un feature no importe la infraestructura de otro feature.
-- Los DTOs solo importen stdlib/`typing`, su propio paquete `application/dto` y,
-  si existe, `shared/application/dto` (lista blanca).
+- Un feature no importe la infraestructura de otro feature. Los imports
+  relativos se resuelven a su ruta absoluta antes de evaluar estas reglas, así
+  que `from ..infrastructure import ...` no las evade.
+- Los DTOs solo importen stdlib/`typing`, su propio paquete `application/dto` y
+  `shared/application/dto` (lista blanca).
 - Los archivos `request_*.py`/`response_*.py` tengan la clase esperada, usen
   `@dataclass(frozen=True, slots=True)` y no contengan lógica.
+- Solo `main.py` puede importar más de un `*.infrastructure.dependencies`
+  (composition root); el resto de raíces no puede concentrar factories.
 
 `tests/architecture/test_dto_convention.py` verifica naming, decoradores y
 ausencia de lógica en todos los DTOs.

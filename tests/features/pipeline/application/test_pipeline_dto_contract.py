@@ -1,7 +1,8 @@
 import json
-from dataclasses import MISSING, FrozenInstanceError, asdict, fields, is_dataclass
-from typing import Any, get_type_hints
+from dataclasses import MISSING, FrozenInstanceError, fields, is_dataclass
+from typing import get_type_hints
 
+import numpy as np
 import pytest
 
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
@@ -9,11 +10,13 @@ from vision_core.features.pipeline.application.dto.request.request_run_pipeline 
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
 from vision_core.features.pipeline.application.dto.response.response_process_frame import ResponseProcessFrame
 from vision_core.features.pipeline.application.mappers.pipeline_mapper import (
-    event_to_dict,
     event_to_dto,
+    event_to_json,
     resolved_track_to_dto,
 )
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
+from vision_core.shared.application.dto import BBoxPayload, FrameLike, JSONValue, ResolvedTrackPayload
+from vision_core.shared.application.dto.serialization import dumps_json
 from vision_core.shared.domain.bbox import BBox
 from vision_core.shared.domain.event import Event
 from vision_core.shared.domain.event_type import EventType
@@ -26,9 +29,13 @@ DTO_CLASSES = (
 )
 
 
+def _metadata_hint(value: dict[str, JSONValue]) -> None:
+    return None
+
+
 def test_request_fields_and_types():
     assert [field.name for field in fields(RequestProcessFrame)] == ["frame"]
-    assert get_type_hints(RequestProcessFrame) == {"frame": object}
+    assert get_type_hints(RequestProcessFrame) == {"frame": FrameLike}
     assert all(field.default is MISSING and field.default_factory is MISSING for field in fields(RequestProcessFrame))
 
     expected_size = fields(RequestRunPipeline)[0]
@@ -48,13 +55,13 @@ def test_response_fields_and_types():
         "event": str,
         "person_id": str,
         "timestamp": float,
-        "metadata": dict[str, Any],
+        "metadata": get_type_hints(_metadata_hint)["value"],
     }
 
     assert [field.name for field in fields(ResponseProcessFrame)] == ["people", "events", "processing_ms"]
     assert get_type_hints(ResponseProcessFrame) == {
-        "people": tuple[dict[str, Any], ...],
-        "events": tuple[dict[str, Any], ...],
+        "people": tuple[ResolvedTrackPayload, ...],
+        "events": tuple[ResponsePipelineEvent, ...],
         "processing_ms": float,
     }
 
@@ -69,7 +76,7 @@ def test_dtos_are_immutable_and_slotted():
         assert hasattr(dto, "__slots__")
 
     instances = (
-        (RequestProcessFrame(frame=object()), "frame"),
+        (RequestProcessFrame(frame=np.zeros((1, 1, 3), dtype=np.uint8)), "frame"),
         (RequestRunPipeline(expected_frame_size=(640, 480)), "expected_frame_size"),
         (ResponsePipelineEvent(event="PERSON_ENTERED", person_id="person-1", timestamp=12.5, metadata={}), "metadata"),
         (ResponseProcessFrame(people=(), events=(), processing_ms=1.25), "processing_ms"),
@@ -82,7 +89,7 @@ def test_dtos_are_immutable_and_slotted():
 def test_request_dto_is_serializable():
     request = RequestRunPipeline(expected_frame_size=(640, 480))
 
-    payload = json.loads(json.dumps(asdict(request), allow_nan=False))
+    payload = json.loads(dumps_json(request))
 
     assert payload == {"expected_frame_size": [640, 480]}
 
@@ -90,15 +97,15 @@ def test_request_dto_is_serializable():
 def test_response_pipeline_event_is_serializable():
     event = Event(EventType.PERSON_ENTERED, "person-1", timestamp=12.5, metadata={"zone": "interior"})
 
-    payload = asdict(event_to_dto(event))
+    payload = dumps_json(event_to_dto(event))
 
-    assert payload == {
+    assert json.loads(payload) == {
         "event": "PERSON_ENTERED",
         "person_id": "person-1",
         "timestamp": 12.5,
         "metadata": {"zone": "interior"},
     }
-    assert json.loads(json.dumps(payload, allow_nan=False)) == payload
+    assert json.loads(event_to_json(event))["metadata"] == {"zone": "interior"}
 
 
 def test_response_process_frame_contains_people_and_processing_metrics():
@@ -106,11 +113,11 @@ def test_response_process_frame_contains_people_and_processing_metrics():
     event = Event(EventType.PERSON_ENTERED, "person-1", timestamp=12.5, metadata={"zone": "interior"})
     response = ResponseProcessFrame(
         people=(resolved_track_to_dto(track),),
-        events=(event_to_dict(event),),
+        events=(event_to_dto(event),),
         processing_ms=1.25,
     )
 
-    payload = json.loads(json.dumps(asdict(response), allow_nan=False))
+    payload = json.loads(dumps_json(response))
 
     assert payload["people"][0]["person_id"] == "person-1"
     assert payload["people"][0]["track_id"] == 7
@@ -124,3 +131,10 @@ def test_response_process_frame_contains_people_and_processing_metrics():
         }
     ]
     assert payload["processing_ms"] == 1.25
+
+
+def test_nested_payloads_are_immutable():
+    payload = ResolvedTrackPayload("person-1", BBoxPayload(1, 2, 3, 4), 0.9, 7)
+
+    with pytest.raises(FrozenInstanceError):
+        payload.track_id = 8

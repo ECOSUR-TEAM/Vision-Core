@@ -215,6 +215,10 @@ proceso termina con error; no hay supervisor ni reinicio automático.
 | `DETECTION_TEST_VIDEO` | Ausente | Video local para prueba optativa de detección real (≥30 s, personas visibles) |
 | `DETECTION_TEST_MODEL` | Ausente | Pesos locales para esa prueba optativa |
 
+La lista completa y la forma de validacion estan documentadas en
+[docs/configuration.md](docs/configuration.md). Copia `.env.example`, exporta las
+variables necesarias y no incluyas credenciales reales en Git.
+
 El runner recibe zonas por `--zones` y pesos YOLO por `--model`; usa confirmación de
 3 observaciones y no lee `VISION_CORE_ZONE_CONFIRMATION_FRAMES`. `check_stream`
 fija transporte con `--transport`, sustituyendo las opciones FFmpeg del proceso.

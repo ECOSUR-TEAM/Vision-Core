@@ -1,10 +1,10 @@
 """Single composition root: wire concrete adapters into the application."""
 
 import logging
-import os
 import threading
 
 from vision_core.application.vision_core_app import VisionCoreApp
+from vision_core.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def build_video_source():
     return build_video_with()
 
 
-def build_door_analytics(zones=None, *, confirmation_frames=None):
+def build_door_analytics(zones=None, *, confirmation_frames=None, settings=None):
     if zones is None:
         from vision_core.infrastructure.door.uncalibrated_analytics import (
             UncalibratedAnalytics,
@@ -37,7 +37,8 @@ def build_door_analytics(zones=None, *, confirmation_frames=None):
     )
 
     if confirmation_frames is None:
-        confirmation_frames = int(os.getenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "3"))
+        settings = settings or Settings.from_env()
+        confirmation_frames = settings.zones.confirmation_frames
     return PolygonDoorAnalytics(
         zones.exterior,
         zones.interior,
@@ -56,13 +57,22 @@ def build_vision_core_app(
     detector=None,
     reid_memory=None,
     embedder=None,
+    settings=None,
 ) -> VisionCoreApp:
+    if settings is None and (detector is None or reid_memory is None or embedder is None):
+        settings = Settings.from_env()
     if detector is None:
         from vision_core.infrastructure.detection.yolo_detector_manager import (
             YoloDetectorManager,
         )
 
-        detector = YoloDetectorManager()
+        detector = YoloDetectorManager(
+            str(settings.detection.model_path),
+            confidence=settings.detection.confidence,
+            classes=settings.detection.classes,
+            tracking_enabled=settings.detection.tracking_enabled,
+            max_missed_frames=settings.detection.max_missed_frames,
+        )
     if reid_memory is None:
         from vision_core.infrastructure.reid.memory_reid import InMemoryReID
 
@@ -130,20 +140,22 @@ class MonitorRuntime:
             self._thread.join(timeout)
 
 
-def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None):
+def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_failure=None, settings=None):
     from vision_core.infrastructure.monitor.renderer import render_frame
     from vision_core.infrastructure.video.latest_frame_source import LatestFrameSource
+    settings = settings or Settings.from_env()
 
     def pipeline(stop_requested):
         source = None
         try:
             # Adapters load models lazily so the monitor can report startup failures.
             zones = build_zones(zones_file) if zones_file else None
-            analytics = build_door_analytics(zones)
+            analytics = build_door_analytics(zones, settings=settings)
             source = LatestFrameSource(build_video_source())
             app = build_vision_core_app(
                 video_source=source,
                 door_analytics=analytics,
+                settings=settings,
                 on_event=state.event,
                 expected_frame_size=(zones.width, zones.height) if zones else None,
                 on_frame=lambda frame, tracks, ms: state.publish(

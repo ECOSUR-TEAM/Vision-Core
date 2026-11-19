@@ -1,0 +1,11 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class ReIDSettings:
+    model_name: str
+    device: str | None
+    threshold: float
+    ambiguity_margin: float
+    ttl_seconds: float
+    gallery_size: int

@@ -2,28 +2,29 @@
 
 import argparse
 import logging
-import os
 import signal
 from pathlib import Path
 
 from vision_core.features.monitor.infrastructure.http.server import make_server
+from vision_core.settings import Settings
 
 
 def main(*, state=None, build_runtime=None):
+    settings = Settings.from_env(validate_startup=state is None or build_runtime is None)
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--host", default=os.getenv("VISION_CORE_MONITOR_HOST", "127.0.0.1"))
-    parser.add_argument("--port", type=int, default=8080)
-    parser.add_argument("--zones", default=os.getenv("VISION_CORE_ZONES_FILE"))
+    parser.add_argument("--host", default=settings.monitor.host)
+    parser.add_argument("--port", type=int, default=settings.monitor.port)
+    parser.add_argument("--zones", default=str(settings.zones.zones_file) if settings.zones.zones_file else None)
     parser.add_argument(
         "--uncalibrated",
         action="store_true",
-        default=os.getenv("VISION_CORE_MONITOR_UNCALIBRATED", "0") == "1",
+        default=settings.zones.uncalibrated,
         help="Detectar y recordar personas sin inventar zonas ni cruces",
     )
     parser.add_argument(
         "--demo-zones",
         action="store_true",
-        default=os.getenv("VISION_CORE_MONITOR_DEMO_ZONES", "0") == "1",
+        default=settings.zones.demo_zones,
         help="Zonas ilustrativas de 640 × 480 para webcam",
     )
     args = parser.parse_args()
@@ -35,7 +36,7 @@ def main(*, state=None, build_runtime=None):
         args.zones = str(Path(__file__).resolve().parents[4] / "config/zones.example.json")
     elif not args.zones:
         parser.error("Indica --zones o --demo-zones")
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=getattr(logging, settings.logging.level))
 
     if state is None or build_runtime is None:
         # The composition root lives outside this infrastructure package.
@@ -50,7 +51,7 @@ def main(*, state=None, build_runtime=None):
     runtime = build_runtime(
         state,
         zones_file=args.zones,
-        exit_on_error=os.getenv("VISION_CORE_MONITOR_EXIT_ON_ERROR", "0") == "1",
+        exit_on_error=settings.monitor.exit_on_error,
         on_failure=server.shutdown,
     )
     runtime.start()

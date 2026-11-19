@@ -1,5 +1,3 @@
-import os
-
 import cv2
 import numpy as np
 import torch
@@ -11,6 +9,7 @@ from torchvision.models import (
     mobilenet_v3_small,
     resnet50,
 )
+from vision_core.settings import Settings
 
 
 class TorchvisionEmbeddingExtractor:
@@ -44,9 +43,10 @@ class TorchvisionEmbeddingExtractor:
 
     @classmethod
     def from_env(cls):
+        settings = Settings.from_env(validate_startup=False).reid
         return cls(
-            os.getenv("VISION_CORE_EMBEDDING_MODEL", "mobilenet_v3_small"),
-            os.getenv("VISION_CORE_EMBEDDING_DEVICE") or None,
+            settings.model_name,
+            settings.device,
         )
 
     def __call__(self, crop: np.ndarray) -> np.ndarray:

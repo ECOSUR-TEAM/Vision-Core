@@ -5,6 +5,8 @@ import os
 import shutil
 import socket
 import sys
+
+from vision_core.settings import Settings, environment_with_relay_camera
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -69,10 +71,11 @@ def main():
         if not destination.exists():
             shutil.copyfile("/defaults/config.yml", destination)
         return
-    url = os.environ["FRIGATE_CAMERA_RTSP_URL"]
+    url = Settings.from_env().camera.rtsp_url
+    if url is None:
+        raise ValueError("FRIGATE_CAMERA_RTSP_URL es obligatoria para este modo")
     if mode == "frigate":
-        os.environ["FRIGATE_CAMERA_RTSP_URL"] = relay_url(url)
-        os.execv("/init", ["/init"])
+        os.execve("/init", ["/init"], environment_with_relay_camera(relay_url(url)))
     target = camera_target(url)
     bind = socket.gethostbyname(RELAY_HOST)
     if mode == "check":

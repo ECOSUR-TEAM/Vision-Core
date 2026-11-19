@@ -1,7 +1,6 @@
 """Session identity memory with a small appearance gallery per person."""
 
 import math
-import os
 import time
 import uuid
 from collections import deque
@@ -10,6 +9,7 @@ import numpy as np
 
 from vision_core.domain.model.bbox import BBox
 from vision_core.domain.ports import ReIDMemory
+from vision_core.settings import Settings
 
 TTL_SECONDS = 60
 SIMILARITY_THRESHOLD = 0.85
@@ -52,9 +52,12 @@ class InMemoryReID(ReIDMemory):
 
     @classmethod
     def from_env(cls):
+        settings = Settings.from_env(validate_startup=False).reid
         return cls(
-            ttl_seconds=float(os.getenv("VISION_CORE_REID_TTL_SECONDS", "0")),
-            similarity_threshold=float(os.getenv("VISION_CORE_REID_THRESHOLD", "0.85")),
+            ttl_seconds=settings.ttl_seconds,
+            similarity_threshold=settings.threshold,
+            ambiguity_margin=settings.ambiguity_margin,
+            gallery_size=settings.gallery_size,
         )
 
     def _purge(self, now):

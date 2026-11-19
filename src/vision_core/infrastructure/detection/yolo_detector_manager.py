@@ -20,12 +20,23 @@ class YoloDetectorManager(DetectorManager):
     has no appearance model, so ambiguous overlaps can still switch identities.
     """
 
-    def __init__(self, model_path: str = "yolov8n.pt") -> None:
+    def __init__(
+        self,
+        model_path: str = "yolov8n.pt",
+        *,
+        confidence: float = CONFIDENCE_THRESHOLD,
+        classes: tuple[int, ...] = (PERSON_CLASS_ID,),
+        tracking_enabled: bool = True,
+        max_missed_frames: int = 30,
+    ) -> None:
         from ultralytics import YOLO
 
         self._model_path = model_path
         self._model = YOLO(model_path)
-        self._tracker = MotionTracker()
+        self._confidence = confidence
+        self._classes = classes
+        self._tracking_enabled = tracking_enabled
+        self._tracker = MotionTracker(max_missed_frames)
 
     def process(self, frame: np.ndarray) -> list[Detection]:
         if (
@@ -40,14 +51,14 @@ class YoloDetectorManager(DetectorManager):
         result = self._model.predict(
             np.ascontiguousarray(frame),
             verbose=False,
-            classes=[PERSON_CLASS_ID],
-            conf=CONFIDENCE_THRESHOLD,
+            classes=list(self._classes),
+            conf=self._confidence,
         )[0]
         detections: list[Detection] = []
         for box in result.boxes:
             class_id = int(box.cls[0])
             confidence = float(box.conf[0])
-            if class_id != PERSON_CLASS_ID or not CONFIDENCE_THRESHOLD < confidence <= 1.0:
+            if class_id not in self._classes or not self._confidence < confidence <= 1.0:
                 continue
             coordinates = np.asarray(box.xyxy[0].tolist(), dtype=float)
             if coordinates.shape != (4,) or not np.isfinite(coordinates).all():
@@ -65,7 +76,8 @@ class YoloDetectorManager(DetectorManager):
                     track_id=UNASSIGNED_TRACK_ID,
                 )
             )
-        self._tracker.update(detections)
+        if self._tracking_enabled:
+            self._tracker.update(detections)
         return detections
 
     def pop_lost_track_ids(self) -> list[int]:

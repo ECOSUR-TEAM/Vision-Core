@@ -197,6 +197,7 @@ def test_compose_mode_exits_on_pipeline_error_for_docker_restart(monkeypatch, tm
     monkeypatch.setenv("VISION_CORE_MONITOR_UNCALIBRATED", "0")
     monkeypatch.setenv("VISION_CORE_MONITOR_DEMO_ZONES", "0")
     monkeypatch.setenv("VISION_CORE_MONITOR_EXIT_ON_ERROR", "1")
+    monkeypatch.setenv("VISION_CORE_RTSP_URL", "rtsp://localhost:8554/entrada")
     with pytest.raises(SystemExit) as error:
         monitor.main()
     assert error.value.code == 1

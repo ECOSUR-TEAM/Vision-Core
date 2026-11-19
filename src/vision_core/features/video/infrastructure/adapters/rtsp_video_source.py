@@ -2,7 +2,6 @@
 
 import logging
 import math
-import os
 import time
 from urllib.parse import urlsplit
 
@@ -11,6 +10,7 @@ import numpy as np
 
 from ...domain.ports.video_source import VideoSource
 from ..frame_validation import validate_frame
+from vision_core.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -56,17 +56,15 @@ class RtspVideoSource(VideoSource):
 
     @classmethod
     def from_env(cls) -> "RtspVideoSource":
-        """Read process environment; a local .env must be exported by the caller."""
-        url = os.environ.get("VISION_CORE_RTSP_URL", "").strip()
-        if not url:
-            raise ValueError("Configura VISION_CORE_RTSP_URL antes de iniciar")
+        """Compatibility entry point backed by centralized settings."""
+        settings = Settings.from_env().video
         return cls(
-            url,
-            open_timeout_ms=int(os.getenv("VISION_CORE_OPEN_TIMEOUT_MS", "5000")),
-            read_timeout_ms=int(os.getenv("VISION_CORE_READ_TIMEOUT_MS", "5000")),
-            reconnect_attempts=int(os.getenv("VISION_CORE_RECONNECT_ATTEMPTS", "5")),
-            reconnect_delay_seconds=float(os.getenv("VISION_CORE_RECONNECT_DELAY_SECONDS", "2")),
-            decoder_threads=int(os.getenv("VISION_CORE_DECODER_THREADS", "1")),
+            settings.rtsp_url or "",
+            open_timeout_ms=settings.open_timeout_ms,
+            read_timeout_ms=settings.read_timeout_ms,
+            reconnect_attempts=settings.reconnect_attempts,
+            reconnect_delay_seconds=settings.reconnect_delay_seconds,
+            decoder_threads=settings.decoder_threads,
         )
 
     def _connect(self) -> bool:

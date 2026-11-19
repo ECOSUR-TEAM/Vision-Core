@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import os
 import shutil
 import subprocess
 import time
@@ -11,6 +10,7 @@ import numpy as np
 
 from vision_core.infrastructure.video.frame_validation import validate_frame
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.settings import Settings, apply_ffmpeg_capture_options
 
 
 def probe(url, transport):
@@ -105,11 +105,12 @@ def main():
     args = parser.parse_args()
     if args.frames < 1:
         parser.error("--frames debe ser positivo")
-    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;" + args.transport
+    settings = Settings.from_env()
+    apply_ffmpeg_capture_options("rtsp_transport;" + args.transport)
     report = {"transport_requested": args.transport}
     try:
         source = RtspVideoSource.from_env()
-        report["probe"] = probe(os.environ["VISION_CORE_RTSP_URL"], args.transport)
+        report["probe"] = probe(settings.video.rtsp_url or "", args.transport)
         detector = None
         if args.detector:
             from vision_core.infrastructure.detection.yolo_detector_manager import (

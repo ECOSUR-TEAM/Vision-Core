@@ -222,6 +222,13 @@ variables necesarias y no incluyas credenciales reales en Git.
 El runner recibe zonas por `--zones` y pesos YOLO por `--model`; usa confirmación de
 3 observaciones y no lee `VISION_CORE_ZONE_CONFIRMATION_FRAMES`. `check_stream`
 fija transporte con `--transport`, sustituyendo las opciones FFmpeg del proceso.
+
+## Observabilidad
+
+El monitor expone `/health`, `/ready` y `/metrics`. Los logs usan JSON estructurado
+por defecto y no incluyen frames, embeddings ni credenciales.
+Consulta [docs/observability.md](docs/observability.md) para el catalogo de metricas
+y procedimientos de diagnostico.
 `main.py` usa `yolov8n.pt`; no hay variable de modelo YOLO ni de dispositivo YOLO.
 La variable del extractor solo controla el extractor.
 

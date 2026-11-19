@@ -1,8 +1,14 @@
 """In-memory monitor telemetry and synchronization."""
 
+import logging
 import threading
 import time
 from collections import Counter, deque
+
+from vision_core.shared.observability.health import HealthStatus
+from vision_core.shared.observability.metrics import ObservabilityMetrics
+
+logger = logging.getLogger(__name__)
 
 
 def _event_to_dict(event):
@@ -15,7 +21,13 @@ def _event_to_dict(event):
 
 
 class MonitorState:
-    def __init__(self, demo=False, event_serializer=None):
+    def __init__(
+        self,
+        demo=False,
+        event_serializer=None,
+        metrics=None,
+        health=None,
+    ):
         self._event_serializer = event_serializer or _event_to_dict
         self.lock = threading.Lock()
         self.changed = threading.Condition(self.lock)
@@ -33,15 +45,35 @@ class MonitorState:
         self.processing_ms = 0.0
         self.fps = 0.0
         self.dropped = 0
+        self.metrics = metrics or ObservabilityMetrics()
+        self.health = health or HealthStatus()
+        self.camera_id = "default"
+        self.event_sequence = 0
 
     def set_status(self, status, error=None):
         with self.lock:
             self.status, self.error = status, error
+        self.health.set_ready(source_connected=status == "running")
+        if status == "error":
+            self.metrics.increment("vision_core_errors_total")
 
     def event(self, event):
         with self.lock:
             self.events.appendleft(self._event_serializer(event))
             self.counts[event.event] += 1
+        self.event_sequence += 1
+        event_id = f"{self.camera_id}-{self.event_sequence}"
+        logger.info(
+            "Vision event emitted",
+            extra={
+                "camera_id": self.camera_id,
+                "event_id": event_id,
+                "person_id": event.person_id,
+                "error_code": None,
+            },
+        )
+        self.metrics.increment("vision_core_events_emitted_total")
+        self.metrics.increment(f"vision_core_event_{event.event.lower()}_total")
 
     def person_label(self, person_id):
         with self.lock:
@@ -63,6 +95,13 @@ class MonitorState:
             self.dropped = dropped
             self.status = "running"
             self.changed.notify_all()
+        self.health.set_ready(source_connected=True, model_loaded=True)
+        self.metrics.increment("vision_core_frames_processed_total")
+        self.metrics.increment("vision_core_frames_discarded_total", dropped)
+        self.metrics.set_gauge("vision_core_fps", self.fps)
+        self.metrics.set_gauge("vision_core_active_people", len(people))
+        self.metrics.set_gauge("vision_core_queue_size", 0)
+        self.metrics.observe("vision_core_frame_processing_duration_ms", processing_ms)
 
     def next_frame(self, after):
         with self.changed:

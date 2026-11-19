@@ -50,6 +50,10 @@ class VisionCoreApp:
         self._attendance = SessionAttendance()
         self._person_by_track: dict[int, str] = {}
         self._last_embedding_by_track: dict[int, np.ndarray] = {}
+        self._metrics = None
+
+    def set_observability(self, metrics) -> None:
+        self._metrics = metrics
 
     def run(self, stop_requested: Callable[[], bool] = lambda: False) -> None:
         try:
@@ -60,6 +64,8 @@ class VisionCoreApp:
                     break
                 self._process_frame(frame)
         except BaseException:
+            if self._metrics is not None:
+                self._metrics.increment("vision_core_errors_total")
             # Preserve the original failure even when resource cleanup also fails.
             try:
                 self._video.close()
@@ -74,10 +80,19 @@ class VisionCoreApp:
         resolved = []
         if self._expected_frame_size is not None and (frame.shape[1], frame.shape[0]) != self._expected_frame_size:
             raise ValueError("La resolución del stream no coincide con la calibración de zonas")
+        inference_started = time.perf_counter()
         detections = self._detector.process(frame)
+        if self._metrics is not None:
+            self._metrics.observe(
+                "vision_core_inference_latency_ms",
+                (time.perf_counter() - inference_started) * 1000,
+            )
         visible_tracks = {det.track_id for det in detections}
+        new_tracks = sum(track_id not in self._person_by_track for track_id in visible_tracks)
         absent_tracks = set(self._person_by_track) - visible_tracks
         expired_tracks = set(self._detector.pop_lost_track_ids())
+        if self._metrics is not None:
+            self._metrics.increment("vision_core_tracks_lost_total", len(expired_tracks))
         # Release identities as soon as they are absent, even if the motion tracker
         # retains its local track for another 30 frames. Visible IDs stay reserved.
         for track_id in (absent_tracks | expired_tracks) - visible_tracks:
@@ -104,8 +119,14 @@ class VisionCoreApp:
             if x2 <= x1 or y2 <= y1:
                 raise ValueError("La caja del detector está fuera del frame")
             crop = frame[y1:y2, x1:x2]
+            reid_started = time.perf_counter()
             embedding = self._embed(crop)
             person_id = self._reid.resolve(det.track_id, embedding, det.bbox)
+            if self._metrics is not None:
+                self._metrics.observe(
+                    "vision_core_reid_latency_ms",
+                    (time.perf_counter() - reid_started) * 1000,
+                )
             self._person_by_track[det.track_id] = person_id
             self._last_embedding_by_track[det.track_id] = embedding.copy()
             resolved.append(ResolvedTrack(person_id, det.bbox, det.confidence, det.track_id))
@@ -114,5 +135,8 @@ class VisionCoreApp:
             if event is not None:
                 event.metadata.update(self._attendance.apply(event))
                 self._on_event(event)
+        if self._metrics is not None:
+            self._metrics.increment("vision_core_tracks_created_total", new_tracks)
+            self._metrics.set_gauge("vision_core_active_people", len(self._person_by_track))
         if self._on_frame is not None:
             self._on_frame(frame, tuple(resolved), (time.perf_counter() - started) * 1000)

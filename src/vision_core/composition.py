@@ -58,6 +58,7 @@ def build_vision_core_app(
     reid_memory=None,
     embedder=None,
     settings=None,
+    metrics=None,
 ) -> VisionCoreApp:
     if settings is None and (detector is None or reid_memory is None or embedder is None):
         settings = Settings.from_env()
@@ -83,7 +84,7 @@ def build_vision_core_app(
         )
 
         embedder = TorchvisionEmbeddingExtractor.from_env()
-    return VisionCoreApp(
+    app = VisionCoreApp(
         video_source=video_source,
         detector=detector,
         reid_memory=reid_memory,
@@ -93,13 +94,27 @@ def build_vision_core_app(
         expected_frame_size=expected_frame_size,
         on_frame=on_frame,
     )
+    if metrics is not None:
+        app.set_observability(metrics)
+    return app
 
 
-def build_monitor_state(*, demo=False):
+def build_monitor_state(*, demo=False, settings=None):
     from vision_core.application.event_serializer import event_to_dict
     from vision_core.infrastructure.monitor.state import MonitorState
+    from vision_core.shared.observability.health import HealthStatus
+    from vision_core.shared.observability.metrics import get_observability_metrics
 
-    return MonitorState(demo=demo, event_serializer=event_to_dict)
+    settings = settings or Settings.from_env(validate_startup=False)
+    state = MonitorState(
+        demo=demo,
+        event_serializer=event_to_dict,
+        health=HealthStatus(settings.monitor.minimum_free_disk_mb),
+        metrics=get_observability_metrics(),
+    )
+    state.camera_id = settings.logging.camera_id
+    state.health.set_ready(config_valid=True)
+    return state
 
 
 class MonitorRuntime:
@@ -126,7 +141,10 @@ class MonitorRuntime:
             # Do not expose URLs, credentials or native exception messages in HTTP.
             kind = type(error).__name__
             self._state.set_status("error", kind)
-            logger.error("Pipeline detenido (%s). Revisa stream, zonas y pesos locales.", kind)
+            logger.error(
+                "Pipeline detenido. Revisa stream, zonas y pesos locales.",
+                extra={"error_code": kind, "camera_id": getattr(self._state, "camera_id", "default")},
+            )
             if self._exit_on_error:
                 self.failed.set()
                 if self._on_failure is not None:
@@ -157,6 +175,7 @@ def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_fai
                 video_source=source,
                 door_analytics=analytics,
                 settings=settings,
+                metrics=state.metrics,
                 on_event=state.event,
                 expected_frame_size=(zones.width, zones.height) if zones else None,
                 on_frame=lambda frame, tracks, ms: state.publish(
@@ -165,6 +184,8 @@ def build_monitor_runtime(state, *, zones_file=None, exit_on_error=False, on_fai
                     source.dropped_frames,
                 ),
             )
+            state.health.set_ready(model_loaded=True)
+            state.metrics.increment("vision_core_reconnections_total", getattr(source.source, "reconnections", 0))
             app.run(stop_requested)
         finally:
             if source is not None:

@@ -131,6 +131,9 @@ class RtspVideoSource(VideoSource):
                 frame = self._read()
                 if frame is not None:
                     self.reconnections += 1
+                    from vision_core.shared.observability.metrics import get_observability_metrics
+
+                    get_observability_metrics().increment("vision_core_reconnections_total")
                     return frame
                 self.close()
         raise ConnectionError("Se agotaron los reintentos del stream")

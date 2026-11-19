@@ -1,16 +1,21 @@
 """python -m vision_core.infrastructure.monitor --demo-zones --port 8080"""
 
 import argparse
-import logging
 import signal
 from pathlib import Path
 
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.settings import Settings
+from vision_core.shared.observability.structured_logging import configure_structured_logging
 
 
 def main(*, state=None, build_runtime=None):
     settings = Settings.from_env(validate_startup=state is None or build_runtime is None)
+    configure_structured_logging(
+        settings.logging.level,
+        settings.logging.json_format,
+        settings.logging.camera_id,
+    )
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default=settings.monitor.host)
     parser.add_argument("--port", type=int, default=settings.monitor.port)
@@ -36,14 +41,12 @@ def main(*, state=None, build_runtime=None):
         args.zones = str(Path(__file__).resolve().parents[4] / "config/zones.example.json")
     elif not args.zones:
         parser.error("Indica --zones o --demo-zones")
-    logging.basicConfig(level=getattr(logging, settings.logging.level))
-
     if state is None or build_runtime is None:
         # The composition root lives outside this infrastructure package.
         from vision_core.composition import build_monitor_runtime, build_monitor_state
 
         if state is None:
-            state = build_monitor_state(demo=args.demo_zones or args.uncalibrated)
+            state = build_monitor_state(demo=args.demo_zones or args.uncalibrated, settings=settings)
         if build_runtime is None:
             build_runtime = build_monitor_runtime
 

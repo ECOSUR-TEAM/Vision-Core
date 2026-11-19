@@ -67,4 +67,6 @@ class TorchvisionEmbeddingExtractor:
                 raise ValueError("El modelo produjo un embedding no finito o de norma cero")
             embedding = torch.nn.functional.normalize(embedding, p=2, dim=1)
 
-        return embedding.squeeze(0).cpu().numpy().astype(np.float32)
+        # Única transferencia GPU -> CPU; el modelo ya produce float32, así que
+        # np.asarray evita una copia adicional (antes: .astype(np.float32)).
+        return np.asarray(embedding.squeeze(0).cpu().numpy(), dtype=np.float32)

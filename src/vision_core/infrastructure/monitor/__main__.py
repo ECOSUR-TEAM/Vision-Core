@@ -9,7 +9,7 @@ from pathlib import Path
 from vision_core.features.monitor.infrastructure.http.server import make_server
 
 
-def main(*, state=None, build_state=None, build_runtime=None):
+def main(*, state=None, build_state=None, build_runtime=None, config=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default=os.getenv("VISION_CORE_MONITOR_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=8080)
@@ -25,6 +25,12 @@ def main(*, state=None, build_state=None, build_runtime=None):
         action="store_true",
         default=os.getenv("VISION_CORE_MONITOR_DEMO_ZONES", "0") == "1",
         help="Zonas ilustrativas de 640 × 480 para webcam",
+    )
+    parser.add_argument(
+        "--no-render",
+        action="store_true",
+        default=False,
+        help="Omitir render/JPEG por completo (sin visor conectado)",
     )
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
@@ -44,31 +50,47 @@ def main(*, state=None, build_state=None, build_runtime=None):
             raise RuntimeError("build_state es obligatorio")
         state = build_state(demo=args.demo_zones or args.uncalibrated)
 
-    server = make_server(args.host, args.port, state)
-    runtime = build_runtime(
-        state,
-        zones_file=args.zones,
-        exit_on_error=os.getenv("VISION_CORE_MONITOR_EXIT_ON_ERROR", "0") == "1",
-        on_failure=server.shutdown,
-    )
-    runtime.start()
+    server = None
+    runtime = None
 
-    def terminate(*_):
-        raise KeyboardInterrupt
+    def shutdown():
+        if server is not None:
+            server.shutdown()
 
-    signal.signal(signal.SIGTERM, terminate)
-    print(f"Vision Core: http://{args.host}:{args.port}", flush=True)
     try:
+        # Construir el runtime antes que el server: una config inválida no debe
+        # dejar un socket abierto ni un hilo sin cerrar.
+        runtime = build_runtime(
+            state,
+            zones_file=args.zones,
+            exit_on_error=os.getenv("VISION_CORE_MONITOR_EXIT_ON_ERROR", "0") == "1",
+            on_failure=shutdown,
+            render_enabled=False if args.no_render else None,
+            config=config,
+        )
+        server = make_server(args.host, args.port, state)
+
+        def terminate(*_):
+            raise KeyboardInterrupt
+
+        signal.signal(signal.SIGTERM, terminate)
+        print(f"Vision Core: http://{args.host}:{args.port}", flush=True)
+        runtime.start()
         server.serve_forever(poll_interval=0.25)
+    except ValueError as error:
+        if runtime is not None:
+            runtime.stop()
+        if server is not None:
+            server.server_close()
+        parser.error(str(error))
     except KeyboardInterrupt:
         pass
     finally:
-        runtime.stop()
-        server.server_close()
-        runtime.join(timeout=2)
-    if runtime.failed.is_set():
+        if runtime is not None:
+            runtime.stop()
+        if server is not None:
+            server.server_close()
+        if runtime is not None:
+            runtime.join(timeout=2)
+    if runtime is not None and runtime.failed.is_set():
         raise SystemExit(1)
-
-
-if __name__ == "__main__":
-    main()

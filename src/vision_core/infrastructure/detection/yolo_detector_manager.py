@@ -1,8 +1,10 @@
 import numpy as np
+import torch
 
 from vision_core.domain.model.bbox import BBox
 from vision_core.domain.model.detection import Detection
 from vision_core.domain.ports import DetectorManager
+from vision_core.shared.inference.tensor_boxes import iter_prediction_boxes
 
 from .motion_tracker import MotionTracker
 
@@ -37,19 +39,19 @@ class YoloDetectorManager(DetectorManager):
         ):
             raise ValueError("YOLO requiere un frame BGR uint8 de forma H x W x 3")
         height, width = frame.shape[:2]
-        result = self._model.predict(
-            np.ascontiguousarray(frame),
-            verbose=False,
-            classes=[PERSON_CLASS_ID],
-            conf=CONFIDENCE_THRESHOLD,
-        )[0]
+        # inference_mode desactiva el registro de autograd (más barato que no_grad).
+        with torch.inference_mode():
+            result = self._model.predict(
+                np.ascontiguousarray(frame),
+                verbose=False,
+                classes=[PERSON_CLASS_ID],
+                conf=CONFIDENCE_THRESHOLD,
+            )[0]
         detections: list[Detection] = []
-        for box in result.boxes:
-            class_id = int(box.cls[0])
-            confidence = float(box.conf[0])
+        for class_id, confidence, coordinates in iter_prediction_boxes(result):
             if class_id != PERSON_CLASS_ID or not CONFIDENCE_THRESHOLD < confidence <= 1.0:
                 continue
-            coordinates = np.asarray(box.xyxy[0].tolist(), dtype=float)
+            coordinates = np.asarray(coordinates, dtype=float)
             if coordinates.shape != (4,) or not np.isfinite(coordinates).all():
                 continue
             x1, y1, x2, y2 = coordinates.tolist()

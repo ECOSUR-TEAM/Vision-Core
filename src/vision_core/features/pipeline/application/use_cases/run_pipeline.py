@@ -4,6 +4,8 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from vision_core.application.frame_profiler import FrameProfiler
+from vision_core.application.pipeline_config import PipelineConfig
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
@@ -31,6 +33,7 @@ class RunPipeline:
         on_event: EventConsumer,
         expected_frame_size: tuple[int, int] | None = None,
         on_frame: Callable[[Any, tuple[ResolvedTrack, ...], float], None] | None = None,
+        config: PipelineConfig | None = None,
     ) -> None:
         self._expected_frame_size = expected_frame_size
         self._on_frame = on_frame
@@ -43,6 +46,14 @@ class RunPipeline:
         self._attendance = SessionAttendance()
         self._person_by_track: dict[int, str] = {}
         self._last_embedding_by_track: dict[int, Any] = {}
+        # Llamadas directas sin config no escriben archivos de profiling.
+        self._config = config or PipelineConfig(profiling_enabled=False)
+        self.profiler = FrameProfiler(enabled=self._config.profiling_enabled)
+        self._profiling_output = self._config.profiling_output
+        # Flags expuestos para futuras optimizaciones; la lógica actual sigue
+        # haciendo una inferencia por detección para no alterar ReID/tracking.
+        self.embedding_batch_size = self._config.embedding_batch_size
+        self.embedding_frame_stride = self._config.embedding_frame_stride
 
     def run(
         self,
@@ -52,10 +63,12 @@ class RunPipeline:
     ) -> None:
         if request is not None and request.expected_frame_size is not None:
             self._expected_frame_size = request.expected_frame_size
+        self.profiler.reset()
         try:
             self._video.open()
             while not stop_requested():
-                frame = self._video.read_frame()
+                with self.profiler.measure("decode"):
+                    frame = self._video.read_frame()
                 if frame is None:
                     break
                 self._process_frame(frame)
@@ -67,6 +80,17 @@ class RunPipeline:
             raise
         else:
             self._video.close()
+        finally:
+            self._save_profile()
+
+    def _save_profile(self) -> None:
+        if not self.profiler.enabled or not self._profiling_output:
+            return
+        try:
+            path = self.profiler.save(self._profiling_output)
+            logger.info("Profiling guardado en %s", path)
+        except OSError as error:  # noqa: BLE001 - el fallback no debe matar el pipeline
+            logger.warning("No se pudo guardar el profiling (%s)", type(error).__name__)
 
     def process_frame(self, request: RequestProcessFrame) -> ResponseProcessFrame:
         return self._process_frame(request.frame)
@@ -77,19 +101,26 @@ class RunPipeline:
         events = []
         if self._expected_frame_size is not None and (frame.shape[1], frame.shape[0]) != self._expected_frame_size:
             raise ValueError("La resolución del stream no coincide con la calibración de zonas")
-        detections = self._detector.process(frame)
+        with self.profiler.measure("detection"):
+            detections = self._detector.process(frame)
         visible_tracks = {det.track_id for det in detections}
         absent_tracks = set(self._person_by_track) - visible_tracks
         expired_tracks = set(self._detector.pop_lost_track_ids())
-        for track_id in (absent_tracks | expired_tracks) - visible_tracks:
-            person_id = self._person_by_track.pop(track_id, None)
-            embedding = self._last_embedding_by_track.pop(track_id, None)
-            if person_id is not None and embedding is not None:
-                self._reid.mark_lost(person_id, embedding)
 
-        begin_frame = getattr(self._reid, "begin_frame", None)
-        if begin_frame is not None:
-            begin_frame(visible_tracks)
+        # Release identities as soon as they are absent, even if the motion tracker
+        # retains its local track for another 30 frames. Visible IDs stay reserved.
+        with self.profiler.measure("reid_tracking"):
+            for track_id in (absent_tracks | expired_tracks) - visible_tracks:
+                person_id = self._person_by_track.pop(track_id, None)
+                embedding = self._last_embedding_by_track.pop(track_id, None)
+                if person_id is not None and embedding is not None:
+                    self._reid.mark_lost(person_id, embedding)
+
+            # Optional for legacy adapters; concrete ReID reserves still-known IDs
+            # before a new track can claim the same absent person's appearance.
+            begin_frame = getattr(self._reid, "begin_frame", None)
+            if begin_frame is not None:
+                begin_frame(visible_tracks)
 
         for det in detections:
             coordinates = (det.bbox.x1, det.bbox.y1, det.bbox.x2, det.bbox.y2)
@@ -103,19 +134,24 @@ class RunPipeline:
             if x2 <= x1 or y2 <= y1:
                 raise ValueError("La caja del detector está fuera del frame")
             crop = frame[y1:y2, x1:x2]
-            embedding = self._embed(crop)
-            person_id = self._reid.resolve(det.track_id, embedding, det.bbox)
+            with self.profiler.measure("embedding"):
+                embedding = self._embed(crop)
+            with self.profiler.measure("reid_tracking"):
+                person_id = self._reid.resolve(det.track_id, embedding, det.bbox)
             self._person_by_track[det.track_id] = person_id
             self._last_embedding_by_track[det.track_id] = embedding.copy()
             resolved.append(ResolvedTrack(person_id, det.bbox, det.confidence, det.track_id))
 
-            event = self._door.update(person_id, det.bbox.center)
+            with self.profiler.measure("analytics"):
+                event = self._door.update(person_id, det.bbox.center)
             if event is not None:
                 event.metadata.update(self._attendance.apply(event))
                 events.append(event_to_dict(event))
                 self._on_event(event)
 
         processing_ms = (time.perf_counter() - started) * 1000
+        self.profiler.record("frame_total", processing_ms / 1000)
+        self.profiler.record_frame()
         if self._on_frame is not None:
             self._on_frame(frame, tuple(resolved), processing_ms)
         return ResponseProcessFrame(

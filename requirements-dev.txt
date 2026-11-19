@@ -1,2 +1,2 @@
 mypy==1.11.2
-numpy
+numpy==2.3.5

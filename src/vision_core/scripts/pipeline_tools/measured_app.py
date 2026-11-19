@@ -25,7 +25,7 @@ class MeasuredApp(RunPipeline):
             json.dumps(
                 {
                     "kind": "resolved",
-                    "frame": getattr(self._video, "frames", None),
+                    "frame": getattr(self._video, "frames", 0) or 0,
                     "persons": self._person_by_track,
                     "processing_ms": elapsed * 1000,
                 }

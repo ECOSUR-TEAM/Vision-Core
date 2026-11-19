@@ -31,9 +31,9 @@ def detection_from_dto(data: Mapping[str, object]) -> Detection:
             x2=float(bbox_data["x2"]),
             y2=float(bbox_data["y2"]),
         ),
-        class_id=cast(int, data["class_id"]),
-        confidence=cast(float, data["confidence"]),
-        track_id=cast(int, data["track_id"]),
+        class_id=int(cast(int, data["class_id"])),
+        confidence=float(cast(float, data["confidence"])),
+        track_id=int(cast(int, data["track_id"])),
     )
 
 

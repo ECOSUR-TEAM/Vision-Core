@@ -100,9 +100,7 @@ def test_validate_startup_false_skips_presence_checks():
 
 
 def test_monitor_uncalibrated_default_is_false():
-    settings = Settings.from_env(
-        complete_env(VISION_CORE_MONITOR_UNCALIBRATED="0")
-    )
+    settings = Settings.from_env(complete_env(VISION_CORE_MONITOR_UNCALIBRATED="0"))
     assert settings.zones.uncalibrated is False
 
 
@@ -117,12 +115,7 @@ def test_monitor_uncalibrated_default_is_false():
     ],
 )
 def test_valid_rtsp_url(url):
-    expected = (
-        url.startswith("rtsp://")
-        and " " not in url
-        and "notaport" not in url
-        and ":99999" not in url
-    )
+    expected = url.startswith("rtsp://") and " " not in url and "notaport" not in url and ":99999" not in url
     assert valid_rtsp_url(url) == expected
 
 
@@ -131,10 +124,7 @@ def test_redact_sensitive_password_only():
 
 
 def test_redact_sensitive_http_credentials():
-    assert (
-        redact_sensitive("http://user:secret@host:8080/path")
-        == "http://user:***@host:8080/path"
-    )
+    assert redact_sensitive("http://user:secret@host:8080/path") == "http://user:***@host:8080/path"
 
 
 def test_redact_sensitive_invalid_port_redacts_anyway():

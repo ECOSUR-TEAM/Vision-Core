@@ -76,9 +76,26 @@ entorno en local (tras crear y activar un entorno virtual):
 ```bash
 python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 python -m pip install -r requirements.txt
+python -m pip install -e .
 python -m pip check
 python -m pytest -q
 ```
+
+Unit + integración con cobertura (job de cada PR) y e2e pesado (nightly/manual):
+
+```bash
+python -m pytest -q -m "not slow" \
+  --cov=vision_core --cov-branch \
+  --cov-report=term-missing --cov-report=xml:coverage.xml \
+  --cov-report=json:coverage.json --cov-report=html:htmlcov \
+  --cov-fail-under=80
+python -m vision_core.scripts.check_coverage coverage.json
+python -m pytest -q -m slow
+```
+
+La cobertura incluye ramas, excluye `vision_core/scripts/` y aplica umbrales
+por módulos críticos además del global. Consulta
+[niveles, comandos, umbrales y artefactos](docs/testing.md).
 
 ## Lint y Formato de Código (Ruff)
 
@@ -308,15 +325,18 @@ python -m pytest tests/test_one_class_per_file.py -q
 
 ```bash
 python -m pytest -q
-python -m pytest tests/integration tests/application -q
+python -m pytest tests/integration -q
+python -m pytest -m slow -q
 DETECTION_TEST_VIDEO=/ruta/video.avi DETECTION_TEST_MODEL=/ruta/yolov8n.pt python -m pytest tests/infrastructure/detection/test_real_video.py -q
 python -m vision_core.scripts.evaluate_room sala.jsonl anotaciones.json
 ```
 
 Los tests no descargan pesos. Se omiten pruebas reales cuando falta video, pesos
 locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unitarias,
-escenas controladas y pruebas reales optativas. Consulta:
+integración con video sintético, e2e del monitor y pruebas reales optativas. El job
+de PR publica cobertura y el nightly publica logs. Consulta:
 
+- [Niveles de prueba, cobertura y comandos](docs/testing.md).
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
 - [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
 - [Orquestación y cierre](docs/operations.md).

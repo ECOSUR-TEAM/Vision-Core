@@ -17,6 +17,18 @@ where = ["src"]
 pythonpath = [".", "src"]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
+markers = [
+    "slow: pruebas e2e pesadas; se ejecutan en nightly o workflow manual",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["vision_core"]
+omit = ["*/scripts/*"]
+
+[tool.coverage.report]
+show_missing = true
+precision = 1
 
 [tool.ruff]
 target-version = "py310"

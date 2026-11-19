@@ -1,6 +1,7 @@
 numpy
 opencv-python
 pytest
+pytest-cov
 pillow
 torch
 torchvision

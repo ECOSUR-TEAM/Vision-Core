@@ -5,22 +5,22 @@ from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
-from vision_core.application.vision_core_app import VisionCoreApp
-from vision_core.domain.model.bbox import BBox
-from vision_core.domain.model.detection import Detection
+from vision_core.features.detection.domain.entities.detection import Detection
+from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.infrastructure.reid import memory_reid
 from vision_core.infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.shared.domain.bbox import BBox
 
 
 def test_run_emits_event_per_frame():
     events = []
     frame = np.zeros((20, 20, 3), dtype=np.uint8)
 
-    app = VisionCoreApp(
-        video_source=FakeVideoSource([frame]),
+    app = RunPipeline(
+        video=FakeVideoSource([frame]),
         detector=FakeDetector(),
-        reid_memory=FakeReID(),
-        door_analytics=FakeDoor(),
+        reid=FakeReID(),
+        door=FakeDoor(),
         embedder=lambda crop: np.zeros(4),
         on_event=events.append,
     )
@@ -41,11 +41,11 @@ def test_run_calls_mark_lost_when_track_is_dropped():
     )
     reid = FakeReID()
 
-    app = VisionCoreApp(
-        video_source=FakeVideoSource([frame, frame]),
+    app = RunPipeline(
+        video=FakeVideoSource([frame, frame]),
         detector=detector,
-        reid_memory=reid,
-        door_analytics=FakeDoor(),
+        reid=reid,
+        door=FakeDoor(),
         embedder=lambda crop: np.zeros(4),
         on_event=lambda e: None,
     )
@@ -64,7 +64,7 @@ def test_pipeline_reappearance_ttl_and_cleanup(monkeypatch, elapsed, recovered):
     memory = InMemoryReID()
     # The latest embedding differs from the first, so matching proves it was retained.
     embeddings = iter([np.array([0.0, 1.0]), np.array([1.0, 0.0]), np.array([1.0, 0.0])])
-    app = VisionCoreApp(
+    app = RunPipeline(
         FakeVideoSource([]), detector, memory, FakeDoor(), lambda crop: next(embeddings), lambda event: None
     )
     frame = np.zeros((20, 20, 3), dtype=np.uint8)
@@ -90,7 +90,7 @@ def test_loss_processed_before_reappearance_in_same_frame():
     returned = Detection(BBox(0, 0, 10, 10), 0, 0.9, 2)
     detector = FakeDetector([[first], [returned]], [[], [1]])
     memory = InMemoryReID()
-    app = VisionCoreApp(
+    app = RunPipeline(
         FakeVideoSource([]), detector, memory, FakeDoor(), lambda crop: np.array([1.0, 0.0]), lambda event: None
     )
     frame = np.zeros((20, 20, 3), dtype=np.uint8)
@@ -108,7 +108,7 @@ def test_reappearance_before_tracker_expiry_recovers_identity():
     returned = Detection(BBox(10, 0, 20, 10), 0, 0.9, 2)
     memory = InMemoryReID(ttl_seconds=0)
     snapshots = []
-    app = VisionCoreApp(
+    app = RunPipeline(
         FakeVideoSource([np.zeros((20, 20, 3), np.uint8)] * 3),
         FakeDetector([[first], [], [returned]], [[], [], []]),
         memory,

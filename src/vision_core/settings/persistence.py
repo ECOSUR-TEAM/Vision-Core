@@ -35,8 +35,6 @@ def _number(value: str | None, default: float, *, name: str, minimum: float = 0.
 class PersistenceSettings:
     enabled: bool
     db_path: Path
-    db_url: str | None
-    password: str | None
     busy_timeout_seconds: float
     fail_open: bool
     event_ttl_seconds: float
@@ -68,8 +66,6 @@ class PersistenceSettings:
         return cls(
             enabled=enabled,
             db_path=path,
-            db_url=env.get("VISION_CORE_DB_URL") or None,
-            password=env.get("VISION_CORE_DB_PASSWORD") or None,
             busy_timeout_seconds=busy,
             fail_open=_boolean(env.get("VISION_CORE_DB_FAIL_OPEN"), True),
             event_ttl_seconds=_number(

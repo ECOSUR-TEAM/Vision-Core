@@ -40,8 +40,8 @@ Adoptar **SQLite** como primer motor, con `sqlite3` de la biblioteca estándar:
 **Límite documentado:** SQLite no es adecuado para escritura concurrente desde
 varios hosts, ni para replicación. Si aparece un segundo nodo, se migrará a
 **PostgreSQL** manteniendo los mismos repository ports y cambiando solo el
-adaptador; la URL y las credenciales vendrán de `VISION_CORE_DB_URL` y
-`VISION_CORE_DB_PASSWORD` (nunca del código ni de logs). El tercer destino
+adaptador; la URL y las credenciales se leerán de variables de entorno
+específicas cuando se implemente (nunca del código ni de logs). El tercer destino
 evaluado, archivos JSONL, queda como formato de exportación/backup, no como
 almacén de consulta.
 
@@ -85,7 +85,7 @@ root activo usa el dominio global. Cada puerto es una `ABC` sin SQL, sin
 
 Las implementaciones `Sqlite*` viven en
 `vision_core.infrastructure.persistence`. El dominio y `application/` no importan
-este paquete: la inyección se hace en `composition.py`. Se respeta una clase por
+este paquete: la inyección se hace en `main.py`. Se respeta una clase por
 archivo.
 
 ### Esquema y migraciones

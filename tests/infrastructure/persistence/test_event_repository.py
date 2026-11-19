@@ -1,3 +1,4 @@
+import sqlite3
 import time
 
 from vision_core.domain.model.event import Event
@@ -20,6 +21,32 @@ def test_append_event_is_idempotent_by_explicit_id(tmp_path):
     assert len(service.events.list()) == 1
     assert service.zone_observations.list() == (("person-1", "z", (1.0, 2.0), 100.0),)
     service.close()
+
+
+def test_event_and_zone_observation_are_atomic(monkeypatch, tmp_path):
+    service = _service(tmp_path)
+    event = Event("PERSON_ENTERED", "person-1", 100.0, {"to_zone": "z", "position": [1, 2]}, event_id="atomic")
+    original = service.zone_observations.append_with
+    state = {"fail": True}
+
+    def append_with(*args, **kwargs):
+        if state["fail"]:
+            raise sqlite3.OperationalError("boom")
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(service.zone_observations, "append_with", append_with)
+    assert service.append_event(event) is False
+    assert service.events.list() == ()
+    assert service.health()["failures"] == 1
+
+    state["fail"] = False
+    assert service.append_event(event) is True
+    assert service.zone_observations.list() == (("person-1", "z", (1.0, 2.0), 100.0),)
+    service.close()
+
+
+def test_event_does_not_generate_a_random_identifier():
+    assert Event("PERSON_ENTERED", "person-1").event_id == ""
 
 
 def test_append_event_derives_stable_id_when_missing(tmp_path):

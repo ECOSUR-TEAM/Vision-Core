@@ -79,6 +79,12 @@ class InMemoryReID(ReIDMemory):
         if not gallery or max(float(np.dot(v, vector)) for v in gallery) < 0.98:
             gallery.append(vector.copy())
 
+    def restore(self, person: str, embedding) -> None:
+        vector = self._normalize(embedding)
+        self._remember(person, vector)
+        if person not in self._lost:
+            self._lost[person] = (vector.copy(), time.monotonic())
+
     def resolve(self, track_id: int, embedding: np.ndarray, bbox: BBox) -> str:
         self._purge(time.monotonic())
         vector = self._normalize(embedding)

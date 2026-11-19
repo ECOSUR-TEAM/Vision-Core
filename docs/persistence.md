@@ -17,8 +17,6 @@ volumen `vision-data`, por lo que sobrevive a `docker compose down`.
 | `VISION_CORE_DB_PATH` | `vision-core.sqlite3` | Ruta del archivo SQLite |
 | `VISION_CORE_DB_FAIL_OPEN` | `1` | `1`: falla la DB y el pipeline sigue; `0`: propaga el error |
 | `VISION_CORE_DB_BUSY_TIMEOUT_SECONDS` | `5` | Espera ante bloqueos |
-| `VISION_CORE_DB_URL` | vacío | Reservada para PostgreSQL; solo Config, nunca en logs |
-| `VISION_CORE_DB_PASSWORD` | vacío | Reservada para PostgreSQL; nunca en logs |
 | `VISION_CORE_EVENT_TTL_SECONDS` | `2592000` (30 días) | Retención de eventos |
 | `VISION_CORE_HISTORY_TTL_SECONDS` | `604800` (7 días) | Retención de observaciones de zona |
 | `VISION_CORE_IDENTITY_TTL_SECONDS` | `86400` (1 día) | Retención de embeddings y personas |

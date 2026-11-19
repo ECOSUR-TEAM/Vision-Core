@@ -65,19 +65,22 @@ class PersistenceService:
 
     def append_event(self, event: Event, session_id: str | None = None) -> bool:
         def operation() -> bool:
-            inserted = self.events.append(event, session_id)
             metadata = event.metadata or {}
             zone = metadata.get("to_zone")
             position = metadata.get("position")
-            if inserted and zone is not None and position is not None and len(position) == 2:
-                self.zone_observations.append(
-                    event.person_id,
-                    str(zone),
-                    (float(position[0]), float(position[1])),
-                    event.timestamp,
-                    event_id_for(event),
-                )
-            return inserted
+            connection = self._database.connection()
+            with self._database.lock, connection:
+                inserted = self.events.append_with(connection, event, session_id)
+                if inserted and zone is not None and position is not None and len(position) == 2:
+                    self.zone_observations.append_with(
+                        connection,
+                        event.person_id,
+                        str(zone),
+                        (float(position[0]), float(position[1])),
+                        event.timestamp,
+                        event_id_for(event),
+                    )
+                return inserted
 
         return bool(self._guard(operation, False))
 
@@ -96,6 +99,9 @@ class PersistenceService:
 
     def save_identity(self, person_id: str, embedding: Embedding, last_seen_at: float) -> bool:
         return bool(self._guard(lambda: self.identities.save(person_id, embedding, last_seen_at), False))
+
+    def list_identities(self, *, since: float) -> tuple[tuple[str, tuple[float, ...], float], ...]:
+        return tuple(self._guard(lambda: self.identities.list_active(since=since), ()) or ())
 
     def start_session(self, session_id: str, started_at: float, camera_id: str | None = None) -> bool:
         return bool(self._guard(lambda: self.sessions.start(session_id, started_at, camera_id), False))

@@ -1,4 +1,5 @@
 import json
+import sqlite3
 
 from vision_core.domain.repositories.zone_observation_repository import ZoneObservationRepository
 from vision_core.infrastructure.persistence.connection import Database
@@ -8,6 +9,30 @@ from vision_core.infrastructure.persistence.utc import utc_text
 class SqliteZoneObservationRepository(ZoneObservationRepository):
     def __init__(self, database: Database):
         self._database = database
+
+    def append_with(
+        self,
+        connection: sqlite3.Connection,
+        person_id: str,
+        zone: str,
+        position: tuple[float, float],
+        timestamp: float,
+        event_id: str | None = None,
+    ) -> bool:
+        cursor = connection.execute(
+            "INSERT OR IGNORE INTO zone_observations("
+            "event_id, person_id, zone, position_json, timestamp_utc, created_at_utc"
+            ") VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                event_id,
+                person_id,
+                zone,
+                json.dumps([float(position[0]), float(position[1])]),
+                float(timestamp),
+                utc_text(),
+            ),
+        )
+        return bool(cursor.rowcount)
 
     def append(
         self,
@@ -19,20 +44,7 @@ class SqliteZoneObservationRepository(ZoneObservationRepository):
     ) -> bool:
         connection = self._database.connection()
         with self._database.lock, connection:
-            cursor = connection.execute(
-                "INSERT OR IGNORE INTO zone_observations("
-                "event_id, person_id, zone, position_json, timestamp_utc, created_at_utc"
-                ") VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    event_id,
-                    person_id,
-                    zone,
-                    json.dumps([float(position[0]), float(position[1])]),
-                    float(timestamp),
-                    utc_text(),
-                ),
-            )
-        return bool(cursor.rowcount)
+            return self.append_with(connection, person_id, zone, position, timestamp, event_id)
 
     def list(
         self,

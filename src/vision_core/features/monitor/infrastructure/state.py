@@ -34,6 +34,7 @@ class MonitorState:
         self.fps = 0.0
         self.dropped = 0
         self.persistence = None
+        self._persistence_provider = None
 
     def set_status(self, status, error=None):
         with self.lock:
@@ -42,6 +43,11 @@ class MonitorState:
     def set_persistence(self, health):
         with self.lock:
             self.persistence = health
+            self._persistence_provider = None
+
+    def set_persistence_provider(self, provider):
+        with self.lock:
+            self._persistence_provider = provider
 
     def event(self, event):
         with self.lock:
@@ -81,6 +87,8 @@ class MonitorState:
             return self.jpeg, self.sequence
 
     def snapshot(self):
+        provider = self._persistence_provider
+        persistence = provider() if provider is not None else self.persistence
         with self.lock:
             age = time.time() - self.updated if self.updated is not None else None
             status = "stale" if self.status == "running" and age > 5 else self.status
@@ -97,5 +105,5 @@ class MonitorState:
                 "processing_ms": self.processing_ms,
                 "fps": self.fps,
                 "dropped_frames": self.dropped,
-                "persistence": self.persistence,
+                "persistence": persistence,
             }

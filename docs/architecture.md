@@ -19,8 +19,8 @@ Los tests transversales están en `tests/integration/`, `tests/evaluation/` y
 - `application/` no importe `infrastructure`.
 - Un feature no importe la infraestructura de otro feature.
 - Los DTOs no dependan del dominio, infraestructura ni frameworks de visión.
-- Solo los composition roots `main.py` y `composition.py` puedan importar
-  factories de múltiples features.
+- Solo el composition root `main.py` de la raíz pueda importar factories de
+  múltiples features.
 
 `tests/architecture/test_one_class_per_file.py` mantiene la política de una
 clase de nivel superior por archivo.
@@ -31,7 +31,7 @@ cada pull request. Si un check falla, mueve la dependencia al límite correcto
 
 Los repository ports transversales viven en `vision_core.domain.repositories` y
 sus implementaciones SQLite en `vision_core.infrastructure.persistence`; el
-dominio no conoce SQL. `composition.py` inyecta los adaptadores y hace degradar
+dominio no conoce SQL. `main.py` inyecta los adaptadores y hace degradar
 la persistencia ante errores sin detener el video.
 
 Las decisiones arquitectónicas y sus motivaciones están registradas en

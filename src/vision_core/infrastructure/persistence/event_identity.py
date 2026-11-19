@@ -1,7 +1,7 @@
 import hashlib
 import json
 
-from vision_core.application.event_serializer import event_to_dict
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict
 
 
 def event_id_for(event: object) -> str:

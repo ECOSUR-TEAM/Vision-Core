@@ -1,5 +1,5 @@
-from vision_core.domain.attendance import SessionAttendance
-from vision_core.domain.model.event import Event
+from vision_core.features.pipeline.domain.attendance import SessionAttendance
+from vision_core.shared.domain.event import Event
 
 
 def test_leave_and_return_is_one_visitor_but_restores_occupancy():

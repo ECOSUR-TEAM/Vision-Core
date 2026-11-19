@@ -15,9 +15,8 @@ def test_repository_ports_do_not_depend_on_sqlite():
                 assert "infrastructure" not in (node.module or ""), path
 
 
-def test_events_have_stable_and_unique_ids():
+def test_events_do_not_generate_random_ids():
     first = Event("PERSON_ENTERED", "p1", 1.0)
     second = Event("PERSON_ENTERED", "p1", 1.0)
 
-    assert first.event_id != second.event_id
-    assert isinstance(first.event_id, str) and first.event_id
+    assert first.event_id == second.event_id == ""

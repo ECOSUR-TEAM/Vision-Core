@@ -59,7 +59,7 @@ def test_monitor_annotates_without_mutating_input_and_flags_stale(monkeypatch):
     assert report["people"][0]["zone"] == "exterior"
     assert report["people"][0]["track_id"] == 1
     assert report["dropped_frames"] == 7
-    monkeypatch.setattr(time, "time", lambda: state.updated + 6)
+    monkeypatch.setattr(time, "monotonic", lambda: state._updated_monotonic + 6)
     assert state.snapshot()["status"] == "stale"
     assert state.snapshot()["people"] == []
     state.set_status("error", "ConnectionError")

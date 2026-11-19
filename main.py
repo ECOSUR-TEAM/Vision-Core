@@ -15,14 +15,29 @@ from vision_core.features.reid.infrastructure.dependencies import build_reid
 from vision_core.features.video.infrastructure.dependencies import build_video
 from vision_core.infrastructure.monitor import __main__ as monitor_cli
 from vision_core.settings import Settings
+from vision_core.shared.observability.health import HealthStatus
+from vision_core.shared.observability.metrics import get_observability_metrics
 
 
 def build_video_with(source=None, *, path=None, latest=False):
     return build_video(source=source, path=path, latest=latest)
 
 
-def build_monitor_state(*, demo=False):
-    return build_monitor(demo=demo, event_serializer=event_to_dict).state
+def build_monitor_state(*, demo=False, settings=None):
+    settings = settings or Settings.from_env(validate_startup=False)
+    metrics = get_observability_metrics()
+    health = HealthStatus(
+        minimum_free_disk_mb=settings.monitor.minimum_free_disk_mb,
+        disk_path=settings.monitor.disk_check_path,
+    )
+    health.set_ready(config_valid=True)
+    return build_monitor(
+        demo=demo,
+        event_serializer=event_to_dict,
+        state=None,
+        metrics=metrics,
+        health=health,
+    ).state
 
 
 def build_monitor_pipeline(state, *, zones_file=None, settings=None):
@@ -52,7 +67,7 @@ def build_monitor_pipeline(state, *, zones_file=None, settings=None):
                 max_missed_frames=settings.detection.max_missed_frames,
             )
             reid = build_reid()
-            source = build_video(latest=True)
+            source = build_video(latest=True, metrics=state.metrics)
             app = build_pipeline(
                 video=source,
                 detector=detection.detector,
@@ -65,8 +80,10 @@ def build_monitor_pipeline(state, *, zones_file=None, settings=None):
                     *render_frame(frame, tracks, zones, analytics, state.person_label, demo=state.demo),
                     ms,
                     source.dropped_frames,
+                    getattr(source, "queue_size", 0),
                 ),
             )
+            app.set_observability(state.metrics)
             app.run(stop_requested)
         finally:
             if source is not None:

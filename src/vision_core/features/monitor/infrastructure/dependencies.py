@@ -19,8 +19,20 @@ class MonitorDependencies:
         return make_server(host, port, self.state, page_path)
 
 
-def build_monitor(*, state=None, demo=False, event_serializer=None) -> MonitorDependencies:
-    state = state or MonitorState(demo=demo, event_serializer=event_serializer)
+def build_monitor(
+    *,
+    state=None,
+    demo=False,
+    event_serializer=None,
+    metrics=None,
+    health=None,
+) -> MonitorDependencies:
+    state = state or MonitorState(
+        demo=demo,
+        event_serializer=event_serializer,
+        metrics=metrics,
+        health=health,
+    )
     return MonitorDependencies(
         state=state,
         publish=PublishMonitorState(state),

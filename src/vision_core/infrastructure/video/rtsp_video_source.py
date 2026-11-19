@@ -31,6 +31,7 @@ class RtspVideoSource(VideoSource):
         reconnect_attempts: int = 5,
         reconnect_delay_seconds: float = 2.0,
         decoder_threads: int = 1,
+        metrics=None,
     ) -> None:
         try:
             parsed = urlsplit(rtsp_url)
@@ -53,6 +54,7 @@ class RtspVideoSource(VideoSource):
         self._attempts = reconnect_attempts
         self._delay = reconnect_delay_seconds
         self._decoder_threads = decoder_threads
+        self._metrics = metrics
         self._cap: cv2.VideoCapture | None = None
         self.reconnections = 0
 
@@ -136,6 +138,8 @@ class RtspVideoSource(VideoSource):
                 frame = self._read()
                 if frame is not None:
                     self.reconnections += 1
+                    if self._metrics is not None:
+                        self._metrics.increment("vision_core_reconnections_total")
                     return frame
                 self.close()
         raise ConnectionError("Se agotaron los reintentos del stream")

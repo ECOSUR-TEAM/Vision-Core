@@ -1,4 +1,5 @@
 import os
+import re
 from urllib.parse import urlsplit
 
 
@@ -19,6 +20,12 @@ def valid_rtsp_url(value: str) -> bool:
 
 def redact_sensitive(value: object) -> str:
     text = str(value)
+    text = re.sub(
+        r"(rtsps?://[^:/\s]+):[^@\s]+@",
+        r"\1:***@",
+        text,
+        flags=re.IGNORECASE,
+    )
     try:
         parsed = urlsplit(text)
         if parsed.scheme not in {"http", "https", "rtsp", "rtsps"}:

@@ -286,6 +286,15 @@ Parámetros de código, no variables: IoU mínimo **0.3**, expiración tras **31
 frames ausentes (tolera 30), memoria ReID durante la sesión por defecto, similitud
 coseno **>0.85**, historial de zonas **300** observaciones por persona. El TTL
 opcional usa tiempo monotónico; los eventos llevan timestamp Unix.
+## Observabilidad
+
+El monitor expone `/health`, `/ready` y `/metrics`. `/health` solo indica que el
+servidor HTTP responde; Docker usa `/ready`, que verifica configuración, modelo,
+fuente y disco. Los logs redactan credenciales tanto en JSON como en texto y no
+incluyen frames ni embeddings.
+Consulta [docs/observability.md](docs/observability.md) para el catalogo de metricas
+y procedimientos de diagnostico.
+
 
 ## Docker
 

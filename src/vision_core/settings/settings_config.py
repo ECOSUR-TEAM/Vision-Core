@@ -168,14 +168,22 @@ class Settings:
         monitor_host = env.get("VISION_CORE_MONITOR_HOST", "127.0.0.1").strip()
         monitor_port = integer("VISION_CORE_MONITOR_PORT", 8080)
         exit_on_error = boolean("VISION_CORE_MONITOR_EXIT_ON_ERROR", False)
+        disk_check_path = env.get("VISION_CORE_DISK_CHECK_PATH", ".").strip() or "."
         if not monitor_host:
             errors.append("VISION_CORE_MONITOR_HOST: no puede estar vacío")
         if not 1 <= monitor_port <= 65535:
             errors.append("VISION_CORE_MONITOR_PORT: debe estar entre 1 y 65535")
 
         log_level = env.get("VISION_CORE_LOG_LEVEL", "INFO").strip().upper()
+        log_json = boolean("VISION_CORE_LOG_JSON", True)
+        camera_id = env.get("VISION_CORE_CAMERA_ID", "default").strip() or "default"
         if log_level not in {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}:
             errors.append("VISION_CORE_LOG_LEVEL: use CRITICAL, ERROR, WARNING, INFO o DEBUG")
+        if not camera_id or camera_id.lower() in {"none", "null"}:
+            errors.append("VISION_CORE_CAMERA_ID: no puede estar vacío")
+        minimum_free_disk_mb = integer("VISION_CORE_MINIMUM_FREE_DISK_MB", 500)
+        if minimum_free_disk_mb < 0:
+            errors.append("VISION_CORE_MINIMUM_FREE_DISK_MB: debe ser mayor o igual que 0")
         performance_interval = floating("VISION_CORE_PERFORMANCE_INTERVAL_SECONDS", 1.0)
         if not isfinite(performance_interval) or performance_interval <= 0:
             errors.append("VISION_CORE_PERFORMANCE_INTERVAL_SECONDS: debe ser mayor que 0")
@@ -203,8 +211,8 @@ class Settings:
             detection=DetectionSettings(model_path, detection_device, confidence, classes, tracking, max_missed),
             reid=ReIDSettings(reid_model, reid_device, reid_threshold, ambiguity_margin, reid_ttl, gallery_size),
             zones=ZonesSettings(zones_file, confirmation_frames, demo_zones, uncalibrated),
-            monitor=MonitorSettings(monitor_host, monitor_port, exit_on_error),
-            logging=LoggingSettings(log_level),
+            monitor=MonitorSettings(monitor_host, monitor_port, exit_on_error, minimum_free_disk_mb, disk_check_path),
+            logging=LoggingSettings(log_level, log_json, camera_id),
             performance=PerformanceSettings(performance_interval),
             camera=CameraSettings(camera_url),
         )

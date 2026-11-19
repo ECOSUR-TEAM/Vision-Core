@@ -58,6 +58,10 @@ Los valores invalidos producen `SettingsError` con la variable exacta y una acci
 | `VISION_CORE_MONITOR_PORT` | `8080` | Puerto entre 1 y 65535 |
 | `VISION_CORE_MONITOR_EXIT_ON_ERROR` | `0` | Booleano |
 | `VISION_CORE_LOG_LEVEL` | `INFO` | Nivel Python admitido |
+| `VISION_CORE_LOG_JSON` | `0` | Booleano: `1` para logs JSON |
+| `VISION_CORE_CAMERA_ID` | `default` | Identificador estable de la camara |
+| `VISION_CORE_MINIMUM_FREE_DISK_MB` | `500` | Entero no negativo |
+| `VISION_CORE_DISK_CHECK_PATH` | `.` | Ruta existente para el check de disco |
 | `VISION_CORE_PERFORMANCE_INTERVAL_SECONDS` | `1.0` | Numero positivo |
 
 ### Integracion de Frigate

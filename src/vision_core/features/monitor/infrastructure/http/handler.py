@@ -41,6 +41,27 @@ class Handler(BaseHTTPRequestHandler):
                 body, sequence = response.jpeg, response.sequence
                 kind, code = "image/jpeg", 200 if body else 503
                 body = body or b"Esperando video"
+        elif path == "/health":
+            body = json.dumps({"status": "alive", "live": True}, allow_nan=False).encode()
+            kind, code = "application/json", 200
+        elif path == "/ready":
+            server.get_snapshot.execute(RequestSnapshot())
+            readiness = server.health.snapshot() if server.health is not None else {"ready": False, "checks": {}}
+            body = json.dumps(readiness, allow_nan=False).encode()
+            kind, code = "application/json", 200 if readiness["ready"] else 503
+        elif path == "/metrics":
+            metrics = (
+                server.metrics.snapshot()
+                if server.metrics is not None
+                else {
+                    "counters": {},
+                    "gauges": {},
+                    "histograms": {},
+                    "uptime_seconds": 0,
+                }
+            )
+            body = json.dumps(metrics, allow_nan=False).encode()
+            kind, code = "application/json", 200
         else:
             body, kind, code = b"Not found", "text/plain", 404
         self.send_response(code)

@@ -44,7 +44,7 @@ def test_monitor_e2e_with_video_file_and_real_zones(monkeypatch, synthetic_sampl
     monkeypatch.setattr(
         main,
         "build_video",
-        lambda latest=False: original_build_video(source=video_source, latest=False),
+        lambda latest=False, **kwargs: original_build_video(source=video_source, latest=False),
     )
 
     server = make_server("127.0.0.1", 0, state)

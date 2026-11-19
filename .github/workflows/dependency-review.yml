@@ -16,6 +16,7 @@ jobs:
     name: Revisar dependencias del PR
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: vars.DEPENDENCY_GRAPH_ENABLED == 'true'
 
     permissions:
       contents: read

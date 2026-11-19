@@ -17,3 +17,4 @@ coverage.xml
 coverage-*.json
 htmlcov/
 pytest*.log
+dev-data/*.avi

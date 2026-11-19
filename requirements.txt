@@ -6,3 +6,4 @@ pillow
 torch
 torchvision
 ultralytics
+pyyaml==6.0.2

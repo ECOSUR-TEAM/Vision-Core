@@ -25,7 +25,7 @@ def test_monitor_e2e_with_video_file_and_real_zones(monkeypatch, synthetic_sampl
     monkeypatch.setattr(
         main,
         "build_detection",
-        lambda: SimpleNamespace(
+        lambda **kwargs: SimpleNamespace(
             detector=FakeDetector(
                 detections_per_frame=list(detections),
                 lost_ids_per_call=[list(ids) for ids in lost_ids],

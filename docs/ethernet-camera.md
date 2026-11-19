@@ -3,7 +3,7 @@
 ## Uso diario
 
 ```bash
-docker compose up
+docker compose --profile camera up
 ```
 
 Monitor: http://127.0.0.1:8080/. Frigate: http://127.0.0.1:15000/.

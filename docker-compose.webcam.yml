@@ -1,7 +1,18 @@
 # Standalone development alternative: stop the default stack before using this file.
 name: vision-core-webcam
 services:
+  frigate-config:
+    profiles: ["webcam"]
+    build:
+      context: .
+      target: camera-bridge
+    command: ["python", "/app/camera_bridge.py", "init-config"]
+    volumes:
+      - ./config/frigate-local:/config
+      - ./config/frigate.webcam.example.yml:/defaults/config.yml:ro
+
   frigate:
+    profiles: ["webcam"]
     image: ghcr.io/blakeblackshear/frigate:stable
     shm_size: "256mb"
     devices:
@@ -11,10 +22,14 @@ services:
       - "127.0.0.1:28554:8554"
     volumes:
       - ./config/frigate-local:/config
+    depends_on:
+      frigate-config:
+        condition: service_completed_successfully
     tmpfs:
       - /tmp/cache:size=256m
       - /media/frigate:size=256m
   vision-core:
+    profiles: ["webcam"]
     build:
       context: .
       target: runtime

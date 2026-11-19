@@ -1,4 +1,5 @@
-from typing import Mapping
+from collections.abc import Mapping
+from typing import cast
 
 from vision_core.features.detection.application.dto.response.response_detector import ResponseDetector
 from vision_core.features.detection.domain.entities.detection import Detection
@@ -30,9 +31,9 @@ def detection_from_dto(data: Mapping[str, object]) -> Detection:
             x2=float(bbox_data["x2"]),
             y2=float(bbox_data["y2"]),
         ),
-        class_id=int(data["class_id"]),
-        confidence=float(data["confidence"]),
-        track_id=int(data["track_id"]),
+        class_id=int(cast(int, data["class_id"])),
+        confidence=float(cast(float, data["confidence"])),
+        track_id=int(cast(int, data["track_id"])),
     )
 
 

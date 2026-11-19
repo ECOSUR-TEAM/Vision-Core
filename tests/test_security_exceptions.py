@@ -12,7 +12,7 @@ def _exception(identifier, trivy=True, dependency_review=True):
         "version": "1.0.0",
         "reason": "sin correccion",
         "registered": "2026-01-01",
-        "review_by": "2026-02-01",
+        "review_by": "2099-01-01",
         "owner": "seguridad",
         "trivy": trivy,
         "dependency_review": dependency_review,

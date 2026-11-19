@@ -1,6 +1,7 @@
 import argparse
 import json
 import re
+from datetime import date
 from pathlib import Path
 
 _ID_PATTERN = re.compile(r"^(?:GHSA-[a-z0-9-]+|CVE-\d{4}-\d+)$", re.IGNORECASE)
@@ -22,6 +23,13 @@ def load_exceptions(path):
             raise ValueError(f"security-exceptions: campos faltantes en {item.get('id')}: {sorted(missing)}")
         if not _ID_PATTERN.match(item["id"]):
             raise ValueError(f"security-exceptions: identificador invalido: {item['id']}")
+        for field in ("registered", "review_by"):
+            try:
+                parsed = date.fromisoformat(item[field])
+            except (TypeError, ValueError) as error:
+                raise ValueError(f"security-exceptions: {field} invalido en {item['id']}: {error}") from error
+            if field == "review_by" and parsed < date.today():
+                raise ValueError(f"security-exceptions: review_by vencido en {item['id']}: {item[field]}")
         for flag in ("trivy", "dependency_review"):
             if flag in item and not isinstance(item[flag], bool):
                 raise ValueError(f"security-exceptions: {flag} debe ser booleano en {item['id']}")

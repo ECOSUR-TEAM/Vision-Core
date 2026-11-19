@@ -83,8 +83,9 @@ incluye `schema_version`:
 `person_id` es un identificador de sesión, no una identidad nominal.
 `timestamp` es `float` (segundos Unix) y `metadata` es un objeto con valores
 serializables. Los productores son los mappers de door y pipeline y el
-serializador por defecto de `MonitorState`; todos usan la misma función
-`with_schema_version`.
+serializador por defecto de `MonitorState`; todos construyen un DTO de evento
+que declara `schema_version` y validan los campos en la frontera. El
+serializador de `MonitorState` reutiliza el mapper de pipeline.
 
 ## Política de versionado y deprecación
 

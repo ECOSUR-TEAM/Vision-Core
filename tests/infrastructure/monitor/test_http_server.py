@@ -171,3 +171,12 @@ def test_serialized_events_declare_schema_version(monitor_server):
         events = json.load(response)["events"]
 
     assert events[0]["schema_version"] == EVENT_SCHEMA_VERSION
+
+
+def test_state_event_rejects_non_finite_timestamp(monitor_server):
+    _, state, _ = monitor_server
+
+    with pytest.raises(ValueError, match="timestamp must be a finite number"):
+        state.event(Event("PERSON_ENTERED", "p1", timestamp=float("nan")))
+
+    assert state.snapshot()["events"] == []

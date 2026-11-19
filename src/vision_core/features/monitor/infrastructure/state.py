@@ -4,21 +4,11 @@ import threading
 import time
 from collections import Counter, deque
 
-from vision_core.shared.application.dto.serialization import to_json_value
-from vision_core.shared.events import with_schema_version
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict
 
 
 def _event_to_dict(event):
-    return with_schema_version(
-        to_json_value(
-            {
-                "event": event.event,
-                "person_id": event.person_id,
-                "timestamp": event.timestamp,
-                "metadata": event.metadata,
-            }
-        )
-    )
+    return event_to_dict(event)
 
 
 class MonitorState:

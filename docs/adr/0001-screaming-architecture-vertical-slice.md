@@ -218,7 +218,8 @@ son código del feature y permanecen fuera de `src/vision_core/`.
   infraestructura, frameworks de visión u otros features) queda fuera del DTO.
 - La serialización JSON usa `shared/application/dto/serialization.py`
   (`to_json_value`/`dumps_json`, con `allow_nan=False`). Los payloads binarios
-  viajan como `bytes`, se sirven como `image/jpeg` y se omiten del JSON.
+  viajan como `bytes`, se sirven como `image/jpeg` y se serializan como `null`
+  en JSON.
 - No existe un `dto/` global de operaciones. Los payloads compartidos por
   varios slices (bbox, event, observation, track, monitor person) viven en
   `shared/application/dto/` para no duplicar el contrato en cada feature.

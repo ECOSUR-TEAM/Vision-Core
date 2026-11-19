@@ -41,8 +41,8 @@ slices comparten el contrato y el movimiento queda justificado.
   pesados viven ahí, no en el DTO.
 - Serialización: `shared/application/dto/serialization.py` expone
   `to_json_value`/`dumps_json`. Los payloads `bytes` son de transporte (JPEG/
-  PNG), se sirven como `image/jpeg` y se omiten en JSON; los floats no finitos
-  se rechazan con contexto.
+  PNG), se sirven como `image/jpeg` y se serializan como `null` en JSON; los
+  floats no finitos se rechazan con contexto.
 
 La convención normativa está en
 [ADR-0001, § Convención DTO](adr/0001-screaming-architecture-vertical-slice.md#convención-dto).

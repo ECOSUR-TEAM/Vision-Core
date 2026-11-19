@@ -1,9 +1,9 @@
 """Explicit JSON serialization for transport DTOs.
 
-Binary fields (``bytes``) are transport-only and are omitted from JSON: the
-monitor handler serves frames as ``image/jpeg`` and uses :func:`dumps_json`
-only for JSON endpoints. Non-finite floats are rejected with context instead
-of surfacing as a bare ``ValueError`` from ``json.dumps``.
+Binary fields (``bytes``) are transport-only and are serialized as ``null`` in
+JSON: the monitor handler serves frames as ``image/jpeg`` and uses
+:func:`dumps_json` only for JSON endpoints. Non-finite floats are rejected with
+context instead of surfacing as a bare ``ValueError`` from ``json.dumps``.
 """
 
 import json

@@ -64,7 +64,7 @@ def required_str(value: Any, field: str) -> str:
 
 def finite_bbox(value: Any, field: str = "bbox") -> tuple[float, float, float, float]:
     if isinstance(value, BBoxPayload):
-        coordinates = (value.x1, value.y1, value.x2, value.y2)
+        coordinates = tuple(finite_float(getattr(value, name), f"{field}.{name}") for name in _BBOX_FIELDS)
     elif all(hasattr(value, name) for name in _BBOX_FIELDS):
         coordinates = tuple(finite_float(getattr(value, name), f"{field}.{name}") for name in _BBOX_FIELDS)
     elif isinstance(value, Mapping):

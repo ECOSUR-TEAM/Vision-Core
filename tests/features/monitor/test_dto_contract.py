@@ -133,7 +133,7 @@ def test_snapshot_response_is_json_serializable():
     ]
 
 
-def test_frame_response_serializes_without_binary_payload():
+def test_frame_response_serializes_binary_payload_as_null():
     response = ResponseFrame(jpeg=b"jpeg", sequence=4)
 
     payload = json.loads(dumps_json(response))

@@ -15,6 +15,7 @@ from vision_core.features.detection.application.mappers.detection_mapper import 
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.shared.application.dto import BBoxPayload, DetectionPayload, FrameLike
 from vision_core.shared.application.dto.serialization import dumps_json
+from vision_core.shared.application.validation import finite_bbox
 from vision_core.shared.domain.bbox import BBox
 
 
@@ -67,6 +68,12 @@ def test_detections_round_trip_through_response_dto():
 
     assert response == detections_to_response([detection])
     assert response_to_detections(response) == [detection]
+
+
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), -float("inf")])
+def test_finite_bbox_validates_bbox_payload_coordinates(invalid):
+    with pytest.raises(ValueError, match=r"bbox\.x1 must be a finite number"):
+        finite_bbox(BBoxPayload(invalid, 0, 2, 1))
 
 
 def test_detection_mapper_validates_at_the_boundary():

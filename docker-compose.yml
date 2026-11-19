@@ -1,5 +1,6 @@
 services:
   camera-bridge:
+    profiles: ["camera"]
     build:
       context: .
       target: camera-bridge
@@ -17,6 +18,7 @@ services:
       start_period: 10s
 
   frigate-config:
+    profiles: ["camera"]
     build:
       context: .
       target: camera-bridge
@@ -26,6 +28,7 @@ services:
       - ./config/frigate.camera.example.yml:/defaults/config.yml:ro
 
   frigate:
+    profiles: ["camera"]
     image: ghcr.io/blakeblackshear/frigate:stable
     entrypoint: ["python3", "/camera_bridge.py", "frigate"]
     shm_size: "256mb"
@@ -50,6 +53,7 @@ services:
     restart: unless-stopped
 
   vision-core:
+    profiles: ["camera"]
     build:
       context: .
       target: runtime
@@ -77,6 +81,30 @@ services:
       timeout: 5s
       start_period: 180s
       retries: 4
+
+  vision-core-synthetic:
+    profiles: ["synthetic", "file"]
+    build:
+      context: .
+      target: runtime
+    environment:
+      VISION_CORE_VIDEO_SOURCE: file
+      VISION_CORE_VIDEO_PATH: /app/dev-data/sample.avi
+      VISION_CORE_ZONES_FILE: /app/dev-data/zones.json
+      VISION_CORE_MONITOR_UNCALIBRATED: "0"
+      VISION_CORE_MONITOR_DEMO_ZONES: "0"
+      VISION_CORE_MONITOR_HOST: 0.0.0.0
+      VISION_CORE_MONITOR_PORT: "8080"
+      VISION_CORE_MONITOR_EXIT_ON_ERROR: "1"
+      TORCH_HOME: /model-cache/torch
+    command: ["python", "main.py", "--zones", "/app/dev-data/zones.json", "--host", "0.0.0.0", "--port", "8080"]
+    volumes:
+      - ./dev-data:/app/dev-data:ro
+      - ./config:/app/config:ro
+      - vision-model-cache:/model-cache
+    ports:
+      - "127.0.0.1:8080:8080"
+    restart: unless-stopped
 
 volumes:
   vision-model-cache:

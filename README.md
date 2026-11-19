@@ -33,6 +33,19 @@ equipo, calibración, actualizaciones y diagnóstico.
 
 Las siguientes secciones de Python son para desarrollo y validación manual.
 
+## Desarrollo local reproducible
+
+Usa `make setup`, `make test`, `make lint`, `make format`, `make run` y
+`make docker-build`. Para el perfil sintético sin cámara:
+
+```bash
+make setup
+make run
+```
+
+La guía completa, Dev Container, perfiles de Compose y troubleshooting están en
+[docs/development.md](docs/development.md).
+
 ## Instalación local (Linux, Bash)
 
 El proyecto declara Python ≥3.10; para una instalación nueva usa Python 3.11 o

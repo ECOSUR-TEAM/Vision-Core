@@ -2,6 +2,7 @@
 name: vision-core-webcam
 services:
   frigate:
+    profiles: ["webcam"]
     image: ghcr.io/blakeblackshear/frigate:stable
     shm_size: "256mb"
     devices:
@@ -15,6 +16,7 @@ services:
       - /tmp/cache:size=256m
       - /media/frigate:size=256m
   vision-core:
+    profiles: ["webcam"]
     build:
       context: .
       target: runtime

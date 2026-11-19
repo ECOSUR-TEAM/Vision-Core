@@ -1,0 +1,32 @@
+{
+  "name": "Vision Core",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "root",
+  "postCreateCommand": "make setup",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "ruff.enable": true
+      }
+    }
+  },
+  "forwardPorts": [8080, 15000, 8554],
+  "portsAttributes": {
+    "8080": {
+      "label": "Vision Core Monitor"
+    },
+    "15000": {
+      "label": "Frigate"
+    }
+  }
+}

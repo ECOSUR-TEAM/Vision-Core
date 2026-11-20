@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import threading
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -34,6 +35,26 @@ PAYLOADS = (
     "<img src=x onerror=alert(1)>",
     "javascript:alert(1)",
 )
+
+
+class _ScriptExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._in_script = False
+        self.parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "script":
+            self._in_script = True
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "script":
+            self._in_script = False
+
+    def handle_data(self, data: str) -> None:
+        if self._in_script:
+            self.parts.append(data)
+
 
 DOM_HARNESS = r"""
 class StubElement {
@@ -138,9 +159,9 @@ def test_dynamic_image_sources_are_restricted_to_monitor_blobs():
 
 
 def _run_monitor_js(state, driver):
-    script = re.search(r"<script\b[^>]*>(.*?)</script>", INDEX.read_text(encoding="utf-8"), re.S | re.IGNORECASE).group(
-        1
-    )
+    parser = _ScriptExtractor()
+    parser.feed(INDEX.read_text(encoding="utf-8"))
+    script = "".join(parser.parts)
     program = DOM_HARNESS + f"\nglobalThis.__STATE__ = {json.dumps(state)};\n" + script + "\n" + driver
     result = subprocess.run(["node", "-e", program], capture_output=True, text=True, timeout=15, check=False)
     assert result.returncode == 0, f"El renderizado JS falló: {result.stderr}"

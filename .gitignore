@@ -11,6 +11,10 @@ bus.jpg
 config/frigate-local/
 config/frigate-camera-local/
 *.egg-info/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+data/
 requirements.lock.txt
 .trivyignore
 .coverage

@@ -41,6 +41,11 @@ def snapshot_to_response(snapshot: Mapping[str, object]) -> ResponseSnapshot:
         raise TypeError("Monitor snapshot counts must be a mapping")
     counts = {str(key): int(value) for key, value in counts_data.items()}
 
+    persistence_data = snapshot.get("persistence")
+    if persistence_data is not None and not isinstance(persistence_data, Mapping):
+        raise TypeError("Monitor snapshot persistence must be a mapping or None")
+    persistence = {str(key): value for key, value in persistence_data.items()} if persistence_data is not None else None
+
     return ResponseSnapshot(
         status=status,
         error=error,
@@ -54,6 +59,7 @@ def snapshot_to_response(snapshot: Mapping[str, object]) -> ResponseSnapshot:
         processing_ms=float(cast(float, snapshot["processing_ms"])),
         fps=float(cast(float, snapshot["fps"])),
         dropped_frames=int(cast(int, snapshot["dropped_frames"])),
+        persistence=persistence,
     )
 
 

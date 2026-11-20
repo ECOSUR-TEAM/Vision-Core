@@ -46,6 +46,8 @@ class MonitorState:
         self.processing_ms = 0.0
         self.fps = 0.0
         self.dropped = 0
+        self.persistence = None
+        self._persistence_provider = None
         self.metrics = metrics or ObservabilityMetrics()
         self.health = health or HealthStatus()
         self.camera_id = "default"
@@ -56,6 +58,15 @@ class MonitorState:
         with self.lock:
             self.status, self.error = status, error
         self.health.set_ready(source_connected=status == "running")
+
+    def set_persistence(self, health):
+        with self.lock:
+            self.persistence = health
+            self._persistence_provider = None
+
+    def set_persistence_provider(self, provider):
+        with self.lock:
+            self._persistence_provider = provider
 
     def event(self, event):
         with self.lock:
@@ -118,6 +129,8 @@ class MonitorState:
             return self.jpeg, self.sequence
 
     def snapshot(self):
+        provider = self._persistence_provider
+        persistence = provider() if provider is not None else self.persistence
         with self.lock:
             age = time.monotonic() - self._updated_monotonic if self._updated_monotonic is not None else None
             status = "stale" if self.status == "running" and age is not None and age > 5 else self.status
@@ -137,4 +150,5 @@ class MonitorState:
                 "processing_ms": self.processing_ms,
                 "fps": self.fps,
                 "dropped_frames": self.dropped,
+                "persistence": persistence,
             }

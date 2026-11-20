@@ -12,24 +12,32 @@ import ultralytics
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", help="Directorio nuevo para los archivos")
+    parser.add_argument(
+        "--allow-existing",
+        action="store_true",
+        help="Permite generar dentro de un directorio existente",
+    )
     args = parser.parse_args()
     folder = Path(args.directory)
-    folder.mkdir(parents=True, exist_ok=False)
+    folder.mkdir(parents=True, exist_ok=args.allow_existing)
     image = cv2.imread(str(Path(ultralytics.__file__).parent / "assets/bus.jpg"))
     if image is None:
         raise RuntimeError("La instalación de Ultralytics no incluye bus.jpg")
     h, w = image.shape[:2]
-    writer = cv2.VideoWriter(str(folder / "sample.avi"), cv2.VideoWriter_fourcc(*"MJPG"), 10, (w, h))
+    fourcc = cv2.VideoWriter.fourcc(*"MJPG")
+    writer = cv2.VideoWriter(str(folder / "sample.avi"), fourcc, 10, (w, h))
     if not writer.isOpened():
         raise RuntimeError("No se pudo crear el video MJPEG")
     try:
         for shift in list(range(0, 151, 10)) + [150] * 3 + list(range(150, -1, -10)):
-            writer.write(cv2.warpAffine(image, np.float32([[1, 0, shift], [0, 1, 0]]), (w, h)))
+            matrix = np.array([[1, 0, shift], [0, 1, 0]], dtype=np.float32)
+            writer.write(cv2.warpAffine(image, matrix, (w, h)))
     finally:
         writer.release()
     (folder / "zones.json").write_text(
         json.dumps(
             {
+                "version": "1.0",
                 "frame_size": [w, h],
                 "door": [[190, 0], [210, 0], [210, h - 1], [190, h - 1]],
                 "exterior": [[0, 0], [200, 0], [200, h - 1], [0, h - 1]],

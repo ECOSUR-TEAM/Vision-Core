@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
+from main import build_video_with
 from tests.fakes.fake_video_source import FakeVideoSource
-from vision_core.composition import build_video_with
 
 
 def test_build_video_wires_use_cases_with_injected_source():

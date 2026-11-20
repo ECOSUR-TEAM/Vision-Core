@@ -8,8 +8,8 @@ import cv2
 import numpy as np
 import pytest
 
-from vision_core.application.vision_core_app import VisionCoreApp
 from vision_core.domain.model.polygon import Polygon
+from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.infrastructure.detection.yolo_detector_manager import (
     YoloDetectorManager,
 )
@@ -18,6 +18,14 @@ from vision_core.infrastructure.reid.memory_reid import InMemoryReID
 from vision_core.infrastructure.video.file_video_source import FileVideoSource
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 from vision_core.scripts.pipeline_tools.limited_source import LimitedSource
+
+
+def yolo_boxes(items):
+    return SimpleNamespace(
+        cls=np.array([item.cls[0] for item in items]),
+        conf=np.array([item.conf[0] for item in items]),
+        xyxy=np.array([item.xyxy[0] for item in items]).reshape(-1, 4),
+    )
 
 
 def scene(monkeypatch, count):
@@ -35,7 +43,7 @@ def scene(monkeypatch, count):
                 for i in range(count)
             ]
         )
-        outputs.append(SimpleNamespace(boxes=boxes))
+        outputs.append(SimpleNamespace(boxes=yolo_boxes(boxes)))
     model = Mock()
     model.predict.side_effect = [[output] for output in outputs]
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))
@@ -59,7 +67,7 @@ def test_recorded_controlled_entries_exits_and_occlusion(tmp_path, monkeypatch, 
     writer.release()
     source = FileVideoSource(path)
     events = []
-    app = VisionCoreApp(source, detector, InMemoryReID(), analytics(), lambda crop: np.array([1.0, 0.0]), events.append)
+    app = RunPipeline(source, detector, InMemoryReID(), analytics(), lambda crop: np.array([1.0, 0.0]), events.append)
     app.run()
     assert source._cap is None
     assert [e.event for e in events].count("PERSON_ENTERED") == people
@@ -81,7 +89,7 @@ def test_pipeline_rtsp_outage(monkeypatch, recover):
     rtsp = RtspVideoSource("rtsp://test:8554/room", reconnect_attempts=1, reconnect_delay_seconds=0)
     source = LimitedSource(rtsp, frames)
     events = []
-    app = VisionCoreApp(source, detector, InMemoryReID(), analytics(), lambda crop: np.array([1.0, 0.0]), events.append)
+    app = RunPipeline(source, detector, InMemoryReID(), analytics(), lambda crop: np.array([1.0, 0.0]), events.append)
     if recover:
         app.run()
         assert rtsp.reconnections == 1

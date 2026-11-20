@@ -5,8 +5,10 @@ from dataclasses import asdict
 import cv2
 import numpy as np
 
+from vision_core.shared.errors import ValidationError, codes
 
-def render_frame(frame, tracks, zones, analytics, label_for, demo=False):
+
+def render_frame(frame, tracks, zones, analytics, label_for, demo=False, zone_by_person=None):
     annotated = frame.copy()
     polygons = (
         []
@@ -33,8 +35,13 @@ def render_frame(frame, tracks, zones, analytics, label_for, demo=False):
         )
     people = []
     for track in tracks:
-        history = analytics.get_history(track.person_id)
-        zone = history[-1].zone if history else "fuera"
+        # El renderer corre en otro hilo: usa la instantánea tomada por
+        # inferencia en lugar de leer el historial mutable de analytics.
+        if zone_by_person is not None:
+            zone = zone_by_person.get(track.person_id, "fuera")
+        else:
+            history = analytics.get_history(track.person_id)
+            zone = history[-1].zone if history else "fuera"
         label = label_for(track.person_id)
         people.append({**asdict(track), "zone": zone, "display_name": label})
         box = track.bbox
@@ -64,5 +71,5 @@ def render_frame(frame, tracks, zones, analytics, label_for, demo=False):
         )
     ok, jpeg = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 85])
     if not ok:
-        raise RuntimeError("No se pudo codificar el frame")
+        raise ValidationError("No se pudo codificar el frame", code=codes.VIDEO_FRAME_INVALID)
     return jpeg.tobytes(), people

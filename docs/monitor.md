@@ -7,7 +7,7 @@ IDs, embeddings, zonas y eventos proceden de Vision Core.
 ## Arranque principal
 
 ```bash
-docker compose up
+docker compose --profile camera up
 ```
 
 El monitor y Frigate se inician juntos. No hace falta iniciar Python ni ejecutar
@@ -24,12 +24,12 @@ source venv/bin/activate  # O .venv/bin/activate, según tu instalación.
 set -a
 source .env
 set +a
-python -m vision_core.infrastructure.monitor --demo-zones --port 8080
+python main.py --demo-zones --port 8080
 ```
 
 `.env` debe contener `VISION_CORE_RTSP_URL=rtsp://127.0.0.1:28554/entrada`.
 Abre http://127.0.0.1:8080. El comando permanece activo; Ctrl+C detiene el monitor.
-No hace falta ejecutar `main.py` a la vez: el monitor ya construye el pipeline.
+`main.py` es el composition root: construye el pipeline y afterwards levanta el monitor.
 La detección de Frigate puede permanecer desactivada.
 
 El modo `--demo-zones` usa `config/zones.example.json`, con resolución 640 × 480.
@@ -49,7 +49,7 @@ producir transiciones: estos eventos no representan una puerta real calibrada.
   no recibe una imagen nueva en 2,5 segundos, deja de mostrar el conteo como actual.
 
 El panel no muestra FPS, porcentajes, identificadores técnicos, tiempos ni tablas
- de eventos. Estos datos siguen disponibles en `/api/state`. En modo demostración
+ de eventos. Estos datos siguen disponibles en `/api/v1/state`. En modo demostración
 se ocultan los polígonos y aparece «Calibración pendiente»; los eventos de ejemplo
 siguen calculándose internamente pero no se presentan como movimientos reales.
 
@@ -64,7 +64,7 @@ Cambia `VISION_CORE_RTSP_URL` al restream remoto, exporta `.env` y calibra las z
 con [la guía de validación](validation.md). Inicia sin `--demo-zones`:
 
 ```bash
-python -m vision_core.infrastructure.monitor --zones config/zones.json --port 8080
+python main.py --zones config/zones.json --port 8080
 ```
 
 Mantén `VISION_CORE_MONITOR_DEMO_ZONES=0` (predeterminado). Si vale `1`, activa las
@@ -75,8 +75,8 @@ en el panel; corrige la configuración y reinicia el monitor.
 ## Docker
 
 El archivo principal `docker-compose.yml` ejecuta el monitor y sus dependencias.
-Para dejarlo en segundo plano: `docker compose up -d`; para detenerlo:
-`docker compose down`. Al actualizar código: `docker compose up --build`.
+Para dejarlo en segundo plano: `docker compose --profile camera up -d`; para detenerlo:
+`docker compose down`. Al actualizar código: `docker compose --profile camera up --build`.
 
 Después de calibrar, configura `VISION_CORE_MONITOR_UNCALIBRATED=0` y la ruta
 `VISION_CORE_ZONES_FILE` en `.env`. Hasta entonces el monitor acepta la resolución
@@ -85,7 +85,7 @@ para pesos. Los reinicios del proceso borran la memoria temporal de identidades.
 
 ## Implementación y acceso
 
-`VisionCoreApp` dispone de un observador opcional `on_frame(frame, tracks, ms)`,
+`RunPipeline` dispone de un observador opcional `on_frame(frame, tracks, ms)`,
 ejecutado una vez al terminar cada frame, incluso si no hay detecciones.
 El monitor consume los mismos IDs y eventos que el pipeline normal. No realiza
 una inferencia adicional por navegador. La API expone:
@@ -93,9 +93,26 @@ una inferencia adicional por navegador. La API expone:
 | Ruta | Respuesta |
 |---|---|
 | `/` | Panel claro, sin recursos web externos |
-| `/api/state` | Estado, personas, métricas y eventos recientes JSON |
-| `/api/frame` | Último JPEG anotado; 503 mientras no haya frames |
-| `/api/frame?after=N` | Espera hasta 1 s por una imagen posterior a N; 204 si aún no llega. Incluye `X-Frame-Sequence`. |
+| `/api/v1/state` | Estado, personas, métricas y eventos recientes JSON |
+| `/api/v1/frame` | Último JPEG anotado; 503 con envelope de error mientras no haya frames |
+| `/api/v1/frame?after=N` | Espera hasta 1 s por una imagen posterior a N; 204 si aún no llega. Incluye `X-Frame-Sequence`. |
+
+Las rutas sin versionar (`/api/state`, `/api/frame`) quedan como alias obsoletos
+con cabecera `Deprecation: true`. El contrato completo, el envelope de error y
+la política de deprecación están en [contratos versionados](api-contracts.md);
+los códigos estables en el [catálogo de errores](errors.md).
+
+El contrato es estricto: solo `GET`; `/`, `/api/v1/state`, `/health`, `/ready` y
+`/metrics` rechazan cualquier query, y `/api/v1/frame` solo acepta un `after`
+único (sin duplicados ni parámetros desconocidos) de hasta 30 dígitos. Los
+errores siguen usando el envelope con `code`, `message` y `request_id`, salvo en
+`HEAD`, que por RFC 9110 solo devuelve estado y cabeceras (405 con
+`Allow: GET`). Un 204 no incluye cuerpo, `Content-Type` ni `Content-Length`; un
+503 conserva el envelope y añade `Retry-After: 1`. Todas las respuestas llevan
+`X-Request-ID`, un conjunto uniforme de cabeceras de seguridad y una CSP con
+nonce por petición; el panel sustituye sus dos marcadores por ese nonce. El
+número de conexiones y de long-polls simultáneos está acotado y las peticiones
+rechazadas se contabilizan sin exponer direcciones ni payloads.
 
 Un hilo posee la captura RTSP y conserva únicamente el frame más reciente. Si
 la inferencia tarda, reemplaza los frames intermedios en lugar de crear una cola
@@ -118,6 +135,26 @@ No se promete latencia cero. El sensor, codificador de Frigate, red, inferencia 
 pantalla aún añaden tiempo. Para medir el retraso absoluto, apunta la cámara a un
 reloj con milisegundos y compara ese reloj con la imagen del panel en una misma
 captura. Los FPS y la edad de publicación del JPEG no miden ese retraso total.
+
+### Render desacoplado y profiling
+
+El dibujo de zonas/cajas y la codificación JPEG ocurren en `RendererThread`, un
+hilo propio que consume un `LatestFrameBuffer` de tamaño 1. Si la inferencia
+publica un frame nuevo antes de que el renderer termine el anterior, se
+sobrescribe el viejo: el hilo de inferencia nunca espera al renderer. Antes de
+publicar, `RenderJob.capture` copia el array y congela tracks y metadatos, por lo
+que el siguiente ciclo puede reutilizar el buffer de video sin carreras. La
+inferencia sigue siendo secuencial; no se usa multiprocesamiento ni pools.
+
+Sin visor, `VISION_CORE_RENDER_ENABLED=0` (o `--no-render`) omite el render por
+completo y solo ejecuta detección, embeddings, ReID y analítica. Las pasadas
+forward usan `torch.inference_mode()`. El profiling es opt-in: con
+`VISION_CORE_PROFILING_ENABLED=1` los tiempos de decode, detección, embedding,
+ReID/tracking, analítica y frame completo se guardan al finalizar en
+`VISION_CORE_PROFILING_OUTPUT` (por defecto `profiling_results.json`) con p50,
+p95 y FPS. Por defecto (`0`) no se escribe ese archivo.
+`VISION_CORE_EMBEDDING_BATCH_SIZE` y `VISION_CORE_EMBEDDING_STRIDE`
+son flags preparatorios: todavía no cambian el número de inferencias.
 
 El monitor conserva imágenes y eventos solo en memoria. Está pensado para pruebas
 locales, sin autenticación. El bind predeterminado es `127.0.0.1`; `--host 0.0.0.0`
@@ -156,7 +193,7 @@ La prueba de 15 imágenes/s verifica fluidez, no latencia absoluta.
 Para usar la resolución nativa de una cámara nueva, sin polígonos de ejemplo:
 
 ```bash
-python -m vision_core.infrastructure.monitor --uncalibrated --port 8080
+python main.py --uncalibrated --port 8080
 ```
 
 Este modo admite 1280 × 800 de la Vivotek FD8134 y otras resoluciones. Detecta y

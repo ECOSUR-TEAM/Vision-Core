@@ -202,10 +202,34 @@ son código del feature y permanecen fuera de `src/vision_core/`.
   si hay varias operaciones, `RequestProcessFrame` / `ResponseProcessFrame`,
   etc. Un DTO por operación y sentido.
 - Inmutables: `@dataclass(frozen=True, slots=True)`, sin lógica de negocio.
+  Los mappings anidados se entregan como `Mapping` inmutable
+  (`MappingProxyType`) y las colecciones como tuplas, para que los dicts
+  internos tampoco puedan mutarse.
 - Solo tipos serializables y transportables (stdlib y `typing`). Sin `numpy`,
-  `cv2`, `torch`, ni imports de `domain/` o `infrastructure/`.
-- Los mappers viven en `application/mappers/` y convierten DTO ↔ dominio. Un
-  mapper no importa adaptadores concretos.
+  `cv2`, `torch`, ni imports de `domain/` o `infrastructure/`. Los campos
+  anidados son payloads inmutables (`@dataclass(frozen=True, slots=True)`) o
+  alias concretos (`JSONValue`); `dict[str, object]` y `Any` no forman parte del
+  contrato.
+- Excepción documentada: el frame crudo se anota como `FrameLike` (Protocol
+  estructural). En producción es un `numpy.ndarray`, pero el DTO no importa
+  numpy: `validate_frame()` valida dtype y forma en la frontera del caso de uso
+  (y `video_mapper` al codificar/decodificar).
+- Los mappers viven en `application/mappers/` y convierten DTO ↔ dominio,
+  devolviendo payloads tipados. Un mapper no importa adaptadores concretos y
+  valida finitud/rango antes de convertir.
+- La lista blanca de imports es: stdlib/`typing`, re-exports del propio paquete
+  `application/dto` y `shared/application/dto`. Todo lo demás (dominio,
+  infraestructura, frameworks de visión u otros features) queda fuera del DTO.
+- La serialización JSON usa `shared/application/dto/serialization.py`
+  (`to_json_value`/`dumps_json`, con `allow_nan=False`). Los payloads binarios
+  viajan como `bytes`, se sirven como `image/jpeg` y `to_json_value` los
+  sustituye por `null` en JSON; su contenido binario nunca viaja en ese JSON.
+- No existe un `dto/` global de operaciones. Los payloads compartidos por
+  varios slices (bbox, event, observation, track, monitor person) viven en
+  `shared/application/dto/` para no duplicar el contrato en cada feature.
+
+La guía practica y los ejemplos de esta convención están en
+[`docs/architecture.md`](../architecture.md#convención-dto).
 
 Los DTOs son el contrato de transporte del slice: el composition root y los
 demás features hablan con casos de uso mediante DTOs; los tipos ricos del
@@ -292,7 +316,7 @@ Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
 | Riesgo | Mitigación |
 |---|---|
 | `domain/` empiece a importar `application/` o `infrastructure/` | Tests estructurales por slice y revisión de diffs. |
-| DTOs con `numpy`, `cv2`, `torch` o imports de dominio | Contrato `@dataclass(frozen=True, slots=True)` y test de DTO por slice. |
+| DTOs con `numpy`, `cv2`, `torch` o imports de dominio | Convención de esta sección, lista blanca en `test_import_rules.py`, check global en `test_dto_convention.py` y test de contrato por slice. |
 | Importaciones cruzadas entre features | Regla 4; los features solo comparten ports, DTOs o casos de uso. |
 | Carpetas vacías o `data/` dentro de un feature | Regla "solo contenido real" y decisión sobre `data/`. |
 | Features leyendo variables de entorno | `settings.py` + configuración inyectada desde `main.py`. |
@@ -312,14 +336,18 @@ Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
 
 ## Verificación
 
-- La suite actual sigue siendo la referencia: `python -m pytest -q`.
-- `tests/test_one_class_per_file.py` mantiene la política ECM-54.
-- `tests/test_composition.py` y `tests/application/test_pipeline_integration.py`
-  verifican hoy que `infrastructure` no importa `application` y viceversa.
+- La suite sigue siendo la referencia: `python -m pytest -q`.
+- `tests/architecture/test_import_rules.py` verifica los límites de imports y
+  la lista blanca de imports de los DTOs.
+- `tests/architecture/test_dto_convention.py` verifica naming, decoradores y
+  ausencia de lógica en todos los DTOs.
+- `tests/architecture/test_one_class_per_file.py` mantiene la política ECM-54.
+- Los contratos por slice viven en `tests/features/<feature>/.../test_*dto_contract.py`
+  y comprueban campos, tipos, inmutabilidad, serialización y mapeo.
 - Cada ticket de migración debe añadir pruebas de las reglas 1–6 y del contrato
   DTO de su slice, y eliminar los shims que deje de necesitar.
-- No hay `ruff`, `mypy`, `black` ni `flake8` configurados en este repositorio;
-  no se introduce ninguno como parte de este ADR.
+- El formato y el lint se configuran con Ruff en `pyproject.toml` y se ejecutan
+  en CI; no se introduce `mypy`, `black` ni `flake8` como parte de este ADR.
 
 ## Mapa de migración: archivo viejo → archivo nuevo
 
@@ -420,7 +448,7 @@ la limpieza final.
 | Archivo viejo | Archivo nuevo | Ticket |
 |---|---|---|
 | `application/vision_core_app.py` | `src/vision_core/features/pipeline/application/use_cases/run_pipeline.py` (`RunPipeline`) | propuesto |
-| `application/event_serializer.py` | `src/vision_core/features/pipeline/application/mappers/event_serializer.py` | propuesto |
+| `application/event_serializer.py` | `src/vision_core/features/pipeline/application/mappers/pipeline_mapper.py` (`event_to_json_dict`, `event_to_json`) | ECM-67 |
 | `application/README.md` | `src/vision_core/features/pipeline/README.md` | propuesto |
 | `domain/model/resolved_track.py` | `src/vision_core/features/pipeline/domain/entities/resolved_track.py` | propuesto |
 | `composition.py` | se disuelve en `main.py` y los `dependencies.py` de cada feature; shim temporal | propuesto |
@@ -434,7 +462,7 @@ la limpieza final.
 | Variables de `.env.example` repartidas en adaptadores | `src/vision_core/settings.py`; cada adaptador recibe su configuración por parámetro | propuesto |
 | `config/zones.example.json`, `config/frigate.*.yml` | permanecen en `config/` (datos estáticos de ejemplo, nunca dentro de un feature) | sin cambio |
 | `tests/application/test_vision_core_app.py` | `tests/features/pipeline/test_run_pipeline.py` | propuesto |
-| `tests/application/test_event_serializer.py` | `tests/features/pipeline/test_event_serializer.py` | propuesto |
+| `tests/application/test_event_serializer.py` | `tests/features/pipeline/application/test_pipeline_mapper.py` | ECM-67 |
 | `tests/domain/test_event.py`, `tests/test_event.py` | `tests/shared/domain/test_event.py` (se consolida duplicado) | ECM-60 |
 | `tests/domain/test_attendance.py` | `tests/features/reid/test_session_attendance.py` | propuesto |
 | `tests/infrastructure/detection/*` | `tests/features/detection/*` | ECM-61 |

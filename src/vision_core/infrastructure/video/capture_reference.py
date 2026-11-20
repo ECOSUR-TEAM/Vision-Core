@@ -5,7 +5,7 @@ from pathlib import Path
 
 import cv2
 
-from vision_core.composition import build_video_with
+from vision_core.features.video.infrastructure.dependencies import build_video
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     path = Path(args.output)
     if path.suffix.lower() != ".png" or path.exists():
         parser.error("Usa un archivo .png nuevo")
-    video = build_video_with()
+    video = build_video()
     try:
         video.open()
         frame = video.read_frame()

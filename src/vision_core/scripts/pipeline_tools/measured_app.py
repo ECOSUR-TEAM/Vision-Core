@@ -3,10 +3,10 @@ import time
 
 import torch
 
-from vision_core.application.vision_core_app import VisionCoreApp
+from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 
 
-class MeasuredApp(VisionCoreApp):
+class MeasuredApp(RunPipeline):
     def __init__(self, *args, output, **kwargs):
         super().__init__(*args, **kwargs)
         self.output = output
@@ -25,7 +25,7 @@ class MeasuredApp(VisionCoreApp):
             json.dumps(
                 {
                     "kind": "resolved",
-                    "frame": self._video.frames,
+                    "frame": getattr(self._video, "frames", 0) or 0,
                     "persons": self._person_by_track,
                     "processing_ms": elapsed * 1000,
                 }

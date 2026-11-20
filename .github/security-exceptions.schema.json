@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Security exceptions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "exceptions"],
+  "properties": {
+    "version": { "const": 1 },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "component", "version", "reason", "registered", "review_by", "owner"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(GHSA-[a-z0-9-]+|CVE-[0-9]{4}-[0-9]+)$"
+          },
+          "component": { "type": "string", "minLength": 1 },
+          "version": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 },
+          "registered": { "type": "string", "format": "date" },
+          "review_by": { "type": "string", "format": "date" },
+          "owner": { "type": "string", "minLength": 1 },
+          "trivy": { "type": "boolean", "default": true },
+          "dependency_review": { "type": "boolean", "default": true }
+        }
+      }
+    }
+  }
+}

@@ -9,22 +9,22 @@ from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
-from vision_core.application.vision_core_app import VisionCoreApp
-from vision_core.domain.model.bbox import BBox
-from vision_core.domain.model.event import Event
-from vision_core.domain.model.resolved_track import ResolvedTrack
+from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
+from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.infrastructure.door.zone_loader import load_zones
 from vision_core.infrastructure.monitor.renderer import render_frame
 from vision_core.infrastructure.monitor.server import MonitorState
 from vision_core.infrastructure.video.latest_frame_source import LatestFrameSource
+from vision_core.shared.domain.bbox import BBox
+from vision_core.shared.domain.event import Event
 
 
 def test_observer_receives_current_resolved_detections_and_empty_frames():
     snapshots = []
     detector = FakeDetector(lost_ids_per_call=[[], []])
     frame = np.zeros((20, 20, 3), dtype=np.uint8)
-    app = VisionCoreApp(
+    app = RunPipeline(
         FakeVideoSource([]),
         detector,
         FakeReID(),
@@ -59,7 +59,7 @@ def test_monitor_annotates_without_mutating_input_and_flags_stale(monkeypatch):
     assert report["people"][0]["zone"] == "exterior"
     assert report["people"][0]["track_id"] == 1
     assert report["dropped_frames"] == 7
-    monkeypatch.setattr(time, "time", lambda: state.updated + 6)
+    monkeypatch.setattr(time, "monotonic", lambda: state._updated_monotonic + 6)
     assert state.snapshot()["status"] == "stale"
     assert state.snapshot()["people"] == []
     state.set_status("error", "ConnectionError")
@@ -176,6 +176,7 @@ def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
 
 
 def test_compose_mode_exits_on_pipeline_error_for_docker_restart(monkeypatch, tmp_path):
+    import main as composition_root
     from vision_core.infrastructure.monitor import __main__ as monitor
 
     stopped = threading.Event()
@@ -197,7 +198,11 @@ def test_compose_mode_exits_on_pipeline_error_for_docker_restart(monkeypatch, tm
     monkeypatch.setenv("VISION_CORE_MONITOR_UNCALIBRATED", "0")
     monkeypatch.setenv("VISION_CORE_MONITOR_DEMO_ZONES", "0")
     monkeypatch.setenv("VISION_CORE_MONITOR_EXIT_ON_ERROR", "1")
+    monkeypatch.setenv("VISION_CORE_RTSP_URL", "rtsp://localhost:8554/entrada")
     with pytest.raises(SystemExit) as error:
-        monitor.main()
+        monitor.main(
+            build_state=composition_root.build_monitor_state,
+            build_runtime=composition_root.build_monitor_runtime,
+        )
     assert error.value.code == 1
     assert closed == [True]

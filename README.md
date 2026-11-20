@@ -56,7 +56,7 @@ La guía completa, Dev Container, perfiles de Compose y troubleshooting están e
 
 ## Instalación local (Linux, Bash)
 
-El proyecto declara Python ≥3.10; para una instalación nueva usa Python 3.11 o
+El proyecto declara Python ≥3.11; para una instalación nueva usa Python 3.11 o
 posterior compatible con las versiones de PyTorch/torchvision instaladas. El
 Dockerfile utiliza Python 3.11. CPU es suficiente para las pruebas; GPU es opcional.
 
@@ -68,7 +68,8 @@ sudo apt-get install -y python3-venv ffmpeg libgl1 libglib2.0-0
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-cpu.txt
+python -m pip install -r requirements-dev.txt
 python -m pip install -e .
 python -m pip check
 python -m pytest -q
@@ -86,8 +87,11 @@ instalar el resto de requirements. Comprueba el entorno:
 python -c "import torch, torchvision, cv2; print(torch.__version__, torchvision.__version__, cv2.__version__); print('CUDA disponible:', torch.cuda.is_available())"
 ```
 
-`requirements.txt` no fija versiones. Conserva `python -m pip freeze` con cada
-medición para reproducirla. No se requiere OSNet, torchreid ni `third_party/`.
+`requirements.txt` fija las versiones directas; `torch`/`torchvision` se instalan
+desde el índice CPU con `requirements-cpu.txt` y `pytest` está en
+`requirements-dev.txt`. Conserva `python -m pip freeze` con cada medición para
+reproducirla. Consulta [seguridad y supply chain](docs/security.md).
+No se requiere OSNet, torchreid ni `third_party/`.
 
 ## Ejecutar tests localmente
 
@@ -95,8 +99,8 @@ CI usa Python 3.11 con PyTorch de CPU en Ubuntu. Para reproducir el mismo
 entorno en local (tras crear y activar un entorno virtual):
 
 ```bash
-python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-cpu.txt
+python -m pip install -r requirements-dev.txt
 python -m pip install -e .
 python -m pip check
 python -m pytest -q
@@ -121,8 +125,9 @@ por módulos críticos además del global. Consulta
 ## Lint y Formato de Código (Ruff)
 
 El proyecto usa [Ruff](https://docs.astral.sh/ruff/) con las reglas `E`, `F`, `W`
-e `I` (imports), `line-length = 120` y Python 3.10 como objetivo. Instala la
-misma versión fijada que usa la CI (también disponible como hook de pre-commit):
+e `I` (imports), `line-length = 120` y Python 3.11 como objetivo. Instala la
+misma versión fijada que usa la CI (también disponible como hook de
+[pre-commit](.pre-commit-config.yaml)):
 
 ```bash
 python -m pip install ruff==0.3.0
@@ -143,7 +148,7 @@ rulesets de `main` y `develop`, por lo que un PR no podrá mergearse si falla.
 
 ## Type checking (mypy)
 
-El proyecto usa [mypy](https://mypy.readthedocs.io/) con Python 3.10 como
+El proyecto usa [mypy](https://mypy.readthedocs.io/) con Python 3.11 como
 objetivo y `check_untyped_defs`. La configuración está en `[tool.mypy]` de
 `pyproject.toml` y cubre `src/` y `main.py`:
 
@@ -312,7 +317,8 @@ independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 
 El workflow [Docker CD](.github/workflows/docker.yml) construye y publica las
 imágenes automáticamente en GitHub Container Registry (GHCR) en cada push a
-`main`, `develop` o un tag `v*`. En pull requests solo se construyen, sin publicar.
+`main` o un tag `v*`. En pull requests a `main` o `develop` solo se construyen, sin
+publicar.
 
 Se publican dos targets del `Dockerfile`:
 
@@ -323,9 +329,11 @@ El nombre se normaliza a minúsculas; para este repositorio son
 `ghcr.io/ecosur-team/vision-core` y
 `ghcr.io/ecosur-team/vision-core-camera-bridge`.
 
-Tags disponibles: `main`, `develop`, el SHA corto del commit (`sha-<7>`), tags
-semánticos (al subir `v0.1.0` se genera la etiqueta `0.1.0`) y `latest` en la rama
-por defecto.
+Tags disponibles: `main`, el SHA corto del commit (`sha-<7>`), tags semánticos
+(al subir `v0.1.0` se genera la etiqueta `0.1.0`) y `latest` en la rama por
+defecto. Antes de publicar, el job `scan-image` escanea ambas imágenes con
+Trivy y sube el SARIF a GitHub Security; `publish` depende de ese job, por lo que
+una vulnerabilidad alta/crítica corregible impide la publicación.
 
 ```bash
 # Si el paquete es privado, autentícate antes:
@@ -334,6 +342,15 @@ docker pull ghcr.io/ecosur-team/vision-core:main
 docker pull ghcr.io/ecosur-team/vision-core-camera-bridge:main
 docker pull ghcr.io/ecosur-team/vision-core:0.1.0
 ```
+
+## Seguridad y supply chain
+
+Dependabot revisa semanalmente `pip`, GitHub Actions y Docker con PRs agrupados;
+Dependency Review y CodeQL protegen los PRs; Trivy escanea las imágenes en CD.
+La política de respuesta, las excepciones y la activación de secret scanning y
+push protection están en [SECURITY.md](SECURITY.md). Los procedimientos de
+actualización de dependencias y regeneración del lockfile están en
+[docs/security.md](docs/security.md).
 
 ## Módulos y responsabilidades
 

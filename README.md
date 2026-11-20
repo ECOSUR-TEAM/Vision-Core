@@ -229,7 +229,10 @@ con `;`, `&`, `#` u otros caracteres especiales.
 ```bash
 python -m vision_core.infrastructure.video.capture_reference referencia.png
 cp config/zones.example.json config/zones.json
-# Editar frame_size, door, exterior e interior usando referencia.png.
+# Migración: los zones.json antiguos con "_note" y sin "version" deben
+# eliminar "_note" y añadir "version": "1.0" antes de usarlos.
+# Editar frame_size (enteros), door, exterior e interior con referencia.png.
+# No añadir otras claves ni duplicarlas: el loader las rechaza.
 python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png
 ```
 
@@ -379,7 +382,10 @@ Las herramientas de diagnóstico y benchmark viven en `src/vision_core/scripts/`
 Ejecuta `python -m vision_core.scripts.check_stream` y
 `python -m vision_core.scripts.benchmark`.
 La estructura Vertical Slice y Screaming Architecture está registrada en
-[ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
+[ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md). La persistencia
+y retención en [ADR 0002](docs/adr/0002-persistence-and-retention.md); el modelo de
+ejecución multi-cámara y la decisión condicional de ReID compartido, en
+[ADR 0003](docs/adr/0003-modelo-ejecucion-multi-camara.md).
 
 ## Convención: una clase por archivo
 
@@ -449,7 +455,7 @@ de PR publica cobertura y el nightly publica logs. Consulta:
 - [Niveles de prueba, cobertura y comandos](docs/testing.md).
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
 - [Type checking con mypy](docs/type-checking.md).
-- [Decisiones de arquitectura](docs/adr/README.md), [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md) y [ADR 0002](docs/adr/0002-persistence-and-retention.md).
+- [Decisiones de arquitectura](docs/adr/README.md), [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md), [ADR 0002](docs/adr/0002-persistence-and-retention.md) y [ADR 0003](docs/adr/0003-modelo-ejecucion-multi-camara.md).
 - [Persistencia, retención y backup](docs/persistence.md).
 - [Orquestación y cierre](docs/operations.md).
 - [Catálogo de errores](docs/errors.md) y [contratos versionados](docs/api-contracts.md).

@@ -37,6 +37,7 @@ def main():
     (folder / "zones.json").write_text(
         json.dumps(
             {
+                "version": "1.0",
                 "frame_size": [w, h],
                 "door": [[190, 0], [210, 0], [210, h - 1], [190, h - 1]],
                 "exterior": [[0, 0], [200, 0], [200, h - 1], [0, h - 1]],

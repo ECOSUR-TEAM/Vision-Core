@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Vision Core · Cámara en vivo</title>
-    <style>
+    <style nonce="__CSP_NONCE__">
         :root {
             color-scheme: light;
             --bg: #f5f6f2;
@@ -357,7 +357,7 @@
             </aside>
         </div>
     </main>
-    <script>
+    <script nonce="__CSP_NONCE__">
         const el = id => document.getElementById(id);
         let lastFrame = 0, lastImageAt = 0, state = null, imageUrl = null, videoFailed = false;
         const labels = { starting: 'Preparando cámara…', running: 'En vivo', stale: 'Imagen detenida', error: 'Cámara no disponible', stopped: 'Cámara detenida' };

@@ -26,6 +26,10 @@ def detection_to_dto(detection: Detection) -> DetectionPayload:
 
 
 def detection_from_dto(data: DetectionPayload | Mapping[str, object]) -> Detection:
+    bbox: object
+    class_id: object
+    confidence: object
+    track_id: object
     if isinstance(data, DetectionPayload):
         bbox = data.bbox
         class_id = data.class_id

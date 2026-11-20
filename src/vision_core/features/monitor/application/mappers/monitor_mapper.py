@@ -51,6 +51,12 @@ def _event_payload(value: Any) -> EventPayload:
     )
 
 
+def _sequence(value: object, field: str) -> tuple[object, ...]:
+    if not isinstance(value, (tuple, list)):
+        raise ValueError(f"{field} must be a sequence")
+    return tuple(value)
+
+
 def _counts(value: Any) -> Mapping[str, int]:
     if not isinstance(value, Mapping) or any(
         not isinstance(key, str) or not isinstance(count, int) for key, count in value.items()
@@ -63,6 +69,7 @@ def snapshot_to_response(snapshot: Mapping[str, object]) -> ResponseSnapshot:
     updated_at = snapshot["updated_at"]
     age_seconds = snapshot["age_seconds"]
     error = snapshot["error"]
+    persistence_data = snapshot.get("persistence")
     return ResponseSnapshot(
         status=required_str(snapshot["status"], "status"),
         error=None if error is None else required_str(error, "error"),
@@ -70,12 +77,13 @@ def snapshot_to_response(snapshot: Mapping[str, object]) -> ResponseSnapshot:
         frame=bounded_int(snapshot["frame"], "frame"),
         updated_at=None if updated_at is None else finite_float(updated_at, "updated_at"),
         age_seconds=None if age_seconds is None else finite_float(age_seconds, "age_seconds"),
-        people=tuple(_person_payload(person) for person in snapshot["people"]),
-        events=tuple(_event_payload(event) for event in snapshot["events"]),
+        people=tuple(_person_payload(person) for person in _sequence(snapshot["people"], "people")),
+        events=tuple(_event_payload(event) for event in _sequence(snapshot["events"], "events")),
         counts=_counts(snapshot["counts"]),
         processing_ms=finite_float(snapshot["processing_ms"], "processing_ms"),
         fps=finite_float(snapshot["fps"], "fps"),
         dropped_frames=bounded_int(snapshot["dropped_frames"], "dropped_frames"),
+        persistence=None if persistence_data is None else json_metadata(persistence_data, "persistence"),
     )
 
 

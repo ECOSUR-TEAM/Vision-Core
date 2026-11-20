@@ -1,7 +1,6 @@
 """Session identity memory with a small appearance gallery per person."""
 
 import math
-import os
 import time
 import uuid
 from collections import deque
@@ -11,6 +10,7 @@ import numpy as np
 
 from vision_core.domain.model.bbox import BBox
 from vision_core.domain.ports import ReIDMemory
+from vision_core.settings import Settings
 
 TTL_SECONDS = 60
 SIMILARITY_THRESHOLD = 0.85
@@ -31,6 +31,7 @@ class InMemoryReID(ReIDMemory):
         similarity_threshold=SIMILARITY_THRESHOLD,
         ambiguity_margin=0.03,
         gallery_size=8,
+        clock=None,
     ) -> None:
         if not math.isfinite(ttl_seconds) or ttl_seconds < 0:
             raise ValueError("El tiempo de memoria debe ser finito y no negativo")
@@ -42,6 +43,7 @@ class InMemoryReID(ReIDMemory):
         self.threshold = similarity_threshold
         self.margin = ambiguity_margin
         self.gallery_size = gallery_size
+        self._clock = clock if clock is not None else time.monotonic
         self._active: dict[int, str] = {}
         self._lost: dict[str, tuple[np.ndarray, float]] = {}
         self._gallery: dict[str, deque[np.ndarray]] = {}
@@ -53,9 +55,12 @@ class InMemoryReID(ReIDMemory):
 
     @classmethod
     def from_env(cls):
+        settings = Settings.from_env(validate_startup=False).reid
         return cls(
-            ttl_seconds=float(os.getenv("VISION_CORE_REID_TTL_SECONDS", "0")),
-            similarity_threshold=float(os.getenv("VISION_CORE_REID_THRESHOLD", "0.85")),
+            ttl_seconds=settings.ttl_seconds,
+            similarity_threshold=settings.threshold,
+            ambiguity_margin=settings.ambiguity_margin,
+            gallery_size=settings.gallery_size,
         )
 
     def _purge(self, now):
@@ -80,8 +85,14 @@ class InMemoryReID(ReIDMemory):
         if not gallery or max(float(np.dot(v, vector)) for v in gallery) < 0.98:
             gallery.append(vector.copy())
 
+    def restore(self, person: str, embedding: Sequence[float]) -> None:
+        vector = self._normalize(embedding)
+        self._remember(person, vector)
+        if person not in self._lost:
+            self._lost[person] = (vector.copy(), self._clock())
+
     def resolve(self, track_id: int, embedding: Sequence[float], bbox: BBox) -> str:
-        self._purge(time.monotonic())
+        self._purge(self._clock())
         vector = self._normalize(embedding)
         if track_id in self._active:
             person = self._active[track_id]
@@ -120,7 +131,7 @@ class InMemoryReID(ReIDMemory):
         return person
 
     def mark_lost(self, person_id: str, embedding: Sequence[float]) -> None:
-        now = time.monotonic()
+        now = self._clock()
         self._purge(now)
         vector = self._normalize(embedding)
         self._retired_tracks.update({track: person for track, person in self._active.items() if person == person_id})

@@ -79,5 +79,11 @@ Estos checks se ejecutan junto con toda la suite mediante `python -m pytest` en
 cada pull request. Si un check falla, mueve la dependencia al límite correcto
 (normalmente un port o un mapper) en lugar de relajar la regla.
 
-La decisión arquitectónica y sus motivaciones están registradas en
-[ADR-0001](adr/0001-screaming-architecture-vertical-slice.md).
+Los repository ports transversales viven en `vision_core.domain.repositories` y
+sus implementaciones SQLite en `vision_core.infrastructure.persistence`; el
+dominio no conoce SQL. `main.py` inyecta los adaptadores y hace degradar
+la persistencia ante errores sin detener el video.
+
+Las decisiones arquitectónicas y sus motivaciones están registradas en
+[ADR-0001](adr/0001-screaming-architecture-vertical-slice.md) y
+[ADR-0002](adr/0002-persistence-and-retention.md).

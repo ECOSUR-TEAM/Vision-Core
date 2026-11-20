@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from vision_core.shared.application.dto.event_payload import EventPayload
+from vision_core.shared.application.dto.json_value import JSONValue
 from vision_core.shared.application.dto.monitor_person_payload import MonitorPersonPayload
 
 
@@ -19,3 +20,4 @@ class ResponseSnapshot:
     processing_ms: float
     fps: float
     dropped_frames: int
+    persistence: Mapping[str, JSONValue] | None

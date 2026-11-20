@@ -10,7 +10,7 @@ class FakeMonitorState:
     def __init__(self):
         self.published = []
 
-    def publish(self, jpeg, people, processing_ms, dropped):
+    def publish(self, jpeg, people, processing_ms, dropped, queue_size=0):
         self.published.append((jpeg, people, processing_ms, dropped))
 
     def snapshot(self):

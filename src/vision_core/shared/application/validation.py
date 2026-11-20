@@ -9,7 +9,7 @@ import math
 from collections.abc import Mapping
 from enum import Enum
 from types import MappingProxyType
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -88,13 +88,13 @@ def finite_bbox(value: Any, field: str = "bbox") -> tuple[float, float, float, f
     x1, y1, x2, y2 = coordinates
     if x2 <= x1 or y2 <= y1:
         raise ValueError(f"{field} must have positive area")
-    return coordinates
+    return cast("tuple[float, float, float, float]", coordinates)
 
 
 def immutable_json_value(value: JSONValue) -> JSONValue:
     if isinstance(value, Mapping):
         return MappingProxyType({str(key): immutable_json_value(item) for key, item in value.items()})
-    if isinstance(value, tuple):
+    if isinstance(value, (list, tuple)):
         return tuple(immutable_json_value(item) for item in value)
     return value
 

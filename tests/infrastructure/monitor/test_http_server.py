@@ -45,3 +45,23 @@ def test_http_routes_keep_monitor_contract(monitor_server):
     with pytest.raises(HTTPError) as error:
         urlopen(f"{base_url}/api/frame?after=-1")
     assert error.value.code == 400
+
+
+def test_health_ready_and_metrics_routes(monitor_server):
+    server, state = monitor_server
+    base_url = f"http://127.0.0.1:{server.server_port}"
+
+    with urlopen(f"{base_url}/health") as response:
+        body = json.load(response)
+        assert response.status == 200
+        assert body == {"status": "alive", "live": True}
+
+    with urlopen(f"{base_url}/metrics") as response:
+        body = json.load(response)
+        assert "counters" in body
+        assert "gauges" in body
+        assert "histograms" in body
+
+    with pytest.raises(HTTPError) as error:
+        urlopen(f"{base_url}/ready")
+    assert error.value.code == 503

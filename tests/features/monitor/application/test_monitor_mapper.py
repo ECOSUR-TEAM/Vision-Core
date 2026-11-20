@@ -30,6 +30,7 @@ def _state():
         "processing_ms": 2.0,
         "fps": 15.0,
         "dropped_frames": 0,
+        "persistence": {"enabled": True, "migrations": ["001"], "failures": 0},
     }
 
 

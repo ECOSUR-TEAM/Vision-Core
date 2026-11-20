@@ -140,7 +140,18 @@ def test_model_loaded_once_and_predict_settings(monkeypatch):
     manager.process(frame)
     manager.process(frame)
     loader.assert_called_once_with("weights.pt")
-    assert model.predict.call_args.kwargs == {"verbose": False, "classes": [0], "conf": 0.5}
+    assert model.predict.call_args.kwargs == {"verbose": False, "classes": [0], "conf": 0.5, "device": "cpu"}
+
+
+def test_configured_device_is_passed_to_prediction(monkeypatch):
+    from unittest.mock import Mock
+
+    model = Mock()
+    model.predict.return_value = [SimpleNamespace(boxes=fake_boxes([]))]
+    monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))
+    manager = YoloDetectorManager("weights.pt", device="cuda:0")
+    manager.process(np.zeros((48, 64, 3), dtype=np.uint8))
+    assert model.predict.call_args.kwargs["device"] == "cuda:0"
 
 
 @pytest.mark.parametrize(

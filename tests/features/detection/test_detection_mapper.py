@@ -9,6 +9,7 @@ from vision_core.features.detection.application.mappers.detection_mapper import 
     response_to_detections,
 )
 from vision_core.features.detection.domain.entities.detection import Detection
+from vision_core.shared.application.dto.serialization import dumps_json
 from vision_core.shared.domain.bbox import BBox
 
 
@@ -44,7 +45,7 @@ def test_detection_mapper_converts_numpy_scalars_to_python_scalars():
     detection = detection_from_dto(dto)
     converted = detection_to_dto(detection)
 
-    assert isinstance(converted["class_id"], int)
-    assert isinstance(converted["confidence"], float)
-    assert isinstance(converted["track_id"], int)
-    json.dumps(converted)
+    assert isinstance(converted.class_id, int)
+    assert isinstance(converted.confidence, float)
+    assert isinstance(converted.track_id, int)
+    assert json.loads(dumps_json(converted))["bbox"]["x1"] == 1.5

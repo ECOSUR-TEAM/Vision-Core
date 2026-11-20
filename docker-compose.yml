@@ -64,19 +64,24 @@ services:
       VISION_CORE_MONITOR_HOST: 0.0.0.0
       VISION_CORE_RTSP_URL: rtsp://frigate:8554/entrada
       VISION_CORE_MONITOR_UNCALIBRATED: ${VISION_CORE_MONITOR_UNCALIBRATED:-1}
+      VISION_CORE_DISK_CHECK_PATH: /model-cache
       VISION_CORE_MONITOR_EXIT_ON_ERROR: "1"
+      VISION_CORE_DB_ENABLED: ${VISION_CORE_DB_ENABLED:-1}
+      VISION_CORE_DB_PATH: ${VISION_CORE_DB_PATH:-/app/data/vision-core.sqlite3}
+      VISION_CORE_DB_FAIL_OPEN: ${VISION_CORE_DB_FAIL_OPEN:-1}
       TORCH_HOME: /model-cache/torch
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./config:/app/config:ro
       - vision-model-cache:/model-cache
+      - vision-data:/app/data
     depends_on:
       frigate:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import json,urllib.request; s=json.load(urllib.request.urlopen('http://127.0.0.1:8080/api/state',timeout=3)); raise SystemExit(0 if s['status']=='running' else 1)"]
+      test: ["CMD", "python", "-c", "import urllib.request; raise SystemExit(0 if urllib.request.urlopen('http://127.0.0.1:8080/ready',timeout=3).status==200 else 1)"]
       interval: 15s
       timeout: 5s
       start_period: 180s
@@ -107,3 +112,4 @@ services:
 
 volumes:
   vision-model-cache:
+  vision-data:

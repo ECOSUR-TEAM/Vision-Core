@@ -1,2 +1,2 @@
+-r requirements.txt
 mypy==1.11.2
-numpy==2.3.5

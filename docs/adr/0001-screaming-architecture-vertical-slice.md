@@ -202,6 +202,9 @@ son código del feature y permanecen fuera de `src/vision_core/`.
   si hay varias operaciones, `RequestProcessFrame` / `ResponseProcessFrame`,
   etc. Un DTO por operación y sentido.
 - Inmutables: `@dataclass(frozen=True, slots=True)`, sin lógica de negocio.
+  Los mappings anidados se entregan como `Mapping` inmutable
+  (`MappingProxyType`) y las colecciones como tuplas, para que los dicts
+  internos tampoco puedan mutarse.
 - Solo tipos serializables y transportables (stdlib y `typing`). Sin `numpy`,
   `cv2`, `torch`, ni imports de `domain/` o `infrastructure/`. Los campos
   anidados son payloads inmutables (`@dataclass(frozen=True, slots=True)`) o
@@ -209,7 +212,8 @@ son código del feature y permanecen fuera de `src/vision_core/`.
   contrato.
 - Excepción documentada: el frame crudo se anota como `FrameLike` (Protocol
   estructural). En producción es un `numpy.ndarray`, pero el DTO no importa
-  numpy: `video_mapper` valida dtype y forma en la frontera.
+  numpy: `validate_frame()` valida dtype y forma en la frontera del caso de uso
+  (y `video_mapper` al codificar/decodificar).
 - Los mappers viven en `application/mappers/` y convierten DTO ↔ dominio,
   devolviendo payloads tipados. Un mapper no importa adaptadores concretos y
   valida finitud/rango antes de convertir.
@@ -218,8 +222,8 @@ son código del feature y permanecen fuera de `src/vision_core/`.
   infraestructura, frameworks de visión u otros features) queda fuera del DTO.
 - La serialización JSON usa `shared/application/dto/serialization.py`
   (`to_json_value`/`dumps_json`, con `allow_nan=False`). Los payloads binarios
-  viajan como `bytes`, se sirven como `image/jpeg` y se serializan como `null`
-  en JSON.
+  viajan como `bytes`, se sirven como `image/jpeg` y `to_json_value` los
+  sustituye por `null` en JSON; su contenido binario nunca viaja en ese JSON.
 - No existe un `dto/` global de operaciones. Los payloads compartidos por
   varios slices (bbox, event, observation, track, monitor person) viven en
   `shared/application/dto/` para no duplicar el contrato en cada feature.
@@ -444,7 +448,7 @@ la limpieza final.
 | Archivo viejo | Archivo nuevo | Ticket |
 |---|---|---|
 | `application/vision_core_app.py` | `src/vision_core/features/pipeline/application/use_cases/run_pipeline.py` (`RunPipeline`) | propuesto |
-| `application/event_serializer.py` | `src/vision_core/features/pipeline/application/mappers/event_serializer.py` | propuesto |
+| `application/event_serializer.py` | `src/vision_core/features/pipeline/application/mappers/pipeline_mapper.py` (`event_to_json_dict`, `event_to_json`) | ECM-67 |
 | `application/README.md` | `src/vision_core/features/pipeline/README.md` | propuesto |
 | `domain/model/resolved_track.py` | `src/vision_core/features/pipeline/domain/entities/resolved_track.py` | propuesto |
 | `composition.py` | se disuelve en `main.py` y los `dependencies.py` de cada feature; shim temporal | propuesto |
@@ -458,7 +462,7 @@ la limpieza final.
 | Variables de `.env.example` repartidas en adaptadores | `src/vision_core/settings.py`; cada adaptador recibe su configuración por parámetro | propuesto |
 | `config/zones.example.json`, `config/frigate.*.yml` | permanecen en `config/` (datos estáticos de ejemplo, nunca dentro de un feature) | sin cambio |
 | `tests/application/test_vision_core_app.py` | `tests/features/pipeline/test_run_pipeline.py` | propuesto |
-| `tests/application/test_event_serializer.py` | `tests/features/pipeline/test_event_serializer.py` | propuesto |
+| `tests/application/test_event_serializer.py` | `tests/features/pipeline/application/test_pipeline_mapper.py` | ECM-67 |
 | `tests/domain/test_event.py`, `tests/test_event.py` | `tests/shared/domain/test_event.py` (se consolida duplicado) | ECM-60 |
 | `tests/domain/test_attendance.py` | `tests/features/reid/test_session_attendance.py` | propuesto |
 | `tests/infrastructure/detection/*` | `tests/features/detection/*` | ECM-61 |

@@ -2,16 +2,16 @@ import json
 
 import numpy as np
 
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict, event_to_json
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json, event_to_json_dict
 from vision_core.shared.domain.event import Event
 from vision_core.shared.domain.event_type import EventType
 from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 
-def test_event_to_dict_preserves_public_contract():
+def test_event_to_json_dict_preserves_public_contract():
     event = Event(EventType.PERSON_ENTERED, "abc", timestamp=12.5, metadata={"zone": "interior"})
 
-    assert event_to_dict(event) == {
+    assert event_to_json_dict(event) == {
         "event": "PERSON_ENTERED",
         "person_id": "abc",
         "timestamp": 12.5,

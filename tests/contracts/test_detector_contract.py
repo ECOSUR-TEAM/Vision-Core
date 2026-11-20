@@ -19,8 +19,8 @@ def _yolo_detector(monkeypatch):
         conf=np.array([0.9]),
         cls=np.array([0]),
     )
-    model = SimpleNamespace(boxes=[box])
-    model.predict = lambda frame, **kwargs: [SimpleNamespace(boxes=model.boxes)]
+    result = SimpleNamespace(boxes=SimpleNamespace(cls=box.cls, conf=box.conf, xyxy=box.xyxy))
+    model = SimpleNamespace(predict=lambda frame, **kwargs: [result])
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))
     return YoloDetectorManager()
 

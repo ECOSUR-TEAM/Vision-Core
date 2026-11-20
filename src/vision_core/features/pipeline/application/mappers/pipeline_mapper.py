@@ -1,4 +1,4 @@
-"""Mappers between pipeline domain entities and transport DTOs."""
+"""Mappers between pipeline domain entities and transport DTOs, plus event JSON serializers."""
 
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
@@ -17,9 +17,9 @@ from vision_core.shared.application.validation import (
 from vision_core.shared.domain.event import Event
 
 __all__ = [
-    "event_to_dict",
     "event_to_dto",
     "event_to_json",
+    "event_to_json_dict",
     "resolved_track_to_dto",
 ]
 
@@ -33,7 +33,12 @@ def event_to_dto(event: Event) -> ResponsePipelineEvent:
     )
 
 
-def event_to_dict(event: Event) -> dict[str, JSONValue]:
+def event_to_json_dict(event: Event) -> dict[str, JSONValue]:
+    """Public JSON serializer injected into monitor; not a DTO mapper.
+
+    Domain events are converted through ``event_to_dto`` first, so validation
+    stays in the mapper and this function only produces the JSON-ready object.
+    """
     payload = to_json_value(event_to_dto(event))
     if not isinstance(payload, dict):
         raise ValueError("Event DTO must serialize to a JSON object")

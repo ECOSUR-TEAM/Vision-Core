@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from vision_core.features.detection.application.dto.request.request_detector import RequestDetector
 from vision_core.features.detection.application.use_cases.detect_persons import DetectPersons
@@ -37,3 +38,12 @@ def test_detect_persons_executes_through_port_without_loading_yolo():
             track_id=3,
         ),
     )
+
+
+def test_detect_persons_validates_frame_before_calling_detector():
+    detector = FakeDetectorManager([])
+
+    with pytest.raises(ValueError, match="El frame debe ser un ndarray"):
+        DetectPersons(detector).execute(RequestDetector(object()))
+
+    assert detector.frames == []

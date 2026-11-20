@@ -1,4 +1,5 @@
 import json
+from collections.abc import Mapping
 from dataclasses import MISSING, FrozenInstanceError, fields, is_dataclass
 from typing import get_type_hints
 
@@ -30,7 +31,7 @@ DTO_CLASSES = (
 )
 
 
-def _metadata_hint(value: dict[str, JSONValue]) -> None:
+def _metadata_hint(value: Mapping[str, JSONValue]) -> None:
     return None
 
 
@@ -147,3 +148,14 @@ def test_nested_payloads_are_immutable():
 
     with pytest.raises(FrozenInstanceError):
         payload.track_id = 8
+
+
+def test_event_metadata_is_immutable():
+    event = Event(EventType.PERSON_ENTERED, "person-1", timestamp=12.5, metadata={"zone": {"name": "interior"}})
+
+    response = event_to_dto(event)
+
+    with pytest.raises(TypeError):
+        response.metadata["zone"] = "exterior"
+    with pytest.raises(TypeError):
+        response.metadata["zone"]["name"] = "exterior"

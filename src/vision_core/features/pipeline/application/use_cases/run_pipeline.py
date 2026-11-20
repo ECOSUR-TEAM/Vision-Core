@@ -17,6 +17,7 @@ from vision_core.features.pipeline.domain.ports.event_consumer import EventConsu
 from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
 from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 from vision_core.features.video.domain.ports.video_source import VideoSource
+from vision_core.shared.application.validation import validate_frame
 from vision_core.shared.errors import PipelineError, ValidationError, codes
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,10 @@ class RunPipeline:
         self._attendance = SessionAttendance()
         self._person_by_track: dict[int, str] = {}
         self._last_embedding_by_track: dict[int, Any] = {}
+        self._metrics = None
+
+    def set_observability(self, metrics) -> None:
+        self._metrics = metrics
 
     def run(
         self,
@@ -54,6 +59,7 @@ class RunPipeline:
     ) -> None:
         if request is not None and request.expected_frame_size is not None:
             self._expected_frame_size = request.expected_frame_size
+        failed = False
         try:
             self._video.open()
             while not stop_requested():
@@ -61,16 +67,21 @@ class RunPipeline:
                 if frame is None:
                     break
                 self._process_frame(frame)
-        except BaseException:
+        except Exception:  # noqa: BLE001 - preserve pipeline failure
+            failed = True
+            if self._metrics is not None:
+                self._metrics.increment("vision_core_errors_total")
+            raise
+        finally:
             try:
                 self._video.close()
             except Exception as close_error:  # noqa: BLE001 - preserve pipeline failure
                 logger.error("Falló el cierre de video (%s)", type(close_error).__name__)
-            raise
-        else:
-            self._video.close()
+                if not failed:
+                    raise
 
     def process_frame(self, request: RequestProcessFrame) -> ResponseProcessFrame:
+        validate_frame(request.frame)
         return self._process_frame(request.frame)
 
     def _process_frame(self, frame: Any) -> ResponseProcessFrame:
@@ -83,10 +94,19 @@ class RunPipeline:
                 code=codes.PIPELINE_CALIBRATION_MISMATCH,
                 context={"operation": "frame_size"},
             )
+        inference_started = time.perf_counter()
         detections = self._detector.process(frame)
+        if self._metrics is not None:
+            self._metrics.observe(
+                "vision_core_inference_latency_ms",
+                (time.perf_counter() - inference_started) * 1000,
+            )
         visible_tracks = {det.track_id for det in detections}
+        new_tracks = sum(track_id not in self._person_by_track for track_id in visible_tracks)
         absent_tracks = set(self._person_by_track) - visible_tracks
         expired_tracks = set(self._detector.pop_lost_track_ids())
+        if self._metrics is not None:
+            self._metrics.increment("vision_core_tracks_lost_total", len(expired_tracks))
         for track_id in (absent_tracks | expired_tracks) - visible_tracks:
             person_id = self._person_by_track.pop(track_id, None)
             embedding = self._last_embedding_by_track.pop(track_id, None)
@@ -109,8 +129,14 @@ class RunPipeline:
             if x2 <= x1 or y2 <= y1:
                 raise ValidationError("La caja del detector está fuera del frame")
             crop = frame[y1:y2, x1:x2]
+            reid_started = time.perf_counter()
             embedding = self._embed(crop)
             person_id = self._reid.resolve(det.track_id, embedding, det.bbox)
+            if self._metrics is not None:
+                self._metrics.observe(
+                    "vision_core_reid_latency_ms",
+                    (time.perf_counter() - reid_started) * 1000,
+                )
             self._person_by_track[det.track_id] = person_id
             self._last_embedding_by_track[det.track_id] = embedding.copy()
             resolved.append(ResolvedTrack(person_id, det.bbox, det.confidence, det.track_id))
@@ -120,6 +146,9 @@ class RunPipeline:
                 event.metadata.update(self._attendance.apply(event))
                 events.append(event_to_dto(event))
                 self._on_event(event)
+        if self._metrics is not None:
+            self._metrics.increment("vision_core_tracks_created_total", new_tracks)
+            self._metrics.set_gauge("vision_core_active_people", len(self._person_by_track))
 
         processing_ms = (time.perf_counter() - started) * 1000
         if self._on_frame is not None:

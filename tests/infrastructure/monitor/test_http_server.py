@@ -9,6 +9,7 @@ import pytest
 from vision_core.features.monitor.infrastructure.http import handler as handler_module
 from vision_core.infrastructure.monitor.http_server import make_server
 from vision_core.infrastructure.monitor.state import MonitorState
+from vision_core.shared.application.dto.schema_version import EVENT_SCHEMA_VERSION
 from vision_core.shared.domain.event import Event
 from vision_core.shared.errors import (
     ConfigurationError,
@@ -17,7 +18,6 @@ from vision_core.shared.errors import (
     VideoSourceError,
     codes,
 )
-from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 
 @pytest.fixture
@@ -180,3 +180,22 @@ def test_state_event_rejects_non_finite_timestamp(monitor_server):
         state.event(Event("PERSON_ENTERED", "p1", timestamp=float("nan")))
 
     assert state.snapshot()["events"] == []
+
+
+def test_health_ready_and_metrics_routes(monitor_server):
+    _, _, base_url = monitor_server
+
+    with urlopen(f"{base_url}/health") as response:
+        body = json.load(response)
+        assert response.status == 200
+        assert body == {"status": "alive", "live": True}
+
+    with urlopen(f"{base_url}/metrics") as response:
+        body = json.load(response)
+        assert "counters" in body
+        assert "gauges" in body
+        assert "histograms" in body
+
+    with pytest.raises(HTTPError) as error:
+        urlopen(f"{base_url}/ready")
+    assert error.value.code == 503

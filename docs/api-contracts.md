@@ -10,7 +10,7 @@ Versión actual: `v1`. Prefijo: `/api/v1/`. El panel en `/` no está versionado.
 
 | Ruta | Éxito | Errores |
 |---|---|---|
-| `GET /api/v1/state` | 200, JSON con estado, personas, métricas y eventos. | Envelope JSON; 500 si falla el caso de uso. |
+| `GET /api/v1/state` | 200, JSON con estado, personas, métricas y eventos. | Envelope JSON; 400, 404, 409, 422, 500 o 503 según el `code` (ver tabla siguiente). |
 | `GET /api/v1/frame` | 200, JPEG anotado. | 503 `VIDEO_FRAME_PENDING` si aún no hay imagen. |
 | `GET /api/v1/frame?after=N` | 200 con imagen nueva, 204 sin imagen nueva tras 1 s. | 400 `VALIDATION_FAILED` si `N` no es entero no negativo. |
 | Cualquier otra ruta | — | 404 `REQUEST_NOT_FOUND`. |

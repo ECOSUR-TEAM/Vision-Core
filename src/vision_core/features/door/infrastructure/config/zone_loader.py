@@ -36,10 +36,10 @@ def load_zones(path: str | Path) -> ZoneConfig:
 
 
 def _parse_frame_size(data: dict[str, object]) -> tuple[int, int]:
-    try:
-        width, height = data["frame_size"]
-    except (KeyError, TypeError) as error:
-        raise ZoneConfigurationError("Falta frame_size en la configuración de zonas.") from error
+    size = data.get("frame_size")
+    if not isinstance(size, (list, tuple)) or len(size) != 2:
+        raise ZoneConfigurationError("frame_size debe ser [ancho, alto]")
+    width, height = size
     if (
         not isinstance(width, int)
         or isinstance(width, bool)

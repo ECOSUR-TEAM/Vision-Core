@@ -7,7 +7,7 @@ IDs, embeddings, zonas y eventos proceden de Vision Core.
 ## Arranque principal
 
 ```bash
-docker compose up
+docker compose --profile camera up
 ```
 
 El monitor y Frigate se inician juntos. No hace falta iniciar Python ni ejecutar
@@ -75,8 +75,8 @@ en el panel; corrige la configuración y reinicia el monitor.
 ## Docker
 
 El archivo principal `docker-compose.yml` ejecuta el monitor y sus dependencias.
-Para dejarlo en segundo plano: `docker compose up -d`; para detenerlo:
-`docker compose down`. Al actualizar código: `docker compose up --build`.
+Para dejarlo en segundo plano: `docker compose --profile camera up -d`; para detenerlo:
+`docker compose down`. Al actualizar código: `docker compose --profile camera up --build`.
 
 Después de calibrar, configura `VISION_CORE_MONITOR_UNCALIBRATED=0` y la ruta
 `VISION_CORE_ZONES_FILE` en `.env`. Hasta entonces el monitor acepta la resolución

@@ -1,18 +1,16 @@
-import json
-from dataclasses import asdict
-
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
 from vision_core.features.monitor.application.use_cases.get_frame import GetFrame
 from vision_core.features.monitor.application.use_cases.get_snapshot import GetSnapshot
 from vision_core.features.monitor.application.use_cases.publish_monitor_state import PublishMonitorState
+from vision_core.shared.application.dto.serialization import dumps_json
 
 
 class FakeMonitorState:
     def __init__(self):
         self.published = []
 
-    def publish(self, jpeg, people, processing_ms, dropped):
+    def publish(self, jpeg, people, processing_ms, dropped, queue_size=0):
         self.published.append((jpeg, people, processing_ms, dropped))
 
     def snapshot(self):
@@ -50,4 +48,4 @@ def test_publish_and_read_use_cases_use_injected_state():
     assert snapshot.frame == 4
     assert frame.jpeg == b"jpeg"
     assert next_frame.sequence == 5
-    json.dumps(asdict(snapshot), allow_nan=False)
+    dumps_json(snapshot)

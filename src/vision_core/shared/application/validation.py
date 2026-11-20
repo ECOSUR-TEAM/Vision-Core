@@ -8,13 +8,27 @@ the caller instead of deep inside a use case.
 import math
 from collections.abc import Mapping
 from enum import Enum
-from typing import Any
+from types import MappingProxyType
+from typing import Any, cast
+
+import numpy as np
 
 from vision_core.shared.application.dto.bbox_payload import BBoxPayload
 from vision_core.shared.application.dto.json_value import JSONValue
 from vision_core.shared.application.dto.serialization import to_json_value
 
 _BBOX_FIELDS = ("x1", "y1", "x2", "y2")
+
+
+def validate_frame(frame: Any, expected_size: tuple[int, int] | None = None) -> None:
+    if not isinstance(frame, np.ndarray):
+        raise ValueError("El frame debe ser un ndarray")
+    if frame.dtype != np.uint8:
+        raise ValueError("El frame debe tener dtype uint8")
+    if frame.ndim != 3 or frame.shape[2] != 3 or min(frame.shape[:2]) <= 0:
+        raise ValueError("El frame debe tener forma H x W x 3 y no estar vacío")
+    if expected_size is not None and (frame.shape[1], frame.shape[0]) != expected_size:
+        raise ValueError("La resolución cambió o no coincide con la esperada")
 
 
 def finite_float(value: Any, field: str) -> float:
@@ -63,9 +77,7 @@ def required_str(value: Any, field: str) -> str:
 
 
 def finite_bbox(value: Any, field: str = "bbox") -> tuple[float, float, float, float]:
-    if isinstance(value, BBoxPayload):
-        coordinates = tuple(finite_float(getattr(value, name), f"{field}.{name}") for name in _BBOX_FIELDS)
-    elif all(hasattr(value, name) for name in _BBOX_FIELDS):
+    if isinstance(value, BBoxPayload) or all(hasattr(value, name) for name in _BBOX_FIELDS):
         coordinates = tuple(finite_float(getattr(value, name), f"{field}.{name}") for name in _BBOX_FIELDS)
     elif isinstance(value, Mapping):
         if any(name not in value for name in _BBOX_FIELDS):
@@ -76,15 +88,23 @@ def finite_bbox(value: Any, field: str = "bbox") -> tuple[float, float, float, f
     x1, y1, x2, y2 = coordinates
     if x2 <= x1 or y2 <= y1:
         raise ValueError(f"{field} must have positive area")
-    return coordinates
+    return cast("tuple[float, float, float, float]", coordinates)
 
 
-def json_metadata(value: Any, field: str = "metadata") -> dict[str, JSONValue]:
+def immutable_json_value(value: JSONValue) -> JSONValue:
+    if isinstance(value, Mapping):
+        return MappingProxyType({str(key): immutable_json_value(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(immutable_json_value(item) for item in value)
+    return value
+
+
+def json_metadata(value: Any, field: str = "metadata") -> Mapping[str, JSONValue]:
     if value is None:
-        return {}
+        return MappingProxyType({})
     if not isinstance(value, Mapping) or any(not isinstance(key, str) for key in value):
         raise ValueError(f"{field} must be a mapping with string keys")
     result = to_json_value(dict(value))
     if not isinstance(result, dict):
         raise ValueError(f"{field} must serialize to a JSON object")
-    return result
+    return MappingProxyType({str(key): immutable_json_value(item) for key, item in result.items()})

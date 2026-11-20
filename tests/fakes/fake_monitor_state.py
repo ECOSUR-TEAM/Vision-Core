@@ -13,8 +13,8 @@ class FakeMonitorState:
     def person_label(self, person_id):
         return f"Persona {person_id}"
 
-    def publish(self, jpeg, people, processing_ms, dropped=0):
-        self.published.append((jpeg, people, processing_ms, dropped))
+    def publish(self, jpeg, people, processing_ms, dropped=0, queue_size=0):
+        self.published.append((jpeg, people, processing_ms, dropped, queue_size))
 
     def current_frame(self):
         return b"jpeg", 4

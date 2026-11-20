@@ -1,7 +1,8 @@
 import logging
 import uuid
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import ParseResult, parse_qs, urlsplit
+from typing import TYPE_CHECKING, cast
+from urllib.parse import SplitResult, parse_qs, urlsplit
 
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
@@ -11,6 +12,9 @@ from vision_core.shared.application.dto.serialization import dumps_json
 from vision_core.shared.errors import ValidationError, VisionCoreError, codes
 
 _LOGGER = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from vision_core.features.monitor.infrastructure.http.server import MonitorHTTPServer
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -27,23 +31,46 @@ class Handler(BaseHTTPRequestHandler):
             _LOGGER.error("monitor_error request_id=%s error=%s", request_id, details, exc_info=True)
         self._respond(request_id, url.path, code, kind, body, sequence)
 
-    def _route(self, url: ParseResult):
+    def _route(self, url: SplitResult):
         path = url.path
+        server = cast("MonitorHTTPServer", self.server)
         if path == "/":
-            return self.server.page, "text/html; charset=utf-8", 200, None
+            return server.page, "text/html; charset=utf-8", 200, None
         if path in (f"{API_PREFIX}/state", f"{LEGACY_PREFIX}/state"):
-            response = self.server.get_snapshot.execute(RequestSnapshot())
+            response = server.get_snapshot.execute(RequestSnapshot())
             body = dumps_json(response).encode()
             return body, "application/json", 200, None
         if path in (f"{API_PREFIX}/frame", f"{LEGACY_PREFIX}/frame"):
             return self._frame(url)
+        if path == "/health":
+            body = dumps_json({"status": "alive", "live": True}).encode()
+            return body, "application/json", 200, None
+        if path == "/ready":
+            server.get_snapshot.execute(RequestSnapshot())
+            readiness = server.health.snapshot() if server.health is not None else {"ready": False, "checks": {}}
+            body = dumps_json(readiness).encode()
+            return body, "application/json", 200 if readiness["ready"] else 503, None
+        if path == "/metrics":
+            metrics = (
+                server.metrics.snapshot()
+                if server.metrics is not None
+                else {
+                    "counters": {},
+                    "gauges": {},
+                    "histograms": {},
+                    "uptime_seconds": 0,
+                }
+            )
+            body = dumps_json(metrics).encode()
+            return body, "application/json", 200, None
         raise VisionCoreError(
             "La ruta solicitada no existe.",
             code=codes.REQUEST_NOT_FOUND,
             retryable=False,
         )
 
-    def _frame(self, url: ParseResult):
+    def _frame(self, url: SplitResult):
+        server = cast("MonitorHTTPServer", self.server)
         query = parse_qs(url.query)
         if "after" in query:
             try:
@@ -55,11 +82,11 @@ class Handler(BaseHTTPRequestHandler):
                     "El parámetro 'after' debe ser un entero no negativo.",
                     context={"parameter": "after"},
                 ) from None
-            response = self.server.get_frame.execute(RequestFrame(after))
+            response = server.get_frame.execute(RequestFrame(after))
             if response.jpeg:
                 return response.jpeg, "image/jpeg", 200, response.sequence
             return b"", "image/jpeg", 204, response.sequence
-        response = self.server.get_frame.execute(RequestFrame())
+        response = server.get_frame.execute(RequestFrame())
         if response.jpeg:
             return response.jpeg, "image/jpeg", 200, response.sequence
         raise VisionCoreError(

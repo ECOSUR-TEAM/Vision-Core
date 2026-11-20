@@ -42,4 +42,4 @@ def test_real_door_reports_calibrated_transition_as_event():
 def test_real_door_rejects_invalid_polygon_with_stable_code():
     with pytest.raises(ZoneConfigurationError) as error:
         PolygonDoorAnalytics(Polygon("bad", ((0, 0), (1, 1))), INTERIOR)
-    assert error.value.code == codes.ZONE_CONFIG_INVALID
+    assert error.value.code == codes.ZONE_GEOMETRY_INVALID

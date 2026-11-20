@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import os
 import shutil
 import subprocess
 import time
@@ -11,6 +10,7 @@ import numpy as np
 
 from vision_core.infrastructure.video.frame_validation import validate_frame
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.settings import Settings, apply_ffmpeg_capture_options
 from vision_core.shared.errors import codes
 
 
@@ -49,10 +49,13 @@ def probe(url, transport):
 
 
 def measure(source, count, detector=None):
-    reads, intervals, processing = [], [], []
-    size = None
+    reads: list[float] = []
+    intervals: list[float] = []
+    processing: list[float] = []
+    size: tuple[int, int] | None = None
     previous = None
     start = time.perf_counter()
+    opened = start
     try:
         source.open()
         opened = time.perf_counter()
@@ -73,17 +76,18 @@ def measure(source, count, detector=None):
     finally:
         source.close()
 
-    def stats(values):
-        return (
-            {
-                key: float(value) * 1000
-                for key, value in zip(
-                    ("mean_ms", "p95_ms", "max_ms"), (np.mean(values), np.percentile(values, 95), max(values))
-                )
-            }
-            if values
-            else None
+    if size is None:
+        raise RuntimeError("No se recibieron frames durante la medición")
+
+    def stats(values: list[float]) -> dict[str, float] | None:
+        if not values:
+            return None
+        statistics = (
+            float(np.mean(values)),
+            float(np.percentile(values, 95)),
+            float(max(values)),
         )
+        return {key: value * 1000 for key, value in zip(("mean_ms", "p95_ms", "max_ms"), statistics)}
 
     return {
         "frames": count,
@@ -110,11 +114,12 @@ def main():
     args = parser.parse_args()
     if args.frames < 1:
         parser.error("--frames debe ser positivo")
-    os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;" + args.transport
+    settings = Settings.from_env()
+    apply_ffmpeg_capture_options("rtsp_transport;" + args.transport)
     report = {"transport_requested": args.transport}
     try:
         source = RtspVideoSource.from_env()
-        report["probe"] = probe(os.environ["VISION_CORE_RTSP_URL"], args.transport)
+        report["probe"] = probe(settings.video.rtsp_url or "", args.transport)
         detector = None
         if args.detector:
             from vision_core.infrastructure.detection.yolo_detector_manager import (

@@ -2,13 +2,13 @@
 
 import logging
 import math
-import os
 import time
 from urllib.parse import urlsplit
 
 import cv2
 import numpy as np
 
+from vision_core.settings import Settings
 from vision_core.shared.errors import (
     ConfigurationError,
     VideoSourceError,
@@ -20,26 +20,6 @@ from ...domain.ports.video_source import VideoSource
 from ..frame_validation import validate_frame
 
 logger = logging.getLogger(__name__)
-
-
-def _env_int(name: str, default: str) -> int:
-    try:
-        return int(os.getenv(name, default))
-    except (TypeError, ValueError) as error:
-        raise ConfigurationError(
-            "Los parámetros numéricos de RTSP no son válidos.",
-            context={"variable": name},
-        ) from error
-
-
-def _env_float(name: str, default: str) -> float:
-    try:
-        return float(os.getenv(name, default))
-    except (TypeError, ValueError) as error:
-        raise ConfigurationError(
-            "Los parámetros numéricos de RTSP no son válidos.",
-            context={"variable": name},
-        ) from error
 
 
 class RtspVideoSource(VideoSource):
@@ -56,6 +36,7 @@ class RtspVideoSource(VideoSource):
         reconnect_attempts: int = 5,
         reconnect_delay_seconds: float = 2.0,
         decoder_threads: int = 1,
+        metrics=None,
     ) -> None:
         try:
             parsed = urlsplit(rtsp_url)
@@ -81,13 +62,15 @@ class RtspVideoSource(VideoSource):
         self._attempts = reconnect_attempts
         self._delay = reconnect_delay_seconds
         self._decoder_threads = decoder_threads
+        self._metrics = metrics
         self._cap: cv2.VideoCapture | None = None
         self.reconnections = 0
 
     @classmethod
     def from_env(cls) -> "RtspVideoSource":
-        """Read process environment; a local .env must be exported by the caller."""
-        url = os.environ.get("VISION_CORE_RTSP_URL", "").strip()
+        """Compatibility entry point backed by centralized settings."""
+        settings = Settings.from_env(validate_startup=False).video
+        url = (settings.rtsp_url or "").strip()
         if not url:
             raise ConfigurationError(
                 "Configura VISION_CORE_RTSP_URL antes de iniciar",
@@ -95,11 +78,11 @@ class RtspVideoSource(VideoSource):
             )
         return cls(
             url,
-            open_timeout_ms=_env_int("VISION_CORE_OPEN_TIMEOUT_MS", "5000"),
-            read_timeout_ms=_env_int("VISION_CORE_READ_TIMEOUT_MS", "5000"),
-            reconnect_attempts=_env_int("VISION_CORE_RECONNECT_ATTEMPTS", "5"),
-            reconnect_delay_seconds=_env_float("VISION_CORE_RECONNECT_DELAY_SECONDS", "2"),
-            decoder_threads=_env_int("VISION_CORE_DECODER_THREADS", "1"),
+            open_timeout_ms=settings.open_timeout_ms,
+            read_timeout_ms=settings.read_timeout_ms,
+            reconnect_attempts=settings.reconnect_attempts,
+            reconnect_delay_seconds=settings.reconnect_delay_seconds,
+            decoder_threads=settings.decoder_threads,
         )
 
     def _connect(self) -> bool:
@@ -147,8 +130,11 @@ class RtspVideoSource(VideoSource):
         raise VideoSourceError("No se pudo abrir RTSP")
 
     def _read(self):
+        cap = self._cap
+        if cap is None:
+            return None
         try:
-            ok, frame = self._cap.read()
+            ok, frame = cap.read()
         except cv2.error:
             return None
         if not ok or frame is None or frame.size == 0:
@@ -169,6 +155,8 @@ class RtspVideoSource(VideoSource):
                 frame = self._read()
                 if frame is not None:
                     self.reconnections += 1
+                    if self._metrics is not None:
+                        self._metrics.increment("vision_core_reconnections_total")
                     return frame
                 self.close()
         raise VideoSourceError("Se agotaron los reintentos del stream")

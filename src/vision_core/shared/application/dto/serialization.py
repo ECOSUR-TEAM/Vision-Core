@@ -1,7 +1,8 @@
 """Explicit JSON serialization for transport DTOs.
 
-Binary fields (``bytes``) are transport-only and are serialized as ``null`` in
-JSON: the monitor handler serves frames as ``image/jpeg`` and uses
+Binary fields (``bytes``) are transport-only: :func:`to_json_value` replaces
+them with ``None``, so the field appears as ``null`` and never carries binary
+data. The monitor handler serves frames as ``image/jpeg`` and uses
 :func:`dumps_json` only for JSON endpoints. Non-finite floats are rejected with
 context instead of surfacing as a bare ``ValueError`` from ``json.dumps``.
 """

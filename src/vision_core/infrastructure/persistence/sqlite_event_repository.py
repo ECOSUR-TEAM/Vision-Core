@@ -3,10 +3,11 @@ import sqlite3
 
 from vision_core.domain.model.event import Event
 from vision_core.domain.repositories.event_repository import EventRepository
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dto
 from vision_core.infrastructure.persistence.connection import Database
 from vision_core.infrastructure.persistence.event_identity import event_id_for
 from vision_core.infrastructure.persistence.utc import utc_text
+from vision_core.shared.application.dto.serialization import to_json_value
 
 
 class SqliteEventRepository(EventRepository):
@@ -14,19 +15,19 @@ class SqliteEventRepository(EventRepository):
         self._database = database
 
     def append_with(self, connection: sqlite3.Connection, event: Event, session_id: str | None = None) -> bool:
-        payload = event_to_dict(event)
+        payload = event_to_dto(event)
         event_id = event_id_for(event)
-        metadata = json.dumps(payload["metadata"], sort_keys=True, ensure_ascii=False, default=str)
+        metadata = json.dumps(to_json_value(payload.metadata), sort_keys=True, ensure_ascii=False)
         cursor = connection.execute(
             "INSERT OR IGNORE INTO events("
             "event_id, event_type, person_id, session_id, timestamp_utc, metadata_json, created_at_utc"
             ") VALUES (?, ?, ?, ?, ?, ?, ?)",
             (
                 event_id,
-                str(payload["event"]),
-                str(payload["person_id"]),
+                payload.event,
+                payload.person_id,
                 session_id,
-                float(payload["timestamp"]),
+                payload.timestamp,
                 metadata,
                 utc_text(),
             ),
@@ -37,9 +38,9 @@ class SqliteEventRepository(EventRepository):
                 "VALUES (?, ?, ?, '{}', ?) "
                 "ON CONFLICT(person_id) DO UPDATE SET last_seen_utc = excluded.last_seen_utc",
                 (
-                    str(payload["person_id"]),
-                    float(payload["timestamp"]),
-                    float(payload["timestamp"]),
+                    payload.person_id,
+                    payload.timestamp,
+                    payload.timestamp,
                     utc_text(),
                 ),
             )

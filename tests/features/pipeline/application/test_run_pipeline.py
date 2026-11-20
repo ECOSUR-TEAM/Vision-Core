@@ -6,6 +6,7 @@ from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
 from vision_core.features.detection.domain.entities.detection import Detection
+from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.infrastructure.reid import memory_reid
 from vision_core.infrastructure.reid.memory_reid import InMemoryReID
@@ -121,3 +122,17 @@ def test_reappearance_before_tracker_expiry_recovers_identity():
     assert snapshots[0][0].person_id == snapshots[2][0].person_id
     assert len(memory._active) == 1
     assert set(memory._active) == {2}
+
+
+def test_process_frame_validates_frame_at_the_boundary():
+    app = RunPipeline(
+        FakeVideoSource([]),
+        FakeDetector(),
+        FakeReID(),
+        FakeDoor(),
+        lambda crop: np.zeros(4),
+        lambda event: None,
+    )
+
+    with pytest.raises(ValueError, match="El frame debe ser un ndarray"):
+        app.process_frame(RequestProcessFrame(object()))

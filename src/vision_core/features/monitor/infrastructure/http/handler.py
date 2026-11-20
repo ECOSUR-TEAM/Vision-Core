@@ -1,10 +1,10 @@
-import json
 from http.server import BaseHTTPRequestHandler
 from typing import TYPE_CHECKING, cast
 from urllib.parse import parse_qs, urlsplit
 
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
+from vision_core.shared.application.dto.serialization import dumps_json
 
 if TYPE_CHECKING:
     from vision_core.features.monitor.infrastructure.http.server import MonitorHTTPServer
@@ -20,7 +20,7 @@ class Handler(BaseHTTPRequestHandler):
             body, kind, code = server.page, "text/html; charset=utf-8", 200
         elif path == "/api/state":
             response = server.get_snapshot.execute(RequestSnapshot())
-            body = json.dumps(response.__dict__, allow_nan=False).encode()
+            body = dumps_json(response).encode()
             kind, code = "application/json", 200
         elif path == "/api/frame":
             query = parse_qs(url.query)
@@ -42,12 +42,12 @@ class Handler(BaseHTTPRequestHandler):
                 kind, code = "image/jpeg", 200 if body else 503
                 body = body or b"Esperando video"
         elif path == "/health":
-            body = json.dumps({"status": "alive", "live": True}, allow_nan=False).encode()
+            body = dumps_json({"status": "alive", "live": True}).encode()
             kind, code = "application/json", 200
         elif path == "/ready":
             server.get_snapshot.execute(RequestSnapshot())
             readiness = server.health.snapshot() if server.health is not None else {"ready": False, "checks": {}}
-            body = json.dumps(readiness, allow_nan=False).encode()
+            body = dumps_json(readiness).encode()
             kind, code = "application/json", 200 if readiness["ready"] else 503
         elif path == "/metrics":
             metrics = (
@@ -60,7 +60,7 @@ class Handler(BaseHTTPRequestHandler):
                     "uptime_seconds": 0,
                 }
             )
-            body = json.dumps(metrics, allow_nan=False).encode()
+            body = dumps_json(metrics).encode()
             kind, code = "application/json", 200
         else:
             body, kind, code = b"Not found", "text/plain", 404

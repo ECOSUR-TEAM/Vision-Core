@@ -1,65 +1,89 @@
+"""Mappers between monitor state snapshots and transport DTOs."""
+
 from collections.abc import Mapping
-from typing import cast
+from types import MappingProxyType
+from typing import Any
 
 from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
 from vision_core.features.monitor.application.dto.response.response_snapshot import ResponseSnapshot
+from vision_core.shared.application.dto.bbox_payload import BBoxPayload
+from vision_core.shared.application.dto.event_payload import EventPayload
+from vision_core.shared.application.dto.monitor_person_payload import MonitorPersonPayload
+from vision_core.shared.application.validation import (
+    bounded_int,
+    finite_bbox,
+    finite_float,
+    json_metadata,
+    required_str,
+)
+
+
+def _person_payload(value: Any) -> MonitorPersonPayload:
+    if isinstance(value, MonitorPersonPayload):
+        return value
+    if not isinstance(value, Mapping):
+        raise ValueError("people entries must be MonitorPersonPayload or mappings")
+    bbox = value.get("bbox")
+    confidence = value.get("confidence")
+    track_id = value.get("track_id")
+    zone = value.get("zone")
+    display_name = value.get("display_name")
+    return MonitorPersonPayload(
+        person_id=required_str(value.get("person_id"), "people.person_id"),
+        bbox=None if bbox is None else BBoxPayload(*finite_bbox(bbox, "people.bbox")),
+        confidence=None if confidence is None else finite_float(confidence, "people.confidence"),
+        track_id=None if track_id is None else bounded_int(track_id, "people.track_id"),
+        zone=None if zone is None else required_str(zone, "people.zone"),
+        display_name=None if display_name is None else required_str(display_name, "people.display_name"),
+    )
+
+
+def _event_payload(value: Any) -> EventPayload:
+    if isinstance(value, EventPayload):
+        return value
+    if not isinstance(value, Mapping):
+        raise ValueError("events entries must be EventPayload or mappings")
+    return EventPayload(
+        event=required_str(value.get("event"), "events.event"),
+        person_id=required_str(value.get("person_id"), "events.person_id"),
+        timestamp=finite_float(value.get("timestamp"), "events.timestamp"),
+        metadata=json_metadata(value.get("metadata")),
+    )
+
+
+def _sequence(value: object, field: str) -> tuple[object, ...]:
+    if not isinstance(value, (tuple, list)):
+        raise ValueError(f"{field} must be a sequence")
+    return tuple(value)
+
+
+def _counts(value: Any) -> Mapping[str, int]:
+    if not isinstance(value, Mapping) or any(
+        not isinstance(key, str) or not isinstance(count, int) for key, count in value.items()
+    ):
+        raise ValueError("counts must map event names to integer totals")
+    return MappingProxyType(dict(value))
 
 
 def snapshot_to_response(snapshot: Mapping[str, object]) -> ResponseSnapshot:
-    status = snapshot["status"]
-    if not isinstance(status, str):
-        raise TypeError("Monitor snapshot status must be a string")
-
-    error = snapshot["error"]
-    if error is not None and not isinstance(error, str):
-        raise TypeError("Monitor snapshot error must be a string or None")
-
-    demo_zones = snapshot["demo_zones"]
-    if not isinstance(demo_zones, bool):
-        raise TypeError("Monitor snapshot demo_zones must be a bool")
-
-    frame = int(cast(int, snapshot["frame"]))
     updated_at = snapshot["updated_at"]
-    if updated_at is not None:
-        updated_at = float(cast(float, updated_at))
     age_seconds = snapshot["age_seconds"]
-    if age_seconds is not None:
-        age_seconds = float(cast(float, age_seconds))
-
-    people = snapshot["people"]
-    if not isinstance(people, (tuple, list)):
-        raise TypeError("Monitor snapshot people must be a sequence")
-    people = tuple(item for item in people if isinstance(item, dict))
-
-    events = snapshot["events"]
-    if not isinstance(events, (tuple, list)):
-        raise TypeError("Monitor snapshot events must be a sequence")
-    events = tuple(item for item in events if isinstance(item, dict))
-
-    counts_data = snapshot["counts"]
-    if not isinstance(counts_data, Mapping):
-        raise TypeError("Monitor snapshot counts must be a mapping")
-    counts = {str(key): int(value) for key, value in counts_data.items()}
-
+    error = snapshot["error"]
     persistence_data = snapshot.get("persistence")
-    if persistence_data is not None and not isinstance(persistence_data, Mapping):
-        raise TypeError("Monitor snapshot persistence must be a mapping or None")
-    persistence = {str(key): value for key, value in persistence_data.items()} if persistence_data is not None else None
-
     return ResponseSnapshot(
-        status=status,
-        error=error,
-        demo_zones=demo_zones,
-        frame=frame,
-        updated_at=updated_at,
-        age_seconds=age_seconds,
-        people=people,
-        events=events,
-        counts=counts,
-        processing_ms=float(cast(float, snapshot["processing_ms"])),
-        fps=float(cast(float, snapshot["fps"])),
-        dropped_frames=int(cast(int, snapshot["dropped_frames"])),
-        persistence=persistence,
+        status=required_str(snapshot["status"], "status"),
+        error=None if error is None else required_str(error, "error"),
+        demo_zones=bool(snapshot["demo_zones"]),
+        frame=bounded_int(snapshot["frame"], "frame"),
+        updated_at=None if updated_at is None else finite_float(updated_at, "updated_at"),
+        age_seconds=None if age_seconds is None else finite_float(age_seconds, "age_seconds"),
+        people=tuple(_person_payload(person) for person in _sequence(snapshot["people"], "people")),
+        events=tuple(_event_payload(event) for event in _sequence(snapshot["events"], "events")),
+        counts=_counts(snapshot["counts"]),
+        processing_ms=finite_float(snapshot["processing_ms"], "processing_ms"),
+        fps=finite_float(snapshot["fps"], "fps"),
+        dropped_frames=bounded_int(snapshot["dropped_frames"], "dropped_frames"),
+        persistence=None if persistence_data is None else json_metadata(persistence_data, "persistence"),
     )
 
 

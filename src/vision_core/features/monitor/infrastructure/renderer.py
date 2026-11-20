@@ -5,6 +5,8 @@ from dataclasses import asdict
 import cv2
 import numpy as np
 
+from vision_core.shared.errors import ValidationError, codes
+
 
 def render_frame(frame, tracks, zones, analytics, label_for, demo=False):
     annotated = frame.copy()
@@ -64,5 +66,5 @@ def render_frame(frame, tracks, zones, analytics, label_for, demo=False):
         )
     ok, jpeg = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 85])
     if not ok:
-        raise RuntimeError("No se pudo codificar el frame")
+        raise ValidationError("No se pudo codificar el frame", code=codes.VIDEO_FRAME_INVALID)
     return jpeg.tobytes(), people

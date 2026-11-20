@@ -11,6 +11,7 @@ import numpy as np
 from vision_core.infrastructure.video.frame_validation import validate_frame
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 from vision_core.settings import Settings, apply_ffmpeg_capture_options
+from vision_core.shared.errors import codes
 
 
 def probe(url, transport):
@@ -40,7 +41,11 @@ def probe(url, transport):
         streams = json.loads(result.stdout).get("streams", [])
         return {"status": "ok" if streams else "no_video", "streams": streams}
     except (subprocess.SubprocessError, ValueError):
-        return {"status": "failed", "reason": "No se pudo inspeccionar el stream; revisa acceso y transporte"}
+        return {
+            "status": "failed",
+            "code": codes.VIDEO_SOURCE_UNAVAILABLE,
+            "reason": "No se pudo inspeccionar el stream; revisa acceso y transporte",
+        }
 
 
 def measure(source, count, detector=None):

@@ -9,6 +9,7 @@ from vision_core.features.door.infrastructure.geometry import on_segment
 from vision_core.features.door.infrastructure.polygon_validation import validate_polygon
 from vision_core.shared.domain.event import Event
 from vision_core.shared.domain.polygon import Polygon
+from vision_core.shared.errors import ValidationError, ZoneConfigurationError, codes
 
 
 class PolygonDoorAnalytics(DoorAnalytics):
@@ -24,16 +25,16 @@ class PolygonDoorAnalytics(DoorAnalytics):
         history_limit: int = 300,
     ) -> None:
         if exterior_zone is None or interior_zone is None:
-            raise ValueError("exterior_zone e interior_zone son obligatorios")
+            raise ZoneConfigurationError("exterior_zone e interior_zone son obligatorios")
         if len(exterior_zone.points) < 3 or len(interior_zone.points) < 3:
-            raise ValueError("un polígono necesita al menos 3 puntos")
+            raise ZoneConfigurationError("un polígono necesita al menos 3 puntos", code=codes.ZONE_GEOMETRY_INVALID)
         for polygon in (exterior_zone, interior_zone, door_zone):
             if polygon is not None:
                 validate_polygon(polygon)
         if not isinstance(confirmation_frames, int) or isinstance(confirmation_frames, bool) or confirmation_frames < 1:
-            raise ValueError("confirmation_frames debe ser un entero positivo")
+            raise ZoneConfigurationError("confirmation_frames debe ser un entero positivo")
         if not isinstance(history_limit, int) or isinstance(history_limit, bool) or history_limit < 1:
-            raise ValueError("history_limit debe ser un entero positivo")
+            raise ZoneConfigurationError("history_limit debe ser un entero positivo")
         self._confirmation_frames = confirmation_frames
         self._history_limit = history_limit
         self._pending: dict[str, tuple[str, int]] = {}
@@ -76,7 +77,7 @@ class PolygonDoorAnalytics(DoorAnalytics):
 
     def update(self, person_id: str, position: tuple[float, float]) -> Optional[Event]:
         if len(position) != 2 or not all(math.isfinite(value) for value in position):
-            raise ValueError("La posición debe tener dos coordenadas finitas")
+            raise ValidationError("La posición debe tener dos coordenadas finitas")
         position = (float(position[0]), float(position[1]))
         zone = self._zone_for(position)
         timestamp = time.time()

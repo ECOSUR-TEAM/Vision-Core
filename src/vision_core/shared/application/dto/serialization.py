@@ -18,6 +18,11 @@ from typing import Any
 def to_json_value(value: Any) -> Any:
     if isinstance(value, bytes):
         return None
+    if type(value).__module__.startswith("numpy"):
+        if hasattr(value, "tolist"):
+            return to_json_value(value.tolist())
+        if hasattr(value, "item"):
+            return to_json_value(value.item())
     if isinstance(value, Enum):
         return to_json_value(value.value)
     if is_dataclass(value) and not isinstance(value, type):

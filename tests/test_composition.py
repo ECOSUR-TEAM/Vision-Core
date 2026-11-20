@@ -3,6 +3,7 @@ import threading
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 import main as composition_root
 from tests.fakes.fake_detector import FakeDetector
@@ -11,6 +12,7 @@ from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.shared.domain.event import Event
+from vision_core.shared.errors import ConfigurationError, VisionCoreError
 
 
 def test_infrastructure_does_not_import_application():
@@ -40,6 +42,16 @@ def test_build_monitor_state_uses_the_pipeline_serializer():
     state = composition_root.build_monitor_state()
     state.event(Event("PERSON_ENTERED", "person-1", metadata={"vec": np.zeros(2)}))
     assert state.snapshot()["events"][0]["metadata"] == {"vec": [0.0, 0.0]}
+
+
+def test_expected_errors_keep_python_exception_compatibility():
+    error = ConfigurationError("config inválida")
+
+    assert str(error) == "config inválida"
+    assert error.args == ("config inválida",)
+    assert isinstance(error, ValueError)
+    with pytest.raises(TypeError, match="at most one positional message"):
+        VisionCoreError("primero", "segundo")
 
 
 def test_monitor_main_uses_injected_state_and_runtime(monkeypatch):

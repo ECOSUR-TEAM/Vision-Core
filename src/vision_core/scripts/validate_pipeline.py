@@ -22,6 +22,7 @@ from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 from vision_core.scripts.pipeline_tools.limited_source import LimitedSource
 from vision_core.scripts.pipeline_tools.measured_app import MeasuredApp
 from vision_core.scripts.pipeline_tools.recorded_detector import RecordedDetector
+from vision_core.shared.errors import VisionCoreError, codes
 
 
 def main():
@@ -60,7 +61,13 @@ def main():
         except Exception as error:
             output.write(
                 json.dumps(
-                    {"kind": "summary", "status": "failed", "error_type": type(error).__name__, "frames": source.frames}
+                    {
+                        "kind": "summary",
+                        "status": "failed",
+                        "code": error.code if isinstance(error, VisionCoreError) else codes.INTERNAL_ERROR,
+                        "error_type": type(error).__name__,
+                        "frames": source.frames,
+                    }
                 )
                 + "\n"
             )

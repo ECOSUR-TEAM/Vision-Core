@@ -5,6 +5,7 @@ import threading
 import time
 from collections import Counter, deque
 
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict as event_to_dict
 from vision_core.shared.observability.health import HealthStatus
 from vision_core.shared.observability.metrics import ObservabilityMetrics
 
@@ -12,12 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def _event_to_dict(event):
-    return {
-        "event": event.event,
-        "person_id": event.person_id,
-        "timestamp": event.timestamp,
-        "metadata": dict(event.metadata),
-    }
+    return event_to_dict(event)
 
 
 class MonitorState:

@@ -70,6 +70,12 @@ def test_detections_round_trip_through_response_dto():
     assert response_to_detections(response) == [detection]
 
 
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), -float("inf")])
+def test_finite_bbox_validates_bbox_payload_coordinates(invalid):
+    with pytest.raises(ValueError, match=r"bbox\.x1 must be a finite number"):
+        finite_bbox(BBoxPayload(invalid, 0, 2, 1))
+
+
 def test_detection_mapper_validates_at_the_boundary():
     invalid_area = DetectionPayload(BBoxPayload(2, 2, 1, 1), class_id=0, confidence=0.9, track_id=7)
     invalid_confidence = DetectionPayload(BBoxPayload(1, 2, 3, 4), class_id=0, confidence=float("nan"), track_id=7)

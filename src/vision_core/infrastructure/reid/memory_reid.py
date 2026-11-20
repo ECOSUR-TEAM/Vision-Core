@@ -11,6 +11,7 @@ import numpy as np
 from vision_core.domain.model.bbox import BBox
 from vision_core.domain.ports import ReIDMemory
 from vision_core.settings import Settings
+from vision_core.shared.errors import ConfigurationError, ReIDError, codes
 
 TTL_SECONDS = 60
 SIMILARITY_THRESHOLD = 0.85
@@ -34,11 +35,11 @@ class InMemoryReID(ReIDMemory):
         clock=None,
     ) -> None:
         if not math.isfinite(ttl_seconds) or ttl_seconds < 0:
-            raise ValueError("El tiempo de memoria debe ser finito y no negativo")
+            raise ConfigurationError("El tiempo de memoria debe ser finito y no negativo")
         if not 0 < similarity_threshold <= 1 or not 0 <= ambiguity_margin <= 1:
-            raise ValueError("Umbrales de similitud inválidos")
+            raise ConfigurationError("Umbrales de similitud inválidos")
         if not isinstance(gallery_size, int) or isinstance(gallery_size, bool) or gallery_size < 1:
-            raise ValueError("El tamaño de la galería debe ser positivo")
+            raise ConfigurationError("El tamaño de la galería debe ser positivo")
         self.ttl_seconds = ttl_seconds
         self.threshold = similarity_threshold
         self.margin = ambiguity_margin
@@ -76,7 +77,7 @@ class InMemoryReID(ReIDMemory):
     def _normalize(embedding):
         value = np.asarray(embedding, dtype=np.float32)
         if value.ndim != 1 or not np.isfinite(value).all() or np.linalg.norm(value) < 1e-12:
-            raise ValueError("Embedding inválido")
+            raise ReIDError("Embedding inválido", code=codes.REID_INPUT_INVALID)
         return value / np.linalg.norm(value)
 
     def _remember(self, person, vector):

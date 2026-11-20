@@ -49,7 +49,7 @@ producir transiciones: estos eventos no representan una puerta real calibrada.
   no recibe una imagen nueva en 2,5 segundos, deja de mostrar el conteo como actual.
 
 El panel no muestra FPS, porcentajes, identificadores técnicos, tiempos ni tablas
- de eventos. Estos datos siguen disponibles en `/api/state`. En modo demostración
+ de eventos. Estos datos siguen disponibles en `/api/v1/state`. En modo demostración
 se ocultan los polígonos y aparece «Calibración pendiente»; los eventos de ejemplo
 siguen calculándose internamente pero no se presentan como movimientos reales.
 
@@ -93,9 +93,14 @@ una inferencia adicional por navegador. La API expone:
 | Ruta | Respuesta |
 |---|---|
 | `/` | Panel claro, sin recursos web externos |
-| `/api/state` | Estado, personas, métricas y eventos recientes JSON |
-| `/api/frame` | Último JPEG anotado; 503 mientras no haya frames |
-| `/api/frame?after=N` | Espera hasta 1 s por una imagen posterior a N; 204 si aún no llega. Incluye `X-Frame-Sequence`. |
+| `/api/v1/state` | Estado, personas, métricas y eventos recientes JSON |
+| `/api/v1/frame` | Último JPEG anotado; 503 con envelope de error mientras no haya frames |
+| `/api/v1/frame?after=N` | Espera hasta 1 s por una imagen posterior a N; 204 si aún no llega. Incluye `X-Frame-Sequence`. |
+
+Las rutas sin versionar (`/api/state`, `/api/frame`) quedan como alias obsoletos
+con cabecera `Deprecation: true`. El contrato completo, el envelope de error y
+la política de deprecación están en [contratos versionados](api-contracts.md);
+los códigos estables en el [catálogo de errores](errors.md).
 
 Un hilo posee la captura RTSP y conserva únicamente el frame más reciente. Si
 la inferencia tarda, reemplaza los frames intermedios en lugar de crear una cola

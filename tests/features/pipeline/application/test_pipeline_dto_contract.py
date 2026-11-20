@@ -21,6 +21,7 @@ from vision_core.shared.application.dto.serialization import dumps_json
 from vision_core.shared.domain.bbox import BBox
 from vision_core.shared.domain.event import Event
 from vision_core.shared.domain.event_type import EventType
+from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 DTO_CLASSES = (
     RequestProcessFrame,
@@ -51,12 +52,14 @@ def test_response_fields_and_types():
         "person_id",
         "timestamp",
         "metadata",
+        "schema_version",
     ]
     assert get_type_hints(ResponsePipelineEvent) == {
         "event": str,
         "person_id": str,
         "timestamp": float,
         "metadata": get_type_hints(_metadata_hint)["value"],
+        "schema_version": str,
     }
 
     assert [field.name for field in fields(ResponseProcessFrame)] == ["people", "events", "processing_ms"]
@@ -66,8 +69,12 @@ def test_response_fields_and_types():
         "processing_ms": float,
     }
 
-    for dto in (ResponsePipelineEvent, ResponseProcessFrame):
-        assert all(field.default is MISSING and field.default_factory is MISSING for field in fields(dto))
+    required_fields = [field for field in fields(ResponsePipelineEvent) if field.name != "schema_version"]
+    assert all(field.default is MISSING and field.default_factory is MISSING for field in required_fields)
+    version_field = fields(ResponsePipelineEvent)[-1]
+    assert version_field.name == "schema_version"
+    assert version_field.default == EVENT_SCHEMA_VERSION
+    assert all(field.default is MISSING and field.default_factory is MISSING for field in fields(ResponseProcessFrame))
 
 
 def test_dtos_are_immutable_and_slotted():
@@ -105,6 +112,7 @@ def test_response_pipeline_event_is_serializable():
         "person_id": "person-1",
         "timestamp": 12.5,
         "metadata": {"zone": "interior"},
+        "schema_version": EVENT_SCHEMA_VERSION,
     }
     assert json.loads(event_to_json(event))["metadata"] == {"zone": "interior"}
 
@@ -129,6 +137,7 @@ def test_response_process_frame_contains_people_and_processing_metrics():
             "person_id": "person-1",
             "timestamp": 12.5,
             "metadata": {"zone": "interior"},
+            "schema_version": EVENT_SCHEMA_VERSION,
         }
     ]
     assert payload["processing_ms"] == 1.25

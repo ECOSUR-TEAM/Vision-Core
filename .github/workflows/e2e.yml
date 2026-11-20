@@ -44,9 +44,19 @@ jobs:
           python -m pip check
 
       - name: Ejecutar e2e pesado
+        env:
+          G0_PROFILING_ARTIFACT: profiling_results.json
         run: |
           set -o pipefail
           python -m pytest -q -m slow 2>&1 | tee pytest-e2e.log
+
+      - name: Subir baseline G0
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: g0-profiling
+          path: profiling_results.json
+          if-no-files-found: warn
 
       - name: Subir logs
         if: always()

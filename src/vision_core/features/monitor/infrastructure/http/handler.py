@@ -54,8 +54,7 @@ _SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
     "Permissions-Policy": (
-        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
-        "magnetometer=(), microphone=(), payment=(), usb=()"
+        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
     ),
     "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
 }
@@ -80,7 +79,7 @@ _FRAME_PARAMETERS = frozenset({"after"})
 
 def csp_for(nonce: str) -> str:
     """Build a CSP with the given nonce for both inline style and script."""
-    return f"{_CSP_BASE} script-src 'self' 'nonce-{nonce}'; " f"style-src 'self' 'nonce-{nonce}';"
+    return f"{_CSP_BASE} script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}';"
 
 
 def security_headers(nonce: str) -> dict[str, str]:
@@ -236,6 +235,18 @@ class Handler(BaseHTTPRequestHandler):
                 return None
         return bytes(data)
 
+    def _drain_body(self, length: int) -> None:
+        remaining = min(length, MAX_HEADERS_BYTES)
+        self.connection.settimeout(0.05)
+        while remaining > 0:
+            try:
+                chunk = self.rfile.read(min(remaining, 65535))
+            except OSError:
+                break
+            if not chunk:
+                break
+            remaining -= len(chunk)
+
     def _reject_body(self):
         if "Transfer-Encoding" in self.headers:
             self._send_error(400, "Transfer-Encoding is not allowed")
@@ -252,6 +263,7 @@ class Handler(BaseHTTPRequestHandler):
             return True
         if int(raw) > 0:
             self._monitor_server.limits_metrics.record("oversized")
+            self._drain_body(int(raw))
             self._send_error(413, "Request body is not allowed")
             return True
         return False

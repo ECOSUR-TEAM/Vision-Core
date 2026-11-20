@@ -7,9 +7,15 @@ All notable changes to this project are documented here using
 
 ### Added
 - Automated semantic versioning, changelog extraction and GitHub Releases.
+- G0 baseline with `camera_id` in profiling and camera-labelled metrics.
+- Synthetic integration and 30-second e2e baseline tests with coverage artifacts.
 
 ### Changed
+- Bounded frame buffer now enforces an explicit drop-old capacity of 1 or 2.
 - Docker and CI workflows publish and validate versioned artifacts.
+
+### Fixed
+- Windows TCP reset flakiness when the monitor rejects requests without reading their body.
 
 ### Security
 - Trivy image scanning and SARIF upload for fixable high and critical findings.

@@ -13,22 +13,31 @@ class ObservabilityMetrics:
         self._histogram_totals: dict[str, tuple[int, float]] = {}
         self.started_at = time.monotonic()
 
-    def increment(self, name: str, value: float = 1.0) -> None:
-        with self._lock:
-            self._counters[name] = self._counters.get(name, 0.0) + value
+    @staticmethod
+    def _keys(name: str, camera_id: str | None) -> tuple[str, ...]:
+        if camera_id in (None, "", "default"):
+            return (name,)
+        return (name, f"{name}{{camera_id={camera_id}}}")
 
-    def set_gauge(self, name: str, value: float) -> None:
+    def increment(self, name: str, value: float = 1.0, *, camera_id: str | None = None) -> None:
         with self._lock:
-            self._gauges[name] = value
+            for key in self._keys(name, camera_id):
+                self._counters[key] = self._counters.get(key, 0.0) + value
 
-    def observe(self, name: str, value: float) -> None:
+    def set_gauge(self, name: str, value: float, *, camera_id: str | None = None) -> None:
         with self._lock:
-            values = self._histograms.setdefault(name, [])
-            values.append(value)
-            if len(values) > 1000:
-                del values[:500]
-            total_count, total_sum = self._histogram_totals.get(name, (0, 0.0))
-            self._histogram_totals[name] = (total_count + 1, total_sum + value)
+            for key in self._keys(name, camera_id):
+                self._gauges[key] = value
+
+    def observe(self, name: str, value: float, *, camera_id: str | None = None) -> None:
+        with self._lock:
+            for key in self._keys(name, camera_id):
+                values = self._histograms.setdefault(key, [])
+                values.append(value)
+                if len(values) > 1000:
+                    del values[:500]
+                total_count, total_sum = self._histogram_totals.get(key, (0, 0.0))
+                self._histogram_totals[key] = (total_count + 1, total_sum + value)
 
     def snapshot(self) -> dict:
         with self._lock:

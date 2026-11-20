@@ -8,7 +8,10 @@ alternativas y verificación.
 |---|---|---|---|
 | [0001](0001-screaming-architecture-vertical-slice.md) | Screaming Architecture + Vertical Slice con capas por feature y DTOs | Aceptada | 2026-11-17 |
 | [0002](0002-persistence-and-retention.md) | Persistencia y retención de eventos, tracks e historial | Aceptada | 2026-11-19 |
-| [0003](0003-modelo-ejecucion-multi-camara.md) | Modelo de ejecución multi-cámara y estrategia de ReID compartido | Propuesta | 2026-11-19 |
+| [0003](0003-modelo-ejecucion-multi-camara.md) | Modelo de ejecución multi-cámara y estrategia de ReID compartido | Propuesta | 2026-11-18 |
+
+El prerrequisito G0 se ejecuta sin autorizar multi-cámara; su plan operativo está
+en [docs/g0-baseline-plan.md](../g0-baseline-plan.md).
 
 Convención: `NNNN-titulo-en-kebab.md`, un H1 por documento y tabla de metadatos
 (estado, fecha, tipo, ticket, dependencias). Las decisiones no se modifican: si

@@ -59,7 +59,7 @@ def test_monitor_annotates_without_mutating_input_and_flags_stale(monkeypatch):
     assert report["people"][0]["zone"] == "exterior"
     assert report["people"][0]["track_id"] == 1
     assert report["dropped_frames"] == 7
-    monkeypatch.setattr(time, "time", lambda: state.updated + 6)
+    monkeypatch.setattr(time, "monotonic", lambda: state._updated_monotonic + 6)
     assert state.snapshot()["status"] == "stale"
     assert state.snapshot()["people"] == []
     state.set_status("error", "ConnectionError")
@@ -198,6 +198,7 @@ def test_compose_mode_exits_on_pipeline_error_for_docker_restart(monkeypatch, tm
     monkeypatch.setenv("VISION_CORE_MONITOR_UNCALIBRATED", "0")
     monkeypatch.setenv("VISION_CORE_MONITOR_DEMO_ZONES", "0")
     monkeypatch.setenv("VISION_CORE_MONITOR_EXIT_ON_ERROR", "1")
+    monkeypatch.setenv("VISION_CORE_RTSP_URL", "rtsp://localhost:8554/entrada")
     with pytest.raises(SystemExit) as error:
         monitor.main(
             build_state=composition_root.build_monitor_state,

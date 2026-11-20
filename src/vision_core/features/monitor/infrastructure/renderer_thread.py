@@ -101,6 +101,10 @@ class RendererThread(threading.Thread):
                         logger.exception("Falló el callback de error del renderer")
                 else:
                     logger.exception("Fallo en el hilo de renderizado (%s)", type(error).__name__)
+                with self._handoff_lock:
+                    self.buffer.clear()
+                    self._pending = 0
+                    self._busy.clear()
                 break
             finally:
                 with self._handoff_lock:
@@ -117,11 +121,15 @@ class RendererThread(threading.Thread):
             time.sleep(0.005)
         return False
 
-    def stop(self, *, timeout: float = 1.0) -> None:
+    def stop(self, *, timeout: float = 1.0) -> bool:
         """Drena los jobs encolados y despierta el ``wait`` para hacer ``join``."""
-        self.drain(timeout=timeout)
+        drained = self.drain(timeout=timeout)
         self._stop_event.set()
+        return drained
 
-    def close(self, timeout: float = 2.0) -> None:
+    def close(self, timeout: float = 2.0) -> bool:
         self.stop(timeout=timeout / 2)
         self.join(timeout=timeout)
+        if self.is_alive():
+            logger.warning("El renderer no terminó en %.2fs", timeout)
+        return not self.is_alive()

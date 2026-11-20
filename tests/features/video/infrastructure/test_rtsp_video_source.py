@@ -7,6 +7,7 @@ import pytest
 from vision_core.features.video.infrastructure.adapters.rtsp_video_source import (
     RtspVideoSource,
 )
+from vision_core.shared.observability.metrics import ObservabilityMetrics
 
 URL = "rtsp://user:secret@frigate:8554/entrada"
 
@@ -38,6 +39,18 @@ def test_reconnect_returns_bgr_and_releases(monkeypatch):
     second.release.assert_called_once()
     assert first.open.call_args.args[1] == cv2.CAP_FFMPEG
     assert cv2.CAP_PROP_READ_TIMEOUT_MSEC in first.open.call_args.args[2]
+
+
+def test_reconnect_is_counted_once_on_injected_metrics(monkeypatch):
+    frame = np.zeros((2, 3, 3), dtype=np.uint8)
+    first = capture(frames=[(False, None)])
+    second = capture(frames=[(True, frame)])
+    metrics = ObservabilityMetrics()
+    video = source(monkeypatch, [first, second], metrics=metrics)
+    video.open()
+    assert video.read_frame() is frame
+    assert metrics.snapshot()["counters"]["vision_core_reconnections_total"] == 1
+    video.close()
 
 
 def test_initial_retry_and_idempotent_open(monkeypatch):

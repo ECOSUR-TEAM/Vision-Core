@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 from vision_core.application.frame_profiler import FrameProfiler
+from vision_core.application.pipeline_config import PipelineConfig
 from vision_core.features.monitor.infrastructure.latest_frame_buffer import LatestFrameBuffer
 from vision_core.features.monitor.infrastructure.renderer_thread import RendererThread
 
@@ -107,6 +108,60 @@ def test_renderer_stops_cleanly_and_propagates_errors():
     failing.stop()
     failing.join(timeout=2)
     assert failing.ident not in {thread.ident for thread in threading.enumerate()}
+
+
+def test_renderer_failure_clears_pending_jobs():
+    started = threading.Event()
+    release = threading.Event()
+    errors = []
+
+    def failing_render(job):
+        started.set()
+        assert release.wait(1)
+        raise RuntimeError("fallo de JPEG")
+
+    buffer = LatestFrameBuffer()
+    failing = RendererThread(buffer, failing_render, on_error=errors.append)
+    failing.start()
+    try:
+        failing.submit(np.zeros((2, 2, 3), dtype=np.uint8), ())
+        assert started.wait(1)
+        failing.submit(np.ones((2, 2, 3), dtype=np.uint8), ())
+        assert buffer.stats()["queued"] == 1
+        release.set()
+        failing.join(timeout=2)
+        assert not failing.is_alive()
+        assert buffer.stats()["queued"] == 0
+        assert failing.drain(timeout=0.1)
+        assert len(errors) == 1
+    finally:
+        release.set()
+        failing.close(timeout=2)
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [("false", False), ("0", False), ("yes", True), ("on", True), ("TRUE", True)],
+)
+def test_pipeline_config_uses_the_shared_boolean_parser(monkeypatch, raw, expected):
+    monkeypatch.setenv("VISION_CORE_RENDER_ENABLED", raw)
+    config = PipelineConfig.from_env()
+    assert config.render_enabled is expected
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "VISION_CORE_RENDER_ENABLED",
+        "VISION_CORE_PROFILING_ENABLED",
+        "VISION_CORE_EMBEDDING_BATCH_SIZE",
+        "VISION_CORE_EMBEDDING_STRIDE",
+    ],
+)
+def test_pipeline_config_rejects_invalid_environment_values(monkeypatch, name):
+    monkeypatch.setenv(name, "quizas")
+    with pytest.raises(ValueError, match=name):
+        PipelineConfig.from_env()
 
 
 def test_frame_profiler_writes_percentiles_and_fps(tmp_path):

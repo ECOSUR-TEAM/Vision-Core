@@ -13,29 +13,50 @@ La calibración y aceptación en la sala quedan pendientes. Se identificó como 
 
 ## Arranque habitual
 
-Con la cámara encendida y conectada por Ethernet, desde esta carpeta:
+Stack por defecto, sin cámara:
 
 ```bash
 docker compose up
 ```
 
 - **Vision Core:** http://127.0.0.1:8080
-- **Frigate:** http://127.0.0.1:15000
-
-El comando prepara la configuración, levanta el puente de cámara y Frigate e
-inicia el monitor automáticamente. No ejecutes Python, `nmcli` ni reglas de
-firewall en cada arranque. La preparación de esta laptop ya está hecha.
 
 Para segundo plano: `docker compose up -d`. Para detener: `docker compose down`.
 La primera construcción descarga dependencias; después se reutilizan las imágenes.
+
+Con la cámara encendida y conectada por Ethernet, usa el perfil `camera`:
+
+```bash
+docker compose --profile camera up
+```
+
+- **Vision Core:** http://127.0.0.1:8080
+- **Frigate:** http://127.0.0.1:15000
+
+El perfil `camera` prepara la configuración, levanta el puente de cámara y Frigate
+e inicia el monitor automáticamente. No ejecutes Python, `nmcli` ni reglas de
+firewall en cada arranque. La preparación de esta laptop ya está hecha.
 Consulta [la guía de arranque único](docs/startup.md) para instalación en otro
 equipo, calibración, actualizaciones y diagnóstico.
 
 Las siguientes secciones de Python son para desarrollo y validación manual.
 
+## Desarrollo local reproducible
+
+Usa `make setup`, `make test`, `make lint`, `make format`, `make run` y
+`make docker-build`. Para el stack sintético sin cámara:
+
+```bash
+make setup
+make run
+```
+
+La guía completa, Dev Container, perfiles de Compose y troubleshooting están en
+[docs/development.md](docs/development.md).
+
 ## Instalación local (Linux, Bash)
 
-El proyecto declara Python ≥3.10; para una instalación nueva usa Python 3.11 o
+El proyecto declara Python ≥3.11; para una instalación nueva usa Python 3.11 o
 posterior compatible con las versiones de PyTorch/torchvision instaladas. El
 Dockerfile utiliza Python 3.11. CPU es suficiente para las pruebas; GPU es opcional.
 
@@ -47,7 +68,8 @@ sudo apt-get install -y python3-venv ffmpeg libgl1 libglib2.0-0
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-cpu.txt
+python -m pip install -r requirements-dev.txt
 python -m pip install -e .
 python -m pip check
 python -m pytest -q
@@ -65,8 +87,11 @@ instalar el resto de requirements. Comprueba el entorno:
 python -c "import torch, torchvision, cv2; print(torch.__version__, torchvision.__version__, cv2.__version__); print('CUDA disponible:', torch.cuda.is_available())"
 ```
 
-`requirements.txt` no fija versiones. Conserva `python -m pip freeze` con cada
-medición para reproducirla. No se requiere OSNet, torchreid ni `third_party/`.
+`requirements.txt` fija las versiones directas; `torch`/`torchvision` se instalan
+desde el índice CPU con `requirements-cpu.txt` y `pytest` está en
+`requirements-dev.txt`. Conserva `python -m pip freeze` con cada medición para
+reproducirla. Consulta [seguridad y supply chain](docs/security.md).
+No se requiere OSNet, torchreid ni `third_party/`.
 
 ## Ejecutar tests localmente
 
@@ -74,17 +99,35 @@ CI usa Python 3.11 con PyTorch de CPU en Ubuntu. Para reproducir el mismo
 entorno en local (tras crear y activar un entorno virtual):
 
 ```bash
-python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-cpu.txt
+python -m pip install -r requirements-dev.txt
+python -m pip install -e .
 python -m pip check
 python -m pytest -q
 ```
 
+Unit + integración con cobertura (job de cada PR) y e2e pesado (nightly/manual):
+
+```bash
+python -m pytest -q -m "not slow" \
+  --cov=vision_core --cov-branch \
+  --cov-report=term-missing --cov-report=xml:coverage.xml \
+  --cov-report=json:coverage.json --cov-report=html:htmlcov \
+  --cov-fail-under=80
+python -m vision_core.scripts.check_coverage coverage.json
+python -m pytest -q -m slow
+```
+
+La cobertura incluye ramas, excluye `vision_core/scripts/` y aplica umbrales
+por módulos críticos además del global. Consulta
+[niveles, comandos, umbrales y artefactos](docs/testing.md).
+
 ## Lint y Formato de Código (Ruff)
 
 El proyecto usa [Ruff](https://docs.astral.sh/ruff/) con las reglas `E`, `F`, `W`
-e `I` (imports), `line-length = 120` y Python 3.10 como objetivo. Instala la
-misma versión fijada que usa la CI (también disponible como hook de pre-commit):
+e `I` (imports), `line-length = 120` y Python 3.11 como objetivo. Instala la
+misma versión fijada que usa la CI (también disponible como hook de
+[pre-commit](.pre-commit-config.yaml)):
 
 ```bash
 python -m pip install ruff==0.3.0
@@ -102,6 +145,23 @@ Para verificar sin modificar archivos, usa `ruff check .` y
 [Lint and Format](.github/workflows/lint.yml) ejecuta ambos chequeos más
 `compileall`; este job `lint` será un **requerimiento obligatorio** en los
 rulesets de `main` y `develop`, por lo que un PR no podrá mergearse si falla.
+
+## Type checking (mypy)
+
+El proyecto usa [mypy](https://mypy.readthedocs.io/) con Python 3.11 como
+objetivo y `check_untyped_defs`. La configuración está en `[tool.mypy]` de
+`pyproject.toml` y cubre `src/` y `main.py`:
+
+```bash
+python -m pip install -r requirements.txt -r requirements-dev.txt
+python -m mypy
+```
+
+El job **Type Check** de [CI Tests](.github/workflows/ci.yml) ejecuta el mismo
+comando y es independiente de Ruff y pytest. No introduzcas `Any` ni
+`# type: ignore` sin justificación. Consulta
+[Type checking con mypy](docs/type-checking.md) para el alcance, las excepciones
+y las fases de adopción.
 
 ## Primera prueba sin cámara
 
@@ -139,7 +199,7 @@ la analítica con la cámara definitiva.
 
 ## Ver detección de personas en vivo
 
-`docker compose up` inicia el monitor en **http://127.0.0.1:8080**, con video,
+`docker compose --profile camera up` inicia el monitor en **http://127.0.0.1:8080**, con video,
 recuadros, etiquetas «Persona 1» y conteo de personas visibles. Los IDs son
 temporales; no identifican nombres ni rostros. Mientras no calibremos la sala,
 `VISION_CORE_MONITOR_UNCALIBRATED=1` evita inventar cruces de puerta.
@@ -220,22 +280,39 @@ proceso termina con error; no hay supervisor ni reinicio automático.
 | `DETECTION_TEST_VIDEO` | Ausente | Video local para prueba optativa de detección real (≥30 s, personas visibles) |
 | `DETECTION_TEST_MODEL` | Ausente | Pesos locales para esa prueba optativa |
 
+La lista completa y la forma de validacion estan documentadas en
+[docs/configuration.md](docs/configuration.md). Copia `.env.example`, exporta las
+variables necesarias y no incluyas credenciales reales en Git.
+
 El runner recibe zonas por `--zones` y pesos YOLO por `--model`; usa confirmación de
 3 observaciones y no lee `VISION_CORE_ZONE_CONFIRMATION_FRAMES`. `check_stream`
 fija transporte con `--transport`, sustituyendo las opciones FFmpeg del proceso.
-`main.py` usa `yolov8n.pt`; no hay variable de modelo YOLO ni de dispositivo YOLO.
-La variable del extractor solo controla el extractor.
+`main.py` lee el modelo y el dispositivo YOLO de `VISION_CORE_MODEL_PATH` y
+`VISION_CORE_DETECTION_DEVICE` (por defecto `yolov8n.pt` y `cpu`), y la confianza
+de `VISION_CORE_DETECTION_CONFIDENCE`. La variable del extractor solo controla el
+extractor.
 
-Parámetros de código, no variables: confianza de persona **>0.5**, IoU mínimo
-**0.3**, expiración tras **31** frames ausentes (tolera 30), memoria ReID durante la sesión por defecto, similitud coseno **>0.85**, historial de zonas **300** observaciones por
-persona. El TTL opcional usa tiempo monotónico; los eventos llevan timestamp Unix.
+Parámetros de código, no variables: IoU mínimo **0.3**, expiración tras **31**
+frames ausentes (tolera 30), memoria ReID durante la sesión por defecto, similitud
+coseno **>0.85**, historial de zonas **300** observaciones por persona. El TTL
+opcional usa tiempo monotónico; los eventos llevan timestamp Unix.
+## Observabilidad
+
+El monitor expone `/health`, `/ready` y `/metrics`. `/health` solo indica que el
+servidor HTTP responde; Docker usa `/ready`, que verifica configuración, modelo,
+fuente y disco. Los logs redactan credenciales tanto en JSON como en texto y no
+incluyen frames ni embeddings.
+Consulta [docs/observability.md](docs/observability.md) para el catalogo de metricas
+y procedimientos de diagnostico.
+
 
 ## Docker
 
-El Compose principal incluye cámara por Ethernet, Frigate y monitor. Usa CPU,
-conserva la caché de modelos en un volumen y construye el código dentro de la
-imagen. `.dockerignore` excluye el entorno virtual, credenciales y datos locales.
-Para incorporar cambios de código: `docker compose up --build`.
+El Compose principal incluye un stack sintético por defecto y, en el perfil
+`camera`, cámara por Ethernet, Frigate y monitor. Usa CPU, conserva la caché de
+modelos en un volumen y construye el código dentro de la imagen. `.dockerignore`
+excluye el entorno virtual, credenciales y datos locales.
+Para incorporar cambios de código: `docker compose --profile camera up --build`.
 
 No se necesita combinar archivos Compose. Los antiguos complementos de cámara y
 monitor son alias vacíos de compatibilidad. El archivo de webcam es una alternativa
@@ -245,7 +322,9 @@ independiente de desarrollo. Consulta [arranque y parada](docs/startup.md).
 
 El workflow [Docker CD](.github/workflows/docker.yml) construye y publica las
 imágenes automáticamente en GitHub Container Registry (GHCR) en cada push a
-`main`, `develop` o un tag `v*`. En pull requests solo se construyen, sin publicar.
+`main` o manualmente con `workflow_dispatch`. En pull requests a `main` o
+`develop` solo se construyen y escanean, sin publicar. Los tags `v*` los publica
+el workflow [Release](.github/workflows/release.yml).
 
 Se publican dos targets del `Dockerfile`:
 
@@ -256,9 +335,11 @@ El nombre se normaliza a minúsculas; para este repositorio son
 `ghcr.io/ecosur-team/vision-core` y
 `ghcr.io/ecosur-team/vision-core-camera-bridge`.
 
-Tags disponibles: `main`, `develop`, el SHA corto del commit (`sha-<7>`), tags
-semánticos (al subir `v0.1.0` se genera la etiqueta `0.1.0`) y `latest` en la rama
-por defecto.
+Tags disponibles: `main` y el SHA corto del commit (`sha-<7>`) desde Docker CD;
+`X.Y.Z` y `latest` para releases estables, y solo `X.Y.Z-rc.N` para
+prereleases, publicados por el workflow de Release. Cada release escanea ambas
+imágenes con Trivy antes de publicarlas y sube el SARIF a GitHub Security; una
+vulnerabilidad alta/crítica corregible falla el job.
 
 ```bash
 # Si el paquete es privado, autentícate antes:
@@ -267,6 +348,15 @@ docker pull ghcr.io/ecosur-team/vision-core:main
 docker pull ghcr.io/ecosur-team/vision-core-camera-bridge:main
 docker pull ghcr.io/ecosur-team/vision-core:0.1.0
 ```
+
+## Seguridad y supply chain
+
+Dependabot revisa semanalmente `pip`, GitHub Actions y Docker con PRs agrupados;
+Dependency Review y CodeQL protegen los PRs; Trivy escanea las imágenes en CD.
+La política de respuesta, las excepciones y la activación de secret scanning y
+push protection están en [SECURITY.md](SECURITY.md). Los procedimientos de
+actualización de dependencias y regeneración del lockfile están en
+[docs/security.md](docs/security.md).
 
 ## Módulos y responsabilidades
 
@@ -313,21 +403,28 @@ python -m pytest tests/test_one_class_per_file.py -q
 
 ```bash
 python -m pytest -q
-python -m pytest tests/integration tests/application -q
+python -m pytest tests/integration -q
+python -m pytest -m slow -q
 DETECTION_TEST_VIDEO=/ruta/video.avi DETECTION_TEST_MODEL=/ruta/yolov8n.pt python -m pytest tests/infrastructure/detection/test_real_video.py -q
 python -m vision_core.scripts.evaluate_room sala.jsonl anotaciones.json
 ```
 
 Los tests no descargan pesos. Se omiten pruebas reales cuando falta video, pesos
 locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unitarias,
-escenas controladas y pruebas reales optativas. Consulta:
+integración con video sintético, e2e del monitor y pruebas reales optativas. El job
+de PR publica cobertura y el nightly publica logs. Consulta:
 
+- [Niveles de prueba, cobertura y comandos](docs/testing.md).
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
-- [Decisiones de arquitectura](docs/adr/README.md) y [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md).
+- [Type checking con mypy](docs/type-checking.md).
+- [Decisiones de arquitectura](docs/adr/README.md), [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md) y [ADR 0002](docs/adr/0002-persistence-and-retention.md).
+- [Persistencia, retención y backup](docs/persistence.md).
 - [Orquestación y cierre](docs/operations.md).
+- [Catálogo de errores](docs/errors.md) y [contratos versionados](docs/api-contracts.md).
 - [Detección y tracking](docs/validation.md).
 - [Resultados, anotaciones y evaluación pendiente de la sala](reports/room-evaluation.md).
 - [Hardware y problemas conocidos](docs/operations.md).
+- [Proceso de releases, rollback y hotfixes](docs/releases.md).
 
 Con la cámara disponible: confirmar modelo/ruta RTSP, capturar referencia, calibrar
 zonas y ejecutar la evaluación de la sala. No hay aún cifras certificadas de precisión,

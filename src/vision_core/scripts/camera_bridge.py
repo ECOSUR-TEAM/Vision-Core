@@ -10,6 +10,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 RELAY_HOST = "host.docker.internal"
 RELAY_PORT = 15554
+FRIGATE_CAMERA_ENV = "FRIGATE_CAMERA_RTSP_URL"
 
 
 def camera_target(url):
@@ -69,10 +70,13 @@ def main():
         if not destination.exists():
             shutil.copyfile("/defaults/config.yml", destination)
         return
-    url = os.environ["FRIGATE_CAMERA_RTSP_URL"]
+    url = os.getenv(FRIGATE_CAMERA_ENV, "").strip() or None
+    if url is None:
+        raise ValueError("FRIGATE_CAMERA_RTSP_URL es obligatoria para este modo")
     if mode == "frigate":
-        os.environ["FRIGATE_CAMERA_RTSP_URL"] = relay_url(url)
-        os.execv("/init", ["/init"])
+        environment = dict(os.environ)
+        environment[FRIGATE_CAMERA_ENV] = relay_url(url)
+        os.execve("/init", ["/init"], environment)
     target = camera_target(url)
     bind = socket.gethostbyname(RELAY_HOST)
     if mode == "check":

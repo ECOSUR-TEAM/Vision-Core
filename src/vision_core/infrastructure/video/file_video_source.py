@@ -3,6 +3,7 @@ from pathlib import Path
 import cv2
 
 from vision_core.domain.ports import VideoSource
+from vision_core.shared.errors import VideoSourceError, VideoSourceMissingError, VideoSourceStateError
 
 from .frame_validation import validate_frame
 
@@ -17,15 +18,15 @@ class FileVideoSource(VideoSource):
     def open(self):
         self.close()
         if not self.path.is_file():
-            raise FileNotFoundError(self.path)
+            raise VideoSourceMissingError("El archivo de video configurado no existe.")
         self._cap = cv2.VideoCapture(str(self.path))
         if not self._cap.isOpened():
             self.close()
-            raise ConnectionError("No se pudo abrir el video grabado")
+            raise VideoSourceError("No se pudo abrir el video grabado")
 
     def read_frame(self):
         if self._cap is None:
-            raise RuntimeError("Llama a open() antes de read_frame()")
+            raise VideoSourceStateError("Llama a open() antes de read_frame()")
         ok, frame = self._cap.read()
         if not ok:
             return None

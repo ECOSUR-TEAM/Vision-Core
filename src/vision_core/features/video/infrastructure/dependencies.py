@@ -1,6 +1,8 @@
-import os
 from dataclasses import dataclass
 from typing import Any
+
+from vision_core.settings import Settings
+from vision_core.shared.errors import ConfigurationError
 
 from ..application.dto.request.request_close_video import RequestCloseVideo
 from ..application.dto.request.request_open_video import RequestOpenVideo
@@ -35,24 +37,44 @@ class VideoDependencies(VideoSource):
     def dropped_frames(self) -> int:
         return getattr(self.source, "dropped_frames", 0)
 
+    @property
+    def queue_size(self) -> int:
+        return getattr(self.source, "queue_size", 0)
+
 
 def build_video(
     source: VideoSource | None = None,
     *,
     path: str | None = None,
     latest: bool = False,
+    metrics=None,
 ) -> VideoDependencies:
     if source is None:
-        kind = os.getenv("VISION_CORE_VIDEO_SOURCE", "rtsp").strip().lower()
+        settings = Settings.from_env(validate_startup=False)
+        kind = settings.video.source
         if kind == "file":
-            selected_path = path or os.getenv("VISION_CORE_VIDEO_PATH", "")
+            selected_path = path or (str(settings.video.video_path) if settings.video.video_path else "")
             if not selected_path:
-                raise ValueError("Configura VISION_CORE_VIDEO_PATH para el adaptador file")
+                raise ConfigurationError(
+                    "Configura VISION_CORE_VIDEO_PATH para el adaptador file",
+                    context={"variable": "VISION_CORE_VIDEO_PATH"},
+                )
             source = FileVideoSource(selected_path)
         elif kind == "rtsp":
-            source = RtspVideoSource.from_env()
+            source = RtspVideoSource(
+                settings.video.rtsp_url or "",
+                open_timeout_ms=settings.video.open_timeout_ms,
+                read_timeout_ms=settings.video.read_timeout_ms,
+                reconnect_attempts=settings.video.reconnect_attempts,
+                reconnect_delay_seconds=settings.video.reconnect_delay_seconds,
+                decoder_threads=settings.video.decoder_threads,
+                metrics=metrics,
+            )
         else:
-            raise ValueError("VISION_CORE_VIDEO_SOURCE debe ser rtsp o file")
+            raise ConfigurationError(
+                "VISION_CORE_VIDEO_SOURCE debe ser rtsp o file",
+                context={"variable": "VISION_CORE_VIDEO_SOURCE"},
+            )
     if latest:
         source = LatestFrameSource(source)
     return VideoDependencies(

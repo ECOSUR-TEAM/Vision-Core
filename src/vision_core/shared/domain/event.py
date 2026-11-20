@@ -11,6 +11,7 @@ class Event:
     person_id: str
     timestamp: float = field(default_factory=time.time)
     metadata: dict[str, Any] = field(default_factory=dict)
+    event_id: str = ""
 
     def __post_init__(self) -> None:
         self.event = EventType(self.event).value

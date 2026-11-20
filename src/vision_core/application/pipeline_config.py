@@ -3,12 +3,15 @@
 import os
 from dataclasses import dataclass
 
-_TRUE_VALUES = {"1", "true", "yes", "on"}
+from vision_core.settings.settings_helpers import parse_bool
 
 
 def env_flag(name: str, default: str) -> bool:
     """Parse a boolean environment flag with one canonical interpretation."""
-    return os.getenv(name, default).strip().lower() in _TRUE_VALUES
+    parsed = parse_bool(name, os.getenv(name, default), False)
+    if parsed is None:
+        raise ValueError(f"{name} debe ser 1/0, true/false, yes/no u on/off")
+    return parsed
 
 
 def _positive_int(name: str, default: str) -> int:

@@ -4,7 +4,9 @@ from vision_core.features.door.application.use_cases.get_history import GetHisto
 from vision_core.features.door.application.use_cases.update_zone import UpdateZone
 from vision_core.features.door.domain.entities.zone_observation import ZoneObservation
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
+from vision_core.shared.application.dto import EventPayload, ObservationPayload
 from vision_core.shared.domain.event import Event
+from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 
 class FakeDoorAnalytics(DoorAnalytics):
@@ -25,15 +27,16 @@ def test_update_zone_maps_event_without_camera_or_adapter():
     response = UpdateZone(analytics).execute(RequestUpdate("person-1", (1.0, 2.0)))
 
     assert analytics.updated == [("person-1", (1.0, 2.0))]
-    assert response.event == {
-        "event": "PERSON_ENTERED",
-        "person_id": "person-1",
-        "timestamp": 10.0,
-        "metadata": {"to_zone": "interior"},
-    }
+    assert response.event == EventPayload(
+        event="PERSON_ENTERED",
+        person_id="person-1",
+        timestamp=10.0,
+        metadata={"to_zone": "interior"},
+        schema_version=EVENT_SCHEMA_VERSION,
+    )
 
 
 def test_get_history_maps_observations():
     response = GetHistory(FakeDoorAnalytics()).execute(RequestGetHistory("person-1"))
 
-    assert response.observations == ({"position": (1.0, 2.0), "zone": "exterior", "timestamp": 10.0},)
+    assert response.observations == (ObservationPayload((1.0, 2.0), "exterior", 10.0),)

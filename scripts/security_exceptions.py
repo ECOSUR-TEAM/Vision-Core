@@ -6,11 +6,57 @@ from pathlib import Path
 
 _ID_PATTERN = re.compile(r"^(?:GHSA-[a-z0-9-]+|CVE-\d{4}-\d+)$", re.IGNORECASE)
 _REQUIRED_FIELDS = {"id", "component", "version", "reason", "registered", "review_by", "owner"}
+_SCHEMA_PATH = Path(__file__).resolve().parents[1] / ".github" / "security-exceptions.schema.json"
+
+
+def _validate_schema(data, schema, location="$"):
+    if "const" in schema:
+        expected_value = schema["const"]
+        if (
+            isinstance(data, bool) != isinstance(expected_value, bool)
+            or not isinstance(data, type(expected_value))
+            or data != expected_value
+        ):
+            raise ValueError(f"security-exceptions: {location} debe ser {expected_value!r}")
+
+    expected = schema.get("type")
+    if expected == "object":
+        if not isinstance(data, dict):
+            raise ValueError(f"security-exceptions: {location} debe ser un objeto")
+        properties = schema.get("properties", {})
+        for field in schema.get("required", []):
+            if field not in data:
+                raise ValueError(f"security-exceptions: falta {location}.{field}")
+        if schema.get("additionalProperties") is False:
+            extra = sorted(set(data) - set(properties))
+            if extra:
+                raise ValueError(f"security-exceptions: propiedades no permitidas en {location}: {extra}")
+        for field, value in data.items():
+            if field in properties:
+                _validate_schema(value, properties[field], f"{location}.{field}")
+    elif expected == "array":
+        if not isinstance(data, list):
+            raise ValueError(f"security-exceptions: {location} debe ser una lista")
+        for index, item in enumerate(data):
+            _validate_schema(item, schema.get("items", {}), f"{location}[{index}]")
+    elif expected == "string":
+        if not isinstance(data, str):
+            raise ValueError(f"security-exceptions: {location} debe ser una cadena")
+        if len(data) < schema.get("minLength", 0):
+            raise ValueError(f"security-exceptions: {location} no puede estar vacio")
+        pattern = schema.get("pattern")
+        if pattern and not re.search(pattern, data):
+            raise ValueError(f"security-exceptions: valor invalido en {location}: {data}")
+    elif expected == "boolean" and not isinstance(data, bool):
+        raise ValueError(f"security-exceptions: {location} debe ser booleano")
 
 
 def load_exceptions(path):
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    if data.get("version") != 1:
+    if not isinstance(data, dict):
+        raise ValueError("security-exceptions: la raiz debe ser un objeto")
+    version = data.get("version")
+    if isinstance(version, bool) or not isinstance(version, int) or version != 1:
         raise ValueError("security-exceptions: version debe ser 1")
     exceptions = data.get("exceptions")
     if not isinstance(exceptions, list):
@@ -33,6 +79,8 @@ def load_exceptions(path):
         for flag in ("trivy", "dependency_review"):
             if flag in item and not isinstance(item[flag], bool):
                 raise ValueError(f"security-exceptions: {flag} debe ser booleano en {item['id']}")
+    schema = json.loads(_SCHEMA_PATH.read_text(encoding="utf-8"))
+    _validate_schema(data, schema)
     return exceptions
 
 

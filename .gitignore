@@ -13,3 +13,10 @@ config/frigate-camera-local/
 *.egg-info/
 requirements.lock.txt
 .trivyignore
+.coverage
+coverage.json
+coverage.xml
+coverage-*.json
+htmlcov/
+pytest*.log
+dev-data/*.avi

@@ -7,14 +7,16 @@ from vision_core.features.monitor.infrastructure.http.handler import Handler
 
 
 class MonitorHTTPServer(ThreadingHTTPServer):
-    def __init__(self, address, page, get_snapshot, get_frame):
+    def __init__(self, address, page, get_snapshot, get_frame, metrics=None, health=None):
         super().__init__(address, Handler)
         self.page = page
         self.get_snapshot = get_snapshot
         self.get_frame = get_frame
+        self.metrics = metrics
+        self.health = health
 
 
-def make_server(host, port, state, page_path=None):
+def make_server(host, port, state, page_path=None, metrics=None, health=None):
     default_page = Path(__file__).resolve().parents[4] / "infrastructure/monitor/index.html"
     page = Path(page_path or default_page).read_bytes()
     return MonitorHTTPServer(
@@ -22,4 +24,6 @@ def make_server(host, port, state, page_path=None):
         page,
         GetSnapshot(state),
         GetFrame(state),
+        metrics or getattr(state, "metrics", None),
+        health or getattr(state, "health", None),
     )

@@ -1,29 +1,35 @@
-"""python -m vision_core.infrastructure.monitor --demo-zones --port 8080"""
+"""python main.py --demo-zones --port 8080"""
 
 import argparse
-import logging
-import os
 import signal
 from pathlib import Path
 
 from vision_core.features.monitor.infrastructure.http.server import make_server
+from vision_core.settings import Settings
+from vision_core.shared.observability.structured_logging import configure_structured_logging
 
 
-def main(*, state=None, build_runtime=None):
+def main(*, state=None, build_state=None, build_runtime=None):
+    settings = Settings.from_env(validate_startup=state is None or build_runtime is None)
+    configure_structured_logging(
+        settings.logging.level,
+        settings.logging.json_format,
+        settings.logging.camera_id,
+    )
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--host", default=os.getenv("VISION_CORE_MONITOR_HOST", "127.0.0.1"))
-    parser.add_argument("--port", type=int, default=8080)
-    parser.add_argument("--zones", default=os.getenv("VISION_CORE_ZONES_FILE"))
+    parser.add_argument("--host", default=settings.monitor.host)
+    parser.add_argument("--port", type=int, default=settings.monitor.port)
+    parser.add_argument("--zones", default=str(settings.zones.zones_file) if settings.zones.zones_file else None)
     parser.add_argument(
         "--uncalibrated",
         action="store_true",
-        default=os.getenv("VISION_CORE_MONITOR_UNCALIBRATED", "0") == "1",
+        default=settings.zones.uncalibrated,
         help="Detectar y recordar personas sin inventar zonas ni cruces",
     )
     parser.add_argument(
         "--demo-zones",
         action="store_true",
-        default=os.getenv("VISION_CORE_MONITOR_DEMO_ZONES", "0") == "1",
+        default=settings.zones.demo_zones,
         help="Zonas ilustrativas de 640 × 480 para webcam",
     )
     args = parser.parse_args()
@@ -35,23 +41,20 @@ def main(*, state=None, build_runtime=None):
         args.zones = str(Path(__file__).resolve().parents[4] / "config/zones.example.json")
     elif not args.zones:
         parser.error("Indica --zones o --demo-zones")
-    logging.basicConfig(level=logging.INFO)
-
-    if state is None or build_runtime is None:
-        # The composition root lives outside this infrastructure package.
-        from vision_core.composition import build_monitor_runtime, build_monitor_state
-
-        if state is None:
-            state = build_monitor_state(demo=args.demo_zones or args.uncalibrated)
-        if build_runtime is None:
-            build_runtime = build_monitor_runtime
+    if build_runtime is None:
+        raise RuntimeError("build_runtime es obligatorio")
+    if state is None:
+        if build_state is None:
+            raise RuntimeError("build_state es obligatorio")
+        state = build_state(demo=args.demo_zones or args.uncalibrated, settings=settings)
 
     server = make_server(args.host, args.port, state)
     runtime = build_runtime(
         state,
         zones_file=args.zones,
-        exit_on_error=os.getenv("VISION_CORE_MONITOR_EXIT_ON_ERROR", "0") == "1",
+        exit_on_error=settings.monitor.exit_on_error,
         on_failure=server.shutdown,
+        settings=settings,
     )
     runtime.start()
 

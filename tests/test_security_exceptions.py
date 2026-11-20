@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -35,6 +36,29 @@ def test_load_exceptions_rejects_invalid_id(tmp_path):
     path.write_text(json.dumps({"version": 1, "exceptions": [_exception("not-an-id")]}))
     with pytest.raises(ValueError, match="identificador invalido"):
         load_exceptions(path)
+
+
+def test_load_exceptions_rejects_unknown_field(tmp_path):
+    item = _exception("CVE-2026-0001")
+    item["unexpected"] = True
+    path = tmp_path / "exceptions.yml"
+    path.write_text(json.dumps({"version": 1, "exceptions": [item]}))
+    with pytest.raises(ValueError, match="propiedades no permitidas"):
+        load_exceptions(path)
+
+
+def test_load_exceptions_rejects_empty_reason(tmp_path):
+    item = _exception("CVE-2026-0001")
+    item["reason"] = ""
+    path = tmp_path / "exceptions.yml"
+    path.write_text(json.dumps({"version": 1, "exceptions": [item]}))
+    with pytest.raises(ValueError, match="no puede estar vacio"):
+        load_exceptions(path)
+
+
+def test_load_exceptions_validates_committed_file():
+    path = Path(__file__).resolve().parents[1] / ".github" / "security-exceptions.yml"
+    assert load_exceptions(path) == []
 
 
 def test_main_writes_scanner_inputs(tmp_path):

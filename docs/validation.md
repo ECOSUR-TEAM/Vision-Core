@@ -84,8 +84,12 @@ coordenadas sintéticas y no constituye una calibración válida de la cámara.
 1. Con `VISION_CORE_RTSP_URL` configurada, captura sin navegador:
    `python -m vision_core.infrastructure.video.capture_reference referencia.png`.
 2. Abre el PNG a resolución original en un editor que muestre coordenadas del
-   cursor. Copia `config/zones.example.json` a `config/zones.json`. Escribe en
-   `frame_size` el ancho y alto mostrados por la captura.
+   cursor. Copia `config/zones.example.json` a `config/zones.json`. Conserva
+   `"version": "1.0"` (el loader rechaza otras versiones y claves adicionales) y
+   escribe en `frame_size` el ancho y alto mostrados por la captura como enteros.
+   Migración: si tu `zones.json` anterior trae `_note` y no tiene `version`,
+   elimina `_note` y añade `"version": "1.0"`; el esquema estricto no acepta
+   claves heredadas ni claves duplicadas.
 3. Marca los vértices de `door` (puerta), `exterior` e `interior` en orden alrededor
    de cada contorno. No repitas el primer punto al final. El origen es la esquina
    superior izquierda; x crece a la derecha e y hacia abajo. Los puntos deben

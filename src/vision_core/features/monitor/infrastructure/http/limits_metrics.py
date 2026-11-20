@@ -1,4 +1,4 @@
-"""Contadores de peticiones rechazadas por los límites del monitor."""
+"""Thread-safe counters for rejected monitor requests."""
 
 import logging
 import threading
@@ -8,7 +8,7 @@ _LOG_SAMPLE_EVERY = 50
 
 
 class MonitorLimitsMetrics:
-    """Cuenta rechazos sin registrar URLs, payloads ni direcciones."""
+    """Count rejected requests without logging URLs, payloads or addresses."""
 
     _REASONS = ("concurrency", "long_poll_concurrency", "timeout", "oversized")
 

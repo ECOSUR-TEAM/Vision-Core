@@ -1,6 +1,6 @@
 """Compatibility entry point for the zone validation script."""
 
-from scripts.check_zones import main
+from vision_core.scripts.check_zones import main
 
 __all__ = ["main"]
 

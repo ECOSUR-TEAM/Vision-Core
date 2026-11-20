@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Vision Core · Cámara en vivo</title>
-    <style>
+    <style nonce="__CSP_NONCE__">
         :root {
             color-scheme: light;
             --bg: #f5f6f2;
@@ -220,6 +220,36 @@
             border-top: 1px solid var(--line)
         }
 
+        .events-panel {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid var(--line)
+        }
+
+        .events {
+            list-style: none;
+            margin: 12px 0 0;
+            padding: 0
+        }
+
+        .event {
+            border-top: 1px solid var(--line);
+            padding: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 13px;
+            overflow-wrap: anywhere
+        }
+
+        .event .id {
+            font-weight: 600
+        }
+
+        .event .meta {
+            color: var(--muted)
+        }
+
         @media(max-width:850px) {
             .workspace {
                 grid-template-columns: minmax(0, 1fr) 230px;
@@ -259,7 +289,8 @@
 
             .people,
             .empty,
-            .privacy {
+            .privacy,
+            .events-panel {
                 grid-column: 1/-1
             }
 
@@ -319,13 +350,39 @@
                 <p id="emptyPeople" class="empty">Esperando la imagen…</p>
                 <p class="privacy">El número ayuda a seguir a cada persona mientras aparece en cámara. No identifica su
                     nombre.</p>
+                <section class="events-panel" aria-label="Eventos recientes">
+                    <h2>Eventos recientes</h2>
+                    <ul id="events" class="events"></ul>
+                </section>
             </aside>
         </div>
     </main>
-    <script>
+    <script nonce="__CSP_NONCE__">
         const el = id => document.getElementById(id);
         let lastFrame = 0, lastImageAt = 0, state = null, imageUrl = null, videoFailed = false;
         const labels = { starting: 'Preparando cámara…', running: 'En vivo', stale: 'Imagen detenida', error: 'Cámara no disponible', stopped: 'Cámara detenida' };
+        const zoneNames = {
+            interior: 'En el interior',
+            exterior: 'En el exterior',
+            fuera: 'Fuera de las zonas marcadas',
+        };
+
+        function setImageSource(image, url) {
+            if (!image || image.tagName !== 'IMG') {
+                throw new Error('La fuente dinámica solo se permite en imágenes generadas por el monitor');
+            }
+            const candidate = String(url);
+            const normalized = candidate.toLowerCase();
+            if (
+                normalized.startsWith('javascript:')
+                || normalized.startsWith('data:text/html')
+                || !normalized.startsWith('blob:')
+            ) {
+                throw new Error('URL de imagen no permitida');
+            }
+            image.src = candidate;
+        }
+
         function render() {
             const fresh = lastImageAt > 0 && performance.now() - lastImageAt < 2500;
             const live = state?.status === 'running' && fresh && !videoFailed;
@@ -336,9 +393,35 @@
             el('notice').hidden = !state?.demo_zones;
             el('visible').textContent = live ? state.people.length : '—';
             el('people').replaceChildren();
-            if (live) for (const person of state.people) { const li = document.createElement('li'); li.className = 'person'; const name = document.createElement('strong'); name.textContent = person.display_name; const zone = document.createElement('span'); zone.textContent = state.demo_zones ? 'En cámara' : ({ interior: 'En el interior', exterior: 'En el exterior', fuera: 'Fuera de las zonas marcadas' }[person.zone] || 'En cámara'); li.append(name, zone); el('people').append(li); }
+            if (live) {
+                for (const person of state.people) {
+                    const li = document.createElement('li');
+                    li.className = 'person';
+                    const name = document.createElement('strong');
+                    name.textContent = person.display_name;
+                    const zoneLabel = document.createElement('span');
+                    zoneLabel.textContent = state.demo_zones ? 'En cámara' : (Object.hasOwn(zoneNames, person.zone) ? zoneNames[person.zone] : 'En cámara');
+                    const zoneValue = document.createElement('span');
+                    zoneValue.textContent = 'Zona: ' + String(person.zone ?? '');
+                    li.append(name, zoneLabel, zoneValue);
+                    el('people').append(li);
+                }
+            }
             el('emptyPeople').hidden = live && state.people.length > 0;
             el('emptyPeople').textContent = live ? 'No hay personas a la vista.' : 'Esperando la imagen…';
+            el('events').replaceChildren();
+            for (const event of (state?.events || [])) {
+                const li = document.createElement('li');
+                li.className = 'event';
+                const who = document.createElement('span');
+                who.className = 'id';
+                who.textContent = event.person_id;
+                const meta = document.createElement('span');
+                meta.className = 'meta';
+                meta.textContent = JSON.stringify(event.metadata);
+                li.append(who, meta);
+                el('events').append(li);
+            }
         }
         async function pollState() {
             try { const response = await fetch('/api/v1/state', { cache: 'no-store', signal: AbortSignal.timeout(3000) }); if (!response.ok) throw new Error(); state = await response.json(); if (state.frame < lastFrame) lastFrame = 0; }
@@ -352,9 +435,12 @@
                     if (response.status === 204) continue;
                     if (!response.ok) throw new Error();
                     const next = URL.createObjectURL(await response.blob());
-                    const decoded = new Image(); decoded.src = next;
+                    const decoded = new Image();
+                    setImageSource(decoded, next);
                     try { await decoded.decode(); } catch (error) { URL.revokeObjectURL(next); throw error; }
-                    el('video').src = next; if (imageUrl) URL.revokeObjectURL(imageUrl); imageUrl = next;
+                    setImageSource(el('video'), next);
+                    if (imageUrl) URL.revokeObjectURL(imageUrl);
+                    imageUrl = next;
                     lastFrame = Number(response.headers.get('X-Frame-Sequence')); lastImageAt = performance.now(); videoFailed = false;
                 } catch { videoFailed = true; render(); await new Promise(resolve => setTimeout(resolve, 500)); }
             }

@@ -102,6 +102,18 @@ con cabecera `Deprecation: true`. El contrato completo, el envelope de error y
 la política de deprecación están en [contratos versionados](api-contracts.md);
 los códigos estables en el [catálogo de errores](errors.md).
 
+El contrato es estricto: solo `GET`; `/`, `/api/v1/state`, `/health`, `/ready` y
+`/metrics` rechazan cualquier query, y `/api/v1/frame` solo acepta un `after`
+único (sin duplicados ni parámetros desconocidos) de hasta 30 dígitos. Los
+errores siguen usando el envelope con `code`, `message` y `request_id`, salvo en
+`HEAD`, que por RFC 9110 solo devuelve estado y cabeceras (405 con
+`Allow: GET`). Un 204 no incluye cuerpo, `Content-Type` ni `Content-Length`; un
+503 conserva el envelope y añade `Retry-After: 1`. Todas las respuestas llevan
+`X-Request-ID`, un conjunto uniforme de cabeceras de seguridad y una CSP con
+nonce por petición; el panel sustituye sus dos marcadores por ese nonce. El
+número de conexiones y de long-polls simultáneos está acotado y las peticiones
+rechazadas se contabilizan sin exponer direcciones ni payloads.
+
 Un hilo posee la captura RTSP y conserva únicamente el frame más reciente. Si
 la inferencia tarda, reemplaza los frames intermedios en lugar de crear una cola
 creciente. El contador de descartados incluye ese reemplazo, no pérdida de red.

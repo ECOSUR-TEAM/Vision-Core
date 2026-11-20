@@ -1,5 +1,12 @@
-"""Servidor HTTP con presupuestos acotados para el monitor local."""
+"""Bounded ThreadingHTTPServer for the local monitor.
 
+The public factory keeps the ``develop`` contract (``metrics`` and ``health``
+remain available to ``/metrics`` and ``/ready``). Rejection counters live in a
+separate object so ``server.metrics`` is still the observability provider.
+"""
+
+import json
+import secrets
 import socket
 import threading
 import uuid
@@ -10,13 +17,14 @@ from pathlib import Path
 from vision_core.features.monitor.application.use_cases.get_frame import GetFrame
 from vision_core.features.monitor.application.use_cases.get_snapshot import GetSnapshot
 from vision_core.features.monitor.infrastructure.http.error_response import error_envelope
-from vision_core.features.monitor.infrastructure.http.handler import Handler
+from vision_core.features.monitor.infrastructure.http.handler import Handler, security_headers
 from vision_core.features.monitor.infrastructure.http.limits_metrics import MonitorLimitsMetrics
-from vision_core.shared.application.dto.serialization import dumps_json
 from vision_core.shared.errors import codes
 
 MAX_CONNECTIONS = 4
 MAX_LONG_POLLS = 2
+_CSP_PLACEHOLDER = b"__CSP_NONCE__"
+_REQUIRED_PLACEHOLDERS = 2
 
 
 class MonitorHTTPServer(ThreadingHTTPServer):
@@ -27,7 +35,6 @@ class MonitorHTTPServer(ThreadingHTTPServer):
         self.page = page
         self.get_snapshot = get_snapshot
         self.get_frame = get_frame
-        # ``metrics`` sigue siendo el proveedor de observabilidad de /metrics.
         self.metrics = metrics
         self.health = health
         self.limits_metrics = MonitorLimitsMetrics()
@@ -68,7 +75,7 @@ class MonitorHTTPServer(ThreadingHTTPServer):
     @staticmethod
     def _reject_immediately(request, status):
         request_id = uuid.uuid4().hex
-        body = dumps_json(error_envelope(codes.INTERNAL_ERROR, "Service unavailable", request_id)).encode()
+        body = json.dumps(error_envelope(codes.INTERNAL_ERROR, "Service unavailable", request_id)).encode()
         headers = [
             f"HTTP/1.1 {status.value} {status.phrase}",
             "Content-Type: application/json",
@@ -77,8 +84,11 @@ class MonitorHTTPServer(ThreadingHTTPServer):
             f"X-Request-ID: {request_id}",
             "Connection: close",
         ]
+        for name, value in security_headers(secrets.token_urlsafe(16)).items():
+            headers.append(f"{name}: {value}")
         response = ("\r\n".join(headers) + "\r\n\r\n").encode("latin-1") + body
         try:
+            # Keep the accept loop responsive even if the peer is not reading.
             request.settimeout(1.0)
             request.sendall(response)
         except OSError:
@@ -94,6 +104,11 @@ class MonitorHTTPServer(ThreadingHTTPServer):
 def make_server(host, port, state, page_path=None, metrics=None, health=None):
     default_page = Path(__file__).resolve().parents[4] / "infrastructure/monitor/index.html"
     page = Path(page_path or default_page).read_bytes()
+    if page.count(_CSP_PLACEHOLDER) != _REQUIRED_PLACEHOLDERS:
+        raise ValueError(
+            f"La página del monitor debe contener exactamente {_REQUIRED_PLACEHOLDERS} "
+            f"marcadores {_CSP_PLACEHOLDER.decode()}"
+        )
     return MonitorHTTPServer(
         (host, port),
         page,

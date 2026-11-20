@@ -87,17 +87,26 @@ class MonitorHTTPServer(ThreadingHTTPServer):
         for name, value in security_headers(secrets.token_urlsafe(16)).items():
             headers.append(f"{name}: {value}")
         response = ("\r\n".join(headers) + "\r\n\r\n").encode("latin-1") + body
+
+        def drain():
+            for _ in range(8):
+                try:
+                    if not request.recv(65535):
+                        return
+                except OSError:
+                    return
+
         try:
-            # Keep the accept loop responsive even if the peer is not reading.
+            request.settimeout(0.02)
+            drain()
             request.settimeout(1.0)
             request.sendall(response)
+            request.shutdown(socket.SHUT_WR)
+            request.settimeout(0.02)
+            drain()
         except OSError:
             pass
         finally:
-            try:
-                request.shutdown(socket.SHUT_RDWR)
-            except OSError:
-                pass
             request.close()
 
 

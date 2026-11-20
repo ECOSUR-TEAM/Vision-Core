@@ -1,61 +1,65 @@
-"""Thread-safe size-one buffer with a strict "drop old" policy.
+"""Bounded thread-safe buffer with a strict "drop old" policy.
 
-The inference thread is the producer. ``publish`` only swaps one reference
+The inference thread is the producer. ``publish`` only updates a small deque
 while holding the lock for a few instructions; it never waits for rendering,
-JPEG encoding or any downstream I/O. The consumer takes the newest payload
-and leaves the slot empty, so intermediate frames are discarded instead of
-building an unbounded queue.
+JPEG encoding or any downstream I/O. The consumer takes the oldest queued
+payload, so intermediate frames are discarded instead of building an unbounded
+queue.
 """
 
 import threading
+from collections import deque
 from typing import Generic, TypeVar
 
 T = TypeVar("T")
 
 
 class LatestFrameBuffer(Generic[T]):
-    """Buffer de tamaño 1: el productor nunca se bloquea esperando al consumidor."""
+    """Cola acotada de 1-2 frames: el productor nunca se bloquea."""
 
-    __slots__ = ("_dropped", "_item", "_lock", "_published")
+    __slots__ = ("_dropped", "_items", "_lock", "_maxsize", "_published")
 
-    def __init__(self) -> None:
+    def __init__(self, maxsize: int = 1) -> None:
+        if maxsize not in (1, 2):
+            raise ValueError("maxsize debe ser 1 o 2")
         self._lock = threading.Lock()
-        self._item: T | None = None
+        self._maxsize = maxsize
+        self._items: deque[T] = deque(maxlen=maxsize)
         self._published = 0
         self._dropped = 0
 
-    def publish(self, item: T) -> bool:
-        """Sobrescribe el frame anterior y devuelve si descartó uno.
+    @property
+    def maxsize(self) -> int:
+        return self._maxsize
 
-        Nunca llama al consumidor ni espera por él.
-        """
+    def publish(self, item: T) -> bool:
+        """Añade el frame más reciente y devuelve si descartó uno viejo."""
         with self._lock:
-            replaced = self._item is not None
-            if replaced:
+            dropped = len(self._items) == self._maxsize
+            if dropped:
                 self._dropped += 1
-            self._item = item
+            self._items.append(item)
             self._published += 1
-            return replaced
+            return dropped
 
     def take(self) -> T | None:
-        """Devuelve (y retira) el payload más reciente, o ``None`` si no hay uno."""
+        """Devuelve (y retira) el payload más antiguo, o ``None`` si no hay uno."""
         with self._lock:
-            item, self._item = self._item, None
-            return item
+            return self._items.popleft() if self._items else None
 
     def peek(self) -> T | None:
-        """Consulta el payload actual sin retirarlo."""
+        """Consulta el payload más reciente sin retirarlo."""
         with self._lock:
-            return self._item
+            return self._items[-1] if self._items else None
 
     def clear(self) -> None:
         with self._lock:
-            self._item = None
+            self._items.clear()
 
     def stats(self) -> dict[str, int]:
         with self._lock:
             return {
                 "published": self._published,
                 "dropped": self._dropped,
-                "queued": 1 if self._item is not None else 0,
+                "queued": len(self._items),
             }

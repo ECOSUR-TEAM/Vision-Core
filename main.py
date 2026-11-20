@@ -48,6 +48,7 @@ def build_monitor_state(*, demo=False, settings=None):
         state=None,
         metrics=metrics,
         health=health,
+        camera_id=settings.logging.camera_id,
     ).state
 
 
@@ -78,6 +79,7 @@ def build_monitor_pipeline(
 ):
     settings = settings or Settings.from_env(validate_startup=False)
     config = config or PipelineConfig.from_env()
+    camera_id = getattr(state, "camera_id", None) or settings.logging.camera_id or "default"
     if render_enabled is not None:
         config = replace(config, render_enabled=render_enabled)
     if persistence is None:
@@ -145,6 +147,7 @@ def build_monitor_pipeline(
                         job.processing_ms,
                         job.dropped + stats["dropped"],
                         stats["queued"],
+                        camera_id=camera_id,
                     )
 
                 renderer = RendererThread(
@@ -201,8 +204,9 @@ def build_monitor_pipeline(
                 expected_frame_size=(zones.width, zones.height) if zones else None,
                 on_frame=on_frame,
                 config=config,
+                camera_id=camera_id,
             )
-            app.set_observability(state.metrics)
+            app.set_observability(state.metrics, camera_id=camera_id)
             persistence_settings = persistence.settings
             if start_retention and persistence_settings.enabled:
                 retention_worker = RetentionWorker(

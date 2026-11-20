@@ -22,8 +22,9 @@ def _percentile(samples: list[float], quantile: float) -> float:
 class FrameProfiler:
     """Acumula duraciones ``perf_counter`` y guarda p50/p95/FPS al finalizar."""
 
-    def __init__(self, enabled: bool = True) -> None:
+    def __init__(self, enabled: bool = True, camera_id: str = "default") -> None:
         self._enabled = bool(enabled)
+        self._camera_id = camera_id or "default"
         self._samples: dict[str, list[float]] = {stage: [] for stage in STAGES}
         self._frames = 0
         self._started = perf_counter()
@@ -68,6 +69,7 @@ class FrameProfiler:
                 "max_ms": round(max(samples, default=0.0) * 1000, 4),
             }
         return {
+            "camera_id": self._camera_id,
             "frames": self._frames,
             "elapsed_seconds": round(elapsed, 6),
             "fps": round(self._frames / elapsed, 2) if elapsed > 0 else 0.0,

@@ -59,15 +59,16 @@ Las excepciones se revisan al menos cada mes y al actualizar dependencias.
 | Control | Dónde | Resultado |
 |---|---|---|
 | [Dependabot](.github/dependabot.yml) semanal y agrupado (pip, Actions, Docker) | PRs | Actualizaciones revisables |
-| [Dependency Review](.github/workflows/dependency-review.yml) con `fail-on-severity: high` | PRs, solo cuando `DEPENDENCY_GRAPH_ENABLED=true` | Bloquea severidad alta/crítica corregible |
+| [Dependency Review](.github/workflows/dependency-review.yml) con `fail-on-severity: high` | PRs a `main`/`develop` | Bloquea severidad alta/crítica corregible |
 | [CodeQL](.github/workflows/codeql.yml) para Python | Push, PRs del repositorio y semanal | Resultados en GitHub Security |
 | Ruff (primer filtro) | CI y [pre-commit](.pre-commit-config.yaml) (`v0.3.0`) | Bloquea errores de código/imports |
-| [Trivy](.github/workflows/docker.yml) sobre la imagen construida | CD, antes de publicar | SARIF en GitHub Security; falla en alta/crítica corregible |
+| [Trivy](.github/workflows/docker.yml) y [Release](.github/workflows/release.yml) sobre la imagen construida | CD y tags `v*`, antes de publicar | SARIF en GitHub Security; falla en alta/crítica corregible |
 | Secret scanning y push protection | Ajustes del repositorio (ver abajo) | Bloquea secretos antes del push |
 
 Todos los workflows usan `permissions` explícitos y `contents: read` por defecto;
-`security-events: write` solo se otorga a los jobs que publican SARIF y
-`packages: write` solo al job que publica imágenes. No se usa
+`security-events: write` solo se otorga a los jobs que publican SARIF,
+`packages: write` solo al job que publica imágenes, `pull-requests: write` solo a
+Dependency Review y `contents: write` solo al job que crea releases. No se usa
 `pull_request_target`.
 
 ## Secret scanning y push protection
@@ -78,18 +79,16 @@ administrador (no se pueden activar desde un archivo del repositorio):
 1. En **Settings → Code security and analysis** activa **Dependency graph**,
    **Dependabot alerts**, **Dependabot security updates**, **Secret scanning** y
    **Push protection**.
-2. En **Settings → Secrets and variables → Actions → Variables** crea
-   `DEPENDENCY_GRAPH_ENABLED=true` para habilitar el job de Dependency Review.
-3. Opcionalmente activa **Secret scanning for custom patterns** para patrones
+2. Opcionalmente activa **Secret scanning for custom patterns** para patrones
    propios del proyecto.
-4. Verificación: al intentar hacer push de un secreto falso (por ejemplo un token
+3. Verificación: al intentar hacer push de un secreto falso (por ejemplo un token
    de prueba con formato válido), GitHub debe rechazar el push. Si el repositorio
    es un fork o la rama está protegida, comprueba el estado en la pestaña
    **Security → Secret scanning**.
 
-Hasta que el grafo de dependencias y la variable estén activos, el job de
-Dependency Review se omite. Marca ese check como requerido en branch protection
-solo después de habilitarlo, para evitar fallos artificiales en los PRs.
+Sin Dependency Graph, el job de Dependency Review falla y bloquea el PR; no se
+omite ni se degrada a advisory. Marca ese check como requerido en branch
+protection después de habilitar el grafo.
 
 Los hallazgos de los workflows se publican automáticamente en **Security → Code
 scanning** cuando el repositorio tiene habilitada esa pestaña; si no aparece,

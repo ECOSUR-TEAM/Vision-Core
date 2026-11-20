@@ -399,6 +399,38 @@ o de forma aislada:
 python -m pytest tests/test_one_class_per_file.py -q
 ```
 
+## Seguridad de UI y output encoding
+
+El monitor servido por `src/vision_core/infrastructure/monitor/index.html` trata
+**todo** dato que llega de `/api/v1/state` como texto no confiable, incluyendo
+`person_id`, `display_name`, zonas y `metadata`.
+
+> **Regla de oro:** todo dato dinámico debe renderizarse usando `textContent`.
+> Cualquier uso de `innerHTML` está estrictamente prohibido.
+
+El backend no limpia ni sanitiza esos campos: los guarda y transmite tal cual.
+La defensa ocurre en el navegador, creando nodos con `document.createElement()`
+y asignando el valor únicamente a `textContent`. Las fuentes de imagen son
+siempre URLs `blob:` generadas por el propio monitor a partir de `/api/v1/frame`.
+`setImageSource()` exige que el destino sea un `<img>` y que la URL empiece por
+`blob:`, rechazando `javascript:` y `data:text/html`; ese guard es únicamente un
+prefix-check del cliente, no una garantía sobre el origen real del blob. El
+refuerzo de orígenes mediante CSP (`img-src 'self' blob:`) y el resto de
+cabeceras de seguridad se documentan en ECM-92; este cambio no las modifica.
+
+Checklist para campos nuevos en la UI:
+
+1. Asignar siempre vía `textContent` (nunca concatenar HTML ni usar los demás
+   sinks prohibidos en `tests/test_ui_security.py`).
+2. No asignar URLs dinámicas a `src` sin pasar por `setImageSource()`: el guard
+   del cliente solo comprueba el prefijo `blob:`; no sustituye a la CSP.
+3. No confiar en la CSP ni en el guard de cliente como única barrera: la
+   codificación de salida es la defensa principal.
+
+Los tests `tests/test_ui_security.py` fallan si aparece un sink inseguro en el
+frontend, si un payload llega al DOM como marcado en lugar de texto literal o
+si el guard de imágenes acepta una URL que no empieza por `blob:`.
+
 ## Pruebas y documentación de referencia
 
 ```bash

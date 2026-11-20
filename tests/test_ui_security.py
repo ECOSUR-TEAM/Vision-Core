@@ -138,7 +138,9 @@ def test_dynamic_image_sources_are_restricted_to_monitor_blobs():
 
 
 def _run_monitor_js(state, driver):
-    script = re.search(r"<script\b[^>]*>(.*?)</script>", INDEX.read_text(encoding="utf-8"), re.S).group(1)
+    script = re.search(r"<script\b[^>]*>(.*?)</script>", INDEX.read_text(encoding="utf-8"), re.S | re.IGNORECASE).group(
+        1
+    )
     program = DOM_HARNESS + f"\nglobalThis.__STATE__ = {json.dumps(state)};\n" + script + "\n" + driver
     result = subprocess.run(["node", "-e", program], capture_output=True, text=True, timeout=15, check=False)
     assert result.returncode == 0, f"El renderizado JS falló: {result.stderr}"

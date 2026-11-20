@@ -20,10 +20,18 @@ def box(x, confidence=0.9, class_id=0):
     )
 
 
+def fake_boxes(items):
+    return SimpleNamespace(
+        cls=np.array([item.cls[0] for item in items]),
+        conf=np.array([item.conf[0] for item in items]),
+        xyxy=np.array([item.xyxy[0] for item in items]).reshape(-1, 4),
+    )
+
+
 @pytest.fixture
 def detector(monkeypatch):
     model = SimpleNamespace(boxes=[])
-    model.predict = lambda frame, **kwargs: [SimpleNamespace(boxes=model.boxes)]
+    model.predict = lambda frame, **kwargs: [SimpleNamespace(boxes=fake_boxes(model.boxes))]
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))
     manager = YoloDetectorManager()
 
@@ -124,7 +132,7 @@ def test_model_loaded_once_and_predict_settings(monkeypatch):
     from unittest.mock import Mock
 
     model = Mock()
-    model.predict.return_value = [SimpleNamespace(boxes=[])]
+    model.predict.return_value = [SimpleNamespace(boxes=fake_boxes([]))]
     loader = Mock(return_value=model)
     monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=loader))
     manager = YoloDetectorManager("weights.pt")
@@ -132,7 +140,18 @@ def test_model_loaded_once_and_predict_settings(monkeypatch):
     manager.process(frame)
     manager.process(frame)
     loader.assert_called_once_with("weights.pt")
-    assert model.predict.call_args.kwargs == {"verbose": False, "classes": [0], "conf": 0.5}
+    assert model.predict.call_args.kwargs == {"verbose": False, "classes": [0], "conf": 0.5, "device": "cpu"}
+
+
+def test_configured_device_is_passed_to_prediction(monkeypatch):
+    from unittest.mock import Mock
+
+    model = Mock()
+    model.predict.return_value = [SimpleNamespace(boxes=fake_boxes([]))]
+    monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))
+    manager = YoloDetectorManager("weights.pt", device="cuda:0")
+    manager.process(np.zeros((48, 64, 3), dtype=np.uint8))
+    assert model.predict.call_args.kwargs["device"] == "cuda:0"
 
 
 @pytest.mark.parametrize(

@@ -1,6 +1,7 @@
 import pytest
 
 from vision_core.domain.model.event import Event
+from vision_core.infrastructure.persistence.connection import Database
 from vision_core.infrastructure.persistence.persistence_service import PersistenceService
 from vision_core.settings.persistence import PersistenceSettings
 
@@ -37,6 +38,32 @@ def test_settings_are_read_from_environment(tmp_path):
 def test_invalid_numeric_setting_is_rejected():
     with pytest.raises(ValueError, match="numérico"):
         PersistenceSettings.from_env({"VISION_CORE_EVENT_TTL_SECONDS": "not-a-number"})
+
+
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf"])
+def test_non_finite_numeric_setting_is_rejected(value):
+    with pytest.raises(ValueError, match="finito"):
+        PersistenceSettings.from_env({"VISION_CORE_EVENT_TTL_SECONDS": value})
+
+
+def test_database_accepts_relative_path_without_parent(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    database = Database("vision-core.sqlite3")
+
+    assert database.connection().execute("SELECT 1").fetchone()[0] == 1
+    database.close()
+
+
+def test_migrations_are_recorded_once(tmp_path):
+    path = tmp_path / "db.sqlite3"
+    first = Database(path)
+    first.connection()
+    first.close()
+
+    second = Database(path)
+    rows = second.connection().execute("SELECT version FROM schema_migrations ORDER BY version").fetchall()
+    assert [row[0] for row in rows] == ["001_initial", "002_metrics"]
+    second.close()
 
 
 def test_database_failure_degrades_without_raising(tmp_path):

@@ -50,7 +50,8 @@ docker compose exec vision-core python -c "import sqlite3; c=sqlite3.connect('/a
 ```
 
 La respuesta HTTP `/api/state` incluye `persistence` con `enabled`, `path`,
-`migrations`, `failures` y `last_error`. No expone la URL ni la contraseña.
+`migrations`, `failures` y `last_error`. SQLite es local y no usa usuario,
+contraseña ni URL de conexión.
 
 ## Backup y restore
 
@@ -88,7 +89,7 @@ proceso sin antes copiar el archivo para diagnóstico.
 
 ```bash
 VISION_CORE_DB_PATH=/tmp/vision-core-check.sqlite3 VISION_CORE_DB_ENABLED=1 \
-  python -c "from vision_core.composition import build_persistence; print(build_persistence().health())"
+  python -c "from main import build_persistence; print(build_persistence().health())"
 python -m pytest tests/infrastructure/persistence -q
 python -m pytest -q
 ```

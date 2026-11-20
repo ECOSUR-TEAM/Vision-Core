@@ -53,7 +53,7 @@ almacén de consulta.
 | Historial de zonas | `zone_observations` | persona, zona, posición, timestamp, `event_id` | 7 días |
 | Tracks | `tracks` | `session_id`, `track_id` local, `person_id`, bbox, timestamp | 1 día |
 | Embeddings | `identity_gallery` | `person_id`, embedding normalizado, `last_seen_at` | 1 día |
-| Personas | `persons` | primera/última vez vista, metadata | 1 día (huérfanas) |
+| Personas | `persons` | primera/última vez vista, metadata | 1 día (inactividad) |
 | Zonas | `zones` | nombre y polígono configurado | sin expiración |
 | Sesiones | `sessions` | inicio, fin, cámara | 30 días |
 | Métricas | `metrics` | nombre, valor, timestamp, `session_id` | 30 días |

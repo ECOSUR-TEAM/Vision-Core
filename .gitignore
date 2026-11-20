@@ -15,3 +15,12 @@ config/frigate-camera-local/
 *.sqlite3-wal
 *.sqlite3-shm
 data/
+requirements.lock.txt
+.trivyignore
+.coverage
+coverage.json
+coverage.xml
+coverage-*.json
+htmlcov/
+pytest*.log
+dev-data/*.avi

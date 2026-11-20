@@ -10,6 +10,9 @@ class FakeRuntimeApp:
         self.kwargs = kwargs
         self._reid = kwargs.get("reid")
 
+    def set_observability(self, metrics):
+        self.metrics = metrics
+
     def run(self, _stop_requested):
         self.kwargs["on_event"](Event("PERSON_ENTERED", "p1", 10.0, event_id="evt-1"))
         self.kwargs["on_frame"](

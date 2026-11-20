@@ -6,6 +6,13 @@ from vision_core.infrastructure.persistence.connection import Database
 from vision_core.infrastructure.persistence.utc import utc_text
 
 
+def _decode_position(raw: object) -> tuple[float, float]:
+    values = tuple(float(value) for value in json.loads(str(raw)))
+    if len(values) != 2:
+        raise ValueError("posición inválida")
+    return values[0], values[1]
+
+
 class SqliteZoneObservationRepository(ZoneObservationRepository):
     def __init__(self, database: Database):
         self._database = database
@@ -72,7 +79,7 @@ class SqliteZoneObservationRepository(ZoneObservationRepository):
             (
                 row["person_id"],
                 row["zone"],
-                tuple(float(value) for value in json.loads(row["position_json"])),
+                _decode_position(row["position_json"]),
                 float(row["timestamp_utc"]),
             )
             for row in rows

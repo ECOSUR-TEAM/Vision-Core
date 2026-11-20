@@ -20,7 +20,9 @@ class Database:
     def connection(self) -> sqlite3.Connection:
         with self._lock:
             if self._connection is None:
-                self.path.parent.mkdir(parents=True, exist_ok=True)
+                parent = self.path.parent
+                if parent != Path("."):
+                    parent.mkdir(parents=True, exist_ok=True)
                 connection = sqlite3.connect(
                     str(self.path), timeout=self._busy_timeout_seconds, check_same_thread=False
                 )

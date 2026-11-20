@@ -1,3 +1,4 @@
+import math
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -26,8 +27,8 @@ def _number(value: str | None, default: float, *, name: str, minimum: float = 0.
         parsed = float(value)
     except ValueError as error:
         raise ValueError(f"{name} debe ser numérico") from error
-    if parsed < minimum:
-        raise ValueError(f"{name} debe ser >= {minimum}")
+    if not math.isfinite(parsed) or parsed < minimum:
+        raise ValueError(f"{name} debe ser finito y >= {minimum}")
     return parsed
 
 

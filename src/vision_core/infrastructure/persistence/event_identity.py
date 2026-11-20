@@ -2,9 +2,10 @@ import hashlib
 import json
 
 from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dict
+from vision_core.shared.domain.event import Event
 
 
-def event_id_for(event: object) -> str:
+def event_id_for(event: Event) -> str:
     explicit = getattr(event, "event_id", None)
     if explicit:
         return str(explicit)

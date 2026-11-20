@@ -5,6 +5,13 @@ from vision_core.infrastructure.persistence.connection import Database
 from vision_core.infrastructure.persistence.utc import utc_text
 
 
+def _decode_bbox(raw: object) -> tuple[float, float, float, float]:
+    values = tuple(float(value) for value in json.loads(str(raw)))
+    if len(values) != 4:
+        raise ValueError("bbox inválido")
+    return values[0], values[1], values[2], values[3]
+
+
 class SqliteTrackRepository(TrackRepository):
     def __init__(self, database: Database):
         self._database = database
@@ -60,7 +67,7 @@ class SqliteTrackRepository(TrackRepository):
                 row["session_id"],
                 int(row["track_id"]),
                 row["person_id"],
-                tuple(float(value) for value in json.loads(row["bbox_json"])),
+                _decode_bbox(row["bbox_json"]),
                 float(row["timestamp_utc"]),
             )
             for row in rows

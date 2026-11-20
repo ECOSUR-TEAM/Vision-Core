@@ -45,6 +45,17 @@ def test_event_and_zone_observation_are_atomic(monkeypatch, tmp_path):
     service.close()
 
 
+def test_duplicate_event_retry_restores_zone_observation(tmp_path):
+    service = _service(tmp_path)
+    event = Event("PERSON_ENTERED", "person-1", 100.0, {"to_zone": "z", "position": [1, 2]}, event_id="retry")
+
+    assert service.events.append(event) is True
+    assert service.zone_observations.list() == ()
+    assert service.append_event(event) is False
+    assert service.zone_observations.list() == (("person-1", "z", (1.0, 2.0), 100.0),)
+    service.close()
+
+
 def test_event_does_not_generate_a_random_identifier():
     assert Event("PERSON_ENTERED", "person-1").event_id == ""
 

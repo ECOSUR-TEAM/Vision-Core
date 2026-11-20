@@ -71,7 +71,7 @@ class PersistenceService:
             connection = self._database.connection()
             with self._database.lock, connection:
                 inserted = self.events.append_with(connection, event, session_id)
-                if inserted and zone is not None and position is not None and len(position) == 2:
+                if zone is not None and position is not None and len(position) == 2:
                     self.zone_observations.append_with(
                         connection,
                         event.person_id,

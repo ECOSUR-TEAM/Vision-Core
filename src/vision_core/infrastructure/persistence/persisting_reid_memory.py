@@ -19,6 +19,7 @@ class PersistingReIDMemory(ReIDMemory):
         self._inner = inner
         self._save_identity = save_identity
         self._clock = clock
+        self._track_identity: dict[int, str] = {}
         if list_identities is not None:
             restore = getattr(inner, "restore", None)
             if restore is not None:
@@ -31,9 +32,14 @@ class PersistingReIDMemory(ReIDMemory):
 
     def resolve(self, track_id: int, embedding: Embedding, bbox: BBox) -> str:
         person_id = self._inner.resolve(track_id, embedding, bbox)
-        self._save_identity(person_id, embedding, self._clock())
+        if self._track_identity.get(track_id) != person_id:
+            self._track_identity[track_id] = person_id
+            self._save_identity(person_id, embedding, self._clock())
         return person_id
 
     def mark_lost(self, person_id: str, embedding: Embedding) -> None:
         self._inner.mark_lost(person_id, embedding)
+        self._track_identity = {
+            track: identity for track, identity in self._track_identity.items() if identity != person_id
+        }
         self._save_identity(person_id, embedding, self._clock())

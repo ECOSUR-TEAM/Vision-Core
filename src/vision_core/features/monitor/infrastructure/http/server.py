@@ -1,19 +1,94 @@
+"""Servidor HTTP con presupuestos acotados para el monitor local."""
+
+import socket
+import threading
+import uuid
+from http import HTTPStatus
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 from vision_core.features.monitor.application.use_cases.get_frame import GetFrame
 from vision_core.features.monitor.application.use_cases.get_snapshot import GetSnapshot
+from vision_core.features.monitor.infrastructure.http.error_response import error_envelope
 from vision_core.features.monitor.infrastructure.http.handler import Handler
+from vision_core.features.monitor.infrastructure.http.limits_metrics import MonitorLimitsMetrics
+from vision_core.shared.application.dto.serialization import dumps_json
+from vision_core.shared.errors import codes
+
+MAX_CONNECTIONS = 4
+MAX_LONG_POLLS = 2
 
 
 class MonitorHTTPServer(ThreadingHTTPServer):
+    daemon_threads = True
+
     def __init__(self, address, page, get_snapshot, get_frame, metrics=None, health=None):
         super().__init__(address, Handler)
         self.page = page
         self.get_snapshot = get_snapshot
         self.get_frame = get_frame
+        # ``metrics`` sigue siendo el proveedor de observabilidad de /metrics.
         self.metrics = metrics
         self.health = health
+        self.limits_metrics = MonitorLimitsMetrics()
+        self._connections = threading.BoundedSemaphore(MAX_CONNECTIONS)
+        self.long_poll_slots = threading.BoundedSemaphore(MAX_LONG_POLLS)
+        self._active_lock = threading.Lock()
+        self._active = 0
+
+    @property
+    def active_connections(self):
+        with self._active_lock:
+            return self._active
+
+    def process_request(self, request, client_address):
+        if not self._connections.acquire(blocking=False):
+            self.limits_metrics.record("concurrency")
+            self._reject_immediately(request, HTTPStatus.SERVICE_UNAVAILABLE)
+            return
+        try:
+            with self._active_lock:
+                self._active += 1
+            super().process_request(request, client_address)
+        except BaseException:
+            self._release_connection()
+            raise
+
+    def _release_connection(self):
+        with self._active_lock:
+            self._active = max(0, self._active - 1)
+        self._connections.release()
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self._release_connection()
+
+    @staticmethod
+    def _reject_immediately(request, status):
+        request_id = uuid.uuid4().hex
+        body = dumps_json(error_envelope(codes.INTERNAL_ERROR, "Service unavailable", request_id)).encode()
+        headers = [
+            f"HTTP/1.1 {status.value} {status.phrase}",
+            "Content-Type: application/json",
+            f"Content-Length: {len(body)}",
+            "Retry-After: 1",
+            f"X-Request-ID: {request_id}",
+            "Connection: close",
+        ]
+        response = ("\r\n".join(headers) + "\r\n\r\n").encode("latin-1") + body
+        try:
+            request.settimeout(1.0)
+            request.sendall(response)
+        except OSError:
+            pass
+        finally:
+            try:
+                request.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            request.close()
 
 
 def make_server(host, port, state, page_path=None, metrics=None, health=None):

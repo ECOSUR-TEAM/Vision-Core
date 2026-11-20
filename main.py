@@ -1,7 +1,9 @@
 import time
 import uuid
 from collections.abc import Callable
+from dataclasses import replace
 
+from vision_core.application.pipeline_config import PipelineConfig
 from vision_core.features.detection.infrastructure.dependencies import build_detection
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
@@ -9,7 +11,9 @@ from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics im
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 from vision_core.features.door.infrastructure.dependencies import build_door
 from vision_core.features.monitor.infrastructure.dependencies import build_monitor
+from vision_core.features.monitor.infrastructure.latest_frame_buffer import LatestFrameBuffer
 from vision_core.features.monitor.infrastructure.renderer import render_frame
+from vision_core.features.monitor.infrastructure.renderer_thread import RendererThread
 from vision_core.features.monitor.infrastructure.runtime import MonitorRuntime
 from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict
 from vision_core.features.pipeline.infrastructure.dependencies import build_pipeline
@@ -69,8 +73,13 @@ def build_monitor_pipeline(
     settings=None,
     persistence=None,
     start_retention=True,
+    config=None,
+    render_enabled=None,
 ):
     settings = settings or Settings.from_env(validate_startup=False)
+    config = config or PipelineConfig.from_env()
+    if render_enabled is not None:
+        config = replace(config, render_enabled=render_enabled)
     if persistence is None:
         persistence = build_persistence()
     set_persistence_provider = getattr(state, "set_persistence_provider", None)
@@ -84,6 +93,8 @@ def build_monitor_pipeline(
     def pipeline(stop_requested: Callable[[], bool]) -> None:
         source = None
         retention_worker = None
+        renderer = None
+        renderer_error = None
         session_id = str(uuid.uuid4())
         try:
             persistence.start_session(session_id, time.time())
@@ -114,6 +125,34 @@ def build_monitor_pipeline(
             if memory is not reid.memory:
                 reid = build_reid(memory=memory, embedder=reid.embedder)
             source = build_video(latest=True, metrics=state.metrics)
+            buffer: LatestFrameBuffer | None = LatestFrameBuffer() if config.render_enabled else None
+            if buffer is not None:
+
+                def render_job(job):
+                    jpeg, people = render_frame(
+                        job.frame,
+                        job.tracks,
+                        job.zones,
+                        None,
+                        job.label_for,
+                        demo=job.demo,
+                        zone_by_person=job.zone_by_person,
+                    )
+                    stats = buffer.stats()
+                    state.publish(
+                        jpeg,
+                        people,
+                        job.processing_ms,
+                        job.dropped + stats["dropped"],
+                        stats["queued"],
+                    )
+
+                renderer = RendererThread(
+                    buffer,
+                    render_job,
+                    on_error=lambda error: state.set_status("error", type(error).__name__),
+                )
+                renderer.start()
 
             def on_event(event):
                 state.event(event)
@@ -132,12 +171,25 @@ def build_monitor_pipeline(
                         (bbox.x1, bbox.y1, bbox.x2, bbox.y2),
                         time.time(),
                     )
-                state.publish(
-                    *render_frame(frame, tracks, zones, analytics, state.person_label, demo=state.demo),
-                    ms,
-                    source.dropped_frames,
-                    getattr(source, "queue_size", 0),
+                if renderer is None or buffer is None:
+                    return
+                zone_by_person = {}
+                for track in tracks:
+                    history = analytics.get_history(track.person_id)
+                    zone_by_person[track.person_id] = history[-1].zone if history else "fuera"
+                renderer.submit(
+                    frame,
+                    tracks,
+                    zones=zones,
+                    zone_by_person=zone_by_person,
+                    label_for=state.person_label,
+                    demo=state.demo,
+                    processing_ms=ms,
+                    dropped=source.dropped_frames,
                 )
+
+            def should_stop() -> bool:
+                return stop_requested() or (renderer is not None and renderer.failed.is_set())
 
             app = build_pipeline(
                 video=source,
@@ -148,6 +200,7 @@ def build_monitor_pipeline(
                 on_event=on_event,
                 expected_frame_size=(zones.width, zones.height) if zones else None,
                 on_frame=on_frame,
+                config=config,
             )
             app.set_observability(state.metrics)
             persistence_settings = persistence.settings
@@ -157,14 +210,21 @@ def build_monitor_pipeline(
                     interval_seconds=persistence_settings.prune_interval_seconds,
                 )
                 retention_worker.start()
-            app.run(stop_requested)
+            app.run(should_stop)
+            if renderer is not None and renderer.failed.is_set():
+                raise renderer.error or RuntimeError("Fallo en el hilo de renderizado")
         finally:
+            if renderer is not None:
+                renderer.close(timeout=2)
+                renderer_error = renderer.error
             if retention_worker is not None:
                 retention_worker.stop()
             persistence.finish_session(session_id, time.time())
             if source is not None:
                 source.close()
             persistence.close()
+        if renderer_error is not None:
+            raise renderer_error
 
     return pipeline
 
@@ -178,6 +238,8 @@ def build_monitor_runtime(
     settings=None,
     persistence=None,
     start_retention=True,
+    config=None,
+    render_enabled=None,
 ):
     settings = settings or Settings.from_env()
     return MonitorRuntime(
@@ -187,6 +249,8 @@ def build_monitor_runtime(
             settings=settings,
             persistence=persistence,
             start_retention=start_retention,
+            config=config,
+            render_enabled=render_enabled,
         ),
         state,
         exit_on_error=exit_on_error,

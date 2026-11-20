@@ -2,6 +2,20 @@ import os
 import re
 from urllib.parse import urlsplit
 
+_TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
+_FALSE_VALUES = frozenset({"0", "false", "no", "off"})
+
+
+def parse_bool(name: str, value: str | None, default: bool) -> bool | None:
+    if value is None or not value.strip():
+        return default
+    normalized = value.strip().lower()
+    if normalized in _TRUE_VALUES:
+        return True
+    if normalized in _FALSE_VALUES:
+        return False
+    return None
+
 
 def valid_rtsp_url(value: str) -> bool:
     try:

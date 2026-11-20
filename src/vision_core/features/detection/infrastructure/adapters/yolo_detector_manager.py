@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
+import torch
 
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
@@ -9,6 +10,7 @@ from vision_core.features.detection.infrastructure.adapters.motion_tracker impor
 )
 from vision_core.shared.domain.bbox import BBox
 from vision_core.shared.errors import ModelError, ValidationError, codes
+from vision_core.shared.inference.tensor_boxes import iter_prediction_boxes
 
 if TYPE_CHECKING:
     from ultralytics.engine.results import Results
@@ -63,25 +65,21 @@ class YoloDetectorManager(DetectorManager):
                 code=codes.MODEL_INPUT_INVALID,
             )
         height, width = frame.shape[:2]
-        results = cast(
-            "list[Results]",
-            self._model.predict(
-                np.ascontiguousarray(frame),
-                verbose=False,
-                classes=list(self._classes),
-                conf=self._confidence,
-                device=self._device,
-            ),
-        )
+        with torch.inference_mode():
+            results = cast(
+                "list[Results]",
+                self._model.predict(
+                    np.ascontiguousarray(frame),
+                    verbose=False,
+                    classes=list(self._classes),
+                    conf=self._confidence,
+                    device=self._device,
+                ),
+            )
         if not results or results[0].boxes is None:
             return []
-        boxes = results[0].boxes
         detections: list[Detection] = []
-        for class_value, confidence_value, coordinates in zip(
-            boxes.cls.tolist(), boxes.conf.tolist(), boxes.xyxy.tolist()
-        ):
-            class_id = int(class_value)
-            confidence = float(confidence_value)
+        for class_id, confidence, coordinates in iter_prediction_boxes(results[0]):
             if class_id not in self._classes or not self._confidence < confidence <= 1.0:
                 continue
             values = np.asarray(coordinates, dtype=float)

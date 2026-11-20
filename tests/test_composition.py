@@ -96,3 +96,44 @@ def test_monitor_main_uses_injected_state_and_runtime(monkeypatch):
     assert calls["state"] is state
     assert calls["kwargs"]["zones_file"] is None
     assert calls["started"] and calls["stopped"] and calls["closed"]
+
+
+def test_monitor_main_no_render_forces_override(monkeypatch):
+    from vision_core.infrastructure.monitor import __main__ as monitor
+
+    calls = {}
+
+    class Server:
+        def serve_forever(self, **kwargs):
+            pass
+
+        def server_close(self):
+            pass
+
+        def shutdown(self):
+            pass
+
+    class Runtime:
+        failed = threading.Event()
+
+        def start(self):
+            pass
+
+        def stop(self):
+            pass
+
+        def join(self, timeout=None):
+            pass
+
+    def build_runtime(state, **kwargs):
+        calls["kwargs"] = kwargs
+        return Runtime()
+
+    monkeypatch.setattr(monitor, "make_server", lambda *args: Server())
+    monkeypatch.setattr(monitor.signal, "signal", lambda *args: None)
+    monkeypatch.setattr("sys.argv", ["monitor", "--demo-zones", "--no-render"])
+
+    monitor.main(state=object(), build_runtime=build_runtime)
+
+    assert calls["kwargs"]["render_enabled"] is False
+    assert calls["kwargs"]["zones_file"].endswith("config/zones.example.json")

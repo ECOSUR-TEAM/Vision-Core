@@ -64,6 +64,19 @@ Los valores invalidos producen `SettingsError` con la variable exacta y una acci
 | `VISION_CORE_DISK_CHECK_PATH` | `.` | Ruta existente para el check de disco |
 | `VISION_CORE_PERFORMANCE_INTERVAL_SECONDS` | `1.0` | Numero positivo |
 
+### Render y pipeline
+
+| Variable | Predeterminado | Validacion |
+|---|---|---|
+| `VISION_CORE_RENDER_ENABLED` | `1` | Booleano; `0` omite render/JPEG (lo fuerza `--no-render`) |
+| `VISION_CORE_EMBEDDING_BATCH_SIZE` | `1` | Entero positivo; reservado para batching futuro |
+| `VISION_CORE_EMBEDDING_STRIDE` | `1` | Entero positivo; reservado para salto de embeddings |
+| `VISION_CORE_PROFILING_ENABLED` | `0` | Booleano; activa timers `perf_counter` |
+| `VISION_CORE_PROFILING_OUTPUT` | `profiling_results.json` | Ruta no vacia del informe JSON |
+
+Los booleanos aceptan `1/0`, `true/false`, `yes/no` y `on/off` sin distincion
+de mayusculas. Los valores invalidos se rechazan antes de iniciar el pipeline.
+
 ### Integracion de Frigate
 
 | Variable | Predeterminado | Validacion |

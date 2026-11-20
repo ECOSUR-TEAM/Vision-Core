@@ -56,6 +56,7 @@ def test_settings_overrides():
         ("VISION_CORE_OPEN_TIMEOUT_MS", "-1"),
         ("VISION_CORE_RECONNECT_DELAY_SECONDS", "not-a-number"),
         ("VISION_CORE_DETECTION_CONFIDENCE", "2"),
+        ("VISION_CORE_MONITOR_UNCALIBRATED", "quizas"),
         ("VISION_CORE_REID_THRESHOLD", "-0.1"),
         ("VISION_CORE_MONITOR_PORT", "70000"),
         ("VISION_CORE_MODEL_PATH", "/missing/yolov8n.pt"),

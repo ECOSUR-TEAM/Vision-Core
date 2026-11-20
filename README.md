@@ -272,6 +272,11 @@ proceso termina con error; no hay supervisor ni reinicio automático.
 | `VISION_CORE_REID_THRESHOLD` | `0.85` | Similitud mínima para recuperar una identidad ausente |
 | `VISION_CORE_EMBEDDING_MODEL` | `mobilenet_v3_small` | También admite `resnet50` |
 | `VISION_CORE_EMBEDDING_DEVICE` | CUDA si está disponible; si no CPU | `cpu`, `cuda`, `cuda:0`; CUDA explícita falla si no está disponible |
+| `VISION_CORE_RENDER_ENABLED` | `1` | Boolean (`1/0`, `true/false`, `yes/no`, `on/off`); `0` omite render/JPEG por completo (útil sin visor; `--no-render` fuerza el valor) |
+| `VISION_CORE_EMBEDDING_BATCH_SIZE` | `1` | Flag preparatorio para batching futuro; hoy no cambia la inferencia |
+| `VISION_CORE_EMBEDDING_STRIDE` | `1` | Flag preparatorio para saltar embeddings; hoy no cambia ReID |
+| `VISION_CORE_PROFILING_ENABLED` | `0` | Opt-in: timers `perf_counter` y guardado de p50/p95/FPS al finalizar |
+| `VISION_CORE_PROFILING_OUTPUT` | `profiling_results.json` | Ruta del informe JSON |
 | `DETECTION_TEST_VIDEO` | Ausente | Video local para prueba optativa de detección real (≥30 s, personas visibles) |
 | `DETECTION_TEST_MODEL` | Ausente | Pesos locales para esa prueba optativa |
 

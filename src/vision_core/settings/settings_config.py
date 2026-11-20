@@ -7,7 +7,7 @@ from typing import Mapping
 from .settings_camera import CameraSettings
 from .settings_detection import DetectionSettings
 from .settings_error import SettingsError
-from .settings_helpers import valid_rtsp_url
+from .settings_helpers import parse_bool, valid_rtsp_url
 from .settings_logging import LoggingSettings
 from .settings_monitor import MonitorSettings
 from .settings_performance import PerformanceSettings
@@ -53,16 +53,11 @@ class Settings:
                 return default
 
         def boolean(name: str, default: bool = False) -> bool:
-            raw = env.get(name)
-            if raw is None or raw.strip() == "":
+            parsed = parse_bool(name, env.get(name), default)
+            if parsed is None:
+                errors.append(f"{name}: debe ser 1/0, true/false, yes/no u on/off")
                 return default
-            value = raw.strip().lower()
-            if value in {"1", "true", "yes", "on"}:
-                return True
-            if value in {"0", "false", "no", "off"}:
-                return False
-            errors.append(f"{name}: debe ser 1/0, true/false, yes/no u on/off")
-            return default
+            return parsed
 
         source = env.get("VISION_CORE_VIDEO_SOURCE", "rtsp").strip().lower()
         rtsp_url = env.get("VISION_CORE_RTSP_URL", "").strip() or None

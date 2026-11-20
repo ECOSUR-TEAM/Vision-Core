@@ -124,6 +124,26 @@ pantalla aún añaden tiempo. Para medir el retraso absoluto, apunta la cámara 
 reloj con milisegundos y compara ese reloj con la imagen del panel en una misma
 captura. Los FPS y la edad de publicación del JPEG no miden ese retraso total.
 
+### Render desacoplado y profiling
+
+El dibujo de zonas/cajas y la codificación JPEG ocurren en `RendererThread`, un
+hilo propio que consume un `LatestFrameBuffer` de tamaño 1. Si la inferencia
+publica un frame nuevo antes de que el renderer termine el anterior, se
+sobrescribe el viejo: el hilo de inferencia nunca espera al renderer. Antes de
+publicar, `RenderJob.capture` copia el array y congela tracks y metadatos, por lo
+que el siguiente ciclo puede reutilizar el buffer de video sin carreras. La
+inferencia sigue siendo secuencial; no se usa multiprocesamiento ni pools.
+
+Sin visor, `VISION_CORE_RENDER_ENABLED=0` (o `--no-render`) omite el render por
+completo y solo ejecuta detección, embeddings, ReID y analítica. Las pasadas
+forward usan `torch.inference_mode()`. El profiling es opt-in: con
+`VISION_CORE_PROFILING_ENABLED=1` los tiempos de decode, detección, embedding,
+ReID/tracking, analítica y frame completo se guardan al finalizar en
+`VISION_CORE_PROFILING_OUTPUT` (por defecto `profiling_results.json`) con p50,
+p95 y FPS. Por defecto (`0`) no se escribe ese archivo.
+`VISION_CORE_EMBEDDING_BATCH_SIZE` y `VISION_CORE_EMBEDDING_STRIDE`
+son flags preparatorios: todavía no cambian el número de inferencias.
+
 El monitor conserva imágenes y eventos solo en memoria. Está pensado para pruebas
 locales, sin autenticación. El bind predeterminado es `127.0.0.1`; `--host 0.0.0.0`
 permite acceso desde otros equipos de una red de confianza mediante la IP de la

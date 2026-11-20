@@ -12,10 +12,11 @@ MAX_MISSED_FRAMES = 30
 class MotionTracker:
     """Assign local IDs using motion prediction and IoU association."""
 
-    def __init__(self) -> None:
+    def __init__(self, max_missed_frames: int = MAX_MISSED_FRAMES) -> None:
         self._tracks: dict[int, _Track] = {}
         self._next_track_id = 1
         self._lost_ids: list[int] = []
+        self._max_missed_frames = max_missed_frames
 
     def update(self, detections: list[Detection]) -> None:
         boxes = [np.array([d.bbox.x1, d.bbox.y1, d.bbox.x2, d.bbox.y2], dtype=float) for d in detections]
@@ -43,7 +44,7 @@ class MotionTracker:
         for track_id in list(self._tracks):
             if track_id not in matched_tracks:
                 self._tracks[track_id].missed += 1
-                if self._tracks[track_id].missed > MAX_MISSED_FRAMES:
+                if self._tracks[track_id].missed > self._max_missed_frames:
                     del self._tracks[track_id]
                     self._lost_ids.append(track_id)
 

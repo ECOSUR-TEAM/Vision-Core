@@ -2,7 +2,7 @@
 
 ## Arranque diario
 
-`docker compose up` inicia todo; `docker compose down` lo detiene. El perfil de
+`docker compose --profile camera up` inicia todo; `docker compose down` lo detiene. El perfil de
 Ethernet se activa automáticamente y el puente incluido evita la regla manual
 de firewall. Consulta [la guía de arranque](startup.md).
 
@@ -65,7 +65,7 @@ FPS: consulta la [prueba de latencia](monitor.md#implementación-y-acceso).
 ## Monitor web
 
 La analítica en vivo se ve en http://127.0.0.1:8080 al ejecutar
-`docker compose up`. Consulta [la guía](monitor.md).
+`docker compose --profile camera up`. Consulta [la guía](monitor.md).
 Si el panel muestra error, revisa stream, pesos y resolución de zonas, y reinicia
 el monitor. Si 8080 está ocupado, usa `--port 8081`. El monitor no muestra mensajes
 nativos de error ni URLs RTSP en HTTP para evitar exponer credenciales.
@@ -81,11 +81,16 @@ La región puerta se configura y dibuja, pero no restringe los eventos: se usan
 transiciones exterior/interior/fuera. Interior tiene prioridad en solapamientos.
 FALSE_ALARM significa exterior→fuera, incluso tras una salida previa. El historial
 se acota por persona, pero no se eliminan automáticamente todas las personas antiguas
-de la analítica. Estado e identidades viven en memoria y se pierden al reiniciar.
+de la analítica. Con `VISION_CORE_DB_PATH` definido, eventos, zonas, tracks e
+identidades se conservan entre reinicios; sin esa variable todo sigue en memoria.
+La retención se aplica en segundo plano según los TTL de
+[persistencia](persistence.md).
 
-`main.py` no persiste eventos ni tiene supervisor. Un fallo no recuperable detiene
-el proceso tras intentar cerrar el video. El runner JSONL es la salida estructurada
-para pruebas. Los logs nativos pueden contener URLs; revisar antes de compartir.
+`main.py` persiste eventos, tracks, zonas e identidades cuando `VISION_CORE_DB_PATH`
+está definido; sin esa variable todo sigue en memoria. No tiene supervisor: un fallo
+no recuperable detiene el proceso tras intentar cerrar el video. El runner JSONL es la
+salida estructurada para pruebas. Los logs nativos pueden contener URLs; revisar antes
+de compartir.
 
 Los archivos se reproducen a velocidad de procesamiento y el TTL avanza con reloj
 real, no con el tiempo del video. EOF y algunos errores de archivo pueden parecerse;

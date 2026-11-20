@@ -10,10 +10,7 @@ def _read_project_version() -> str:
     except PackageNotFoundError:
         pass
 
-    try:
-        import tomllib
-    except ImportError:
-        import tomli as tomllib  # pragma: no cover - Python 3.10 fallback
+    import tomllib
 
     pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
     with pyproject.open("rb") as source:

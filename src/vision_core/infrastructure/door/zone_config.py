@@ -1,14 +1,5 @@
-"""Zone configuration model."""
+"""Compatibility alias for the canonical feature ZoneConfig."""
 
-from dataclasses import dataclass
+from vision_core.features.door.infrastructure.config.zone_config import ZoneConfig
 
-from vision_core.domain.model.polygon import Polygon
-
-
-@dataclass(frozen=True)
-class ZoneConfig:
-    width: int
-    height: int
-    door: Polygon
-    exterior: Polygon
-    interior: Polygon
+__all__ = ["ZoneConfig"]

@@ -229,7 +229,10 @@ con `;`, `&`, `#` u otros caracteres especiales.
 ```bash
 python -m vision_core.infrastructure.video.capture_reference referencia.png
 cp config/zones.example.json config/zones.json
-# Editar frame_size, door, exterior e interior usando referencia.png.
+# Migración: los zones.json antiguos con "_note" y sin "version" deben
+# eliminar "_note" y añadir "version": "1.0" antes de usarlos.
+# Editar frame_size (enteros), door, exterior e interior con referencia.png.
+# No añadir otras claves ni duplicarlas: el loader las rechaza.
 python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png
 ```
 

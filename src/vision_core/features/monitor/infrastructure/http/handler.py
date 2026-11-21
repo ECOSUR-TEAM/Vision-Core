@@ -54,8 +54,7 @@ _SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
     "Permissions-Policy": (
-        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
-        "magnetometer=(), microphone=(), payment=(), usb=()"
+        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
     ),
     "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
 }
@@ -80,7 +79,7 @@ _FRAME_PARAMETERS = frozenset({"after"})
 
 def csp_for(nonce: str) -> str:
     """Build a CSP with the given nonce for both inline style and script."""
-    return f"{_CSP_BASE} script-src 'self' 'nonce-{nonce}'; " f"style-src 'self' 'nonce-{nonce}';"
+    return f"{_CSP_BASE} script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}';"
 
 
 def security_headers(nonce: str) -> dict[str, str]:

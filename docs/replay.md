@@ -22,8 +22,10 @@ Escenarios base (suite por defecto):
 - `false_alarm`
 - `person_stopped`
 
-Escenario extendido (marcado `replay_extended`, se ejecuta en el job opcional,
-o con `pytest -m replay_extended`): `lighting_change`.
+Escenario extendido (marcado `replay_extended`): `lighting_change`. Queda
+fuera del job de CI por defecto (`-m "not slow and not replay_extended"`) y se
+ejecuta en el job opcional `replay-extended` de `workflow_dispatch`, o en local
+con `python -m pytest -q -m replay_extended tests/regression`.
 
 ## Comparación
 

@@ -1,3 +1,4 @@
+import copy
 import difflib
 import json
 
@@ -27,12 +28,7 @@ def _assert_timestamps_within_tolerance(actual, expected):
         )
 
 
-def _check_scenario(name, regen_golden):
-    runner = ReplayRunner(name)
-    actual = runner.run()
-    if regen_golden:
-        runner.regenerate(actual)
-    golden = json.loads(runner.golden_path().read_text(encoding="utf-8"))
+def assert_events_match(actual, golden, name):
     actual_text = json.dumps(_without_timestamps(actual), indent=2, sort_keys=True)
     golden_text = json.dumps(_without_timestamps(golden), indent=2, sort_keys=True)
     assert actual_text == golden_text, "event replay diff:\n" + "\n".join(
@@ -47,6 +43,15 @@ def _check_scenario(name, regen_golden):
     _assert_timestamps_within_tolerance(actual, golden)
 
 
+def _check_scenario(name, regen_golden):
+    runner = ReplayRunner(name)
+    actual = runner.run()
+    if regen_golden:
+        runner.regenerate(actual)
+    golden = json.loads(runner.golden_path().read_text(encoding="utf-8"))
+    assert_events_match(actual, golden, name)
+
+
 @pytest.mark.parametrize("scenario", FAST_SCENARIOS)
 def test_replay_matches_golden(scenario, regen_golden):
     _check_scenario(scenario, regen_golden)
@@ -56,3 +61,12 @@ def test_replay_matches_golden(scenario, regen_golden):
 @pytest.mark.parametrize("scenario", EXTENDED_SCENARIOS)
 def test_replay_extended_matches_golden(scenario, regen_golden):
     _check_scenario(scenario, regen_golden)
+
+
+def test_changed_event_type_breaks_comparison_with_diff():
+    runner = ReplayRunner("enter_exterior_to_interior")
+    golden = json.loads(runner.golden_path().read_text(encoding="utf-8"))
+    mutated = copy.deepcopy(golden)
+    mutated[0]["event"] = "PERSON_EXITED"
+    with pytest.raises(AssertionError, match="event replay diff"):
+        assert_events_match(golden, mutated, runner._scenario["name"])

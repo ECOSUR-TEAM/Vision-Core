@@ -39,6 +39,8 @@ def main(*, state=None, build_state=None, build_runtime=None, config=None):
         help="Omitir render/JPEG por completo (sin visor conectado)",
     )
     args = parser.parse_args()
+    if args.host == "0.0.0.0":
+        print("WARNING: binding to 0.0.0.0 exposes monitor without auth; use only with ticket 42 controls.", flush=True)
     if not 1 <= args.port <= 65535:
         parser.error("Puerto inválido")
     if args.uncalibrated:

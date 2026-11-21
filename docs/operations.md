@@ -4,7 +4,8 @@
 
 `docker compose --profile camera up` inicia todo; `docker compose down` lo detiene. El perfil de
 Ethernet se activa automáticamente y el puente incluido evita la regla manual
-de firewall. Consulta [la guía de arranque](startup.md).
+de firewall. Consulta [la guía de arranque](startup.md) y los
+[runbooks ante incidentes](runbooks/README.md).
 
 ## Requisitos de ejecución
 
@@ -97,5 +98,6 @@ real, no con el tiempo del video. EOF y algunos errores de archivo pueden parece
 revisar frames obtenidos. El tiempo de `read()` o de inferencia no mide latencia
 cámara→evento: hacen falta timestamps de captura o una prueba con reloj visible.
 
-El arranque principal construye imágenes CPU con Docker Compose; consulta docs/startup.md.
-Las dependencias no están fijadas; registrar versiones junto a los resultados.
+El arranque principal construye imágenes CPU con Docker Compose; consulta [startup.md](startup.md).
+Las dependencias están fijadas en `requirements*.txt`; registra aun así las
+versiones efectivas junto a los resultados.

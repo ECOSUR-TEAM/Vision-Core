@@ -110,3 +110,28 @@ El monitor usa `8080`, Frigate `15000` y RTSP `28554`. Comprueba procesos:
 ```bash
 lsof -nP -iTCP:8080 -iTCP:15000 -iTCP:28554 -sTCP:LISTEN
 ```
+
+## Definition of Done (ticket 40)
+
+Ninguna entrega se considera terminada hasta que el código y su documentación
+están alineados. Antes de abrir el PR, verifica:
+
+- [ ] La conducta nueva o cambiada está explicada en el documento que ya existe
+      (o se crea una guía breve); no se duplica el [README](../README.md).
+- [ ] El [índice de documentación](README.md) enlaza cualquier documento nuevo.
+- [ ] Si hay una decisión estructural, se añade un ADR o una enmienda fechada
+      según el [índice de ADR](adr/README.md).
+- [ ] Si cambia el cableado de features o adaptadores, se actualizan los
+      [diagramas Mermaid](diagrams.md).
+- [ ] Si cambia un comando, endpoint, variable o mensaje de error, se corrigen
+      [configuración](configuration.md), [observabilidad](observability.md) y
+      [contratos](api-contracts.md) según aplique.
+- [ ] Si el cambio afecta a operación, existe o se actualiza el
+      [runbook correspondiente](runbooks/README.md).
+- [ ] Cada feature modificado enlaza su documentación desde su `README.md`.
+- [ ] Los enlaces relativos y los comandos citados se han ejecutado o abierto.
+- [ ] Otra persona revisa la documentación y lo registra en
+      [docs/README.md#revisión](README.md#revisión).
+
+La documentación se revisa en el mismo PR que el código: una doc pendiente no
+se compensa con una tarea futura.

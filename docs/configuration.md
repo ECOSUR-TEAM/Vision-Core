@@ -6,6 +6,7 @@ los puntos de entrada heredados pueden reconstruir su seccion con `validate_star
 para no exigir archivos o URLs presentes solo en despliegues completos.
 Todas las variables se convierten a tipos Python y se validan antes de construir la aplicacion.
 Los valores invalidos producen `SettingsError` con la variable exacta y una accion correctiva.
+La decision esta registrada en el [ADR 0004](adr/0004-configuracion-tipada-y-validacion-de-entorno.md).
 
 ## Variables
 
@@ -58,7 +59,7 @@ Los valores invalidos producen `SettingsError` con la variable exacta y una acci
 | `VISION_CORE_MONITOR_PORT` | `8080` | Puerto entre 1 y 65535 |
 | `VISION_CORE_MONITOR_EXIT_ON_ERROR` | `0` | Booleano |
 | `VISION_CORE_LOG_LEVEL` | `INFO` | Nivel Python admitido |
-| `VISION_CORE_LOG_JSON` | `0` | Booleano: `1` para logs JSON |
+| `VISION_CORE_LOG_JSON` | `1` | Booleano: `1` para logs JSON |
 | `VISION_CORE_CAMERA_ID` | `default` | Identificador estable de la camara |
 | `VISION_CORE_MINIMUM_FREE_DISK_MB` | `500` | Entero no negativo |
 | `VISION_CORE_DISK_CHECK_PATH` | `.` | Ruta existente para el check de disco |
@@ -76,6 +77,25 @@ Los valores invalidos producen `SettingsError` con la variable exacta y una acci
 
 Los booleanos aceptan `1/0`, `true/false`, `yes/no` y `on/off` sin distincion
 de mayusculas. Los valores invalidos se rechazan antes de iniciar el pipeline.
+
+### Persistencia y retencion
+
+| Variable | Predeterminado | Validacion |
+|---|---|---|
+| `VISION_CORE_DB_ENABLED` | `1` si hay `DB_PATH` | Booleano; `0` desactiva la persistencia |
+| `VISION_CORE_DB_PATH` | `vision-core.sqlite3` | Ruta del archivo SQLite |
+| `VISION_CORE_DB_FAIL_OPEN` | `1` | `1`: la DB falla y el pipeline sigue en memoria |
+| `VISION_CORE_DB_BUSY_TIMEOUT_SECONDS` | `5` | Espera ante bloqueos |
+| `VISION_CORE_EVENT_TTL_SECONDS` | `2592000` | Retencion de eventos |
+| `VISION_CORE_HISTORY_TTL_SECONDS` | `604800` | Retencion de observaciones de zona |
+| `VISION_CORE_IDENTITY_TTL_SECONDS` | `86400` | Retencion de identidades |
+| `VISION_CORE_TRACK_TTL_SECONDS` | `86400` | Retencion de tracks |
+| `VISION_CORE_SESSION_TTL_SECONDS` | `2592000` | Retencion de sesiones |
+| `VISION_CORE_METRICS_TTL_SECONDS` | `2592000` | Retencion de metricas |
+| `VISION_CORE_DB_PRUNE_INTERVAL_SECONDS` | `3600` | Frecuencia del worker de limpieza |
+
+Un TTL de `0` desactiva el borrado por tiempo de ese tipo. Detalle y backup en
+[persistencia](persistence.md) y [ADR 0002](adr/0002-persistence-and-retention.md).
 
 ### Integracion de Frigate
 

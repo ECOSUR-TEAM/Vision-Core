@@ -1,5 +1,8 @@
 # Desarrollo local
 
+Antes de crear una rama o abrir un PR, lee
+[CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## Requisitos
 
 - Python 3.11

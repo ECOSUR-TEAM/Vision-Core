@@ -1,0 +1,53 @@
+{
+  "name": "exit_interior_to_exterior",
+  "seed": 1337,
+  "resolution": [
+    640,
+    480
+  ],
+  "fps": 10,
+  "zones": "zones.json",
+  "detector": "scripted-v1 (recorded detections, no model)",
+  "frames": [
+    {
+      "detections": [
+        {
+          "x": 300,
+          "y": 240,
+          "track_id": 1,
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "detections": [
+        {
+          "x": 300,
+          "y": 240,
+          "track_id": 1,
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "detections": [
+        {
+          "x": 100,
+          "y": 240,
+          "track_id": 1,
+          "confidence": 0.9
+        }
+      ]
+    },
+    {
+      "detections": [
+        {
+          "x": 100,
+          "y": 240,
+          "track_id": 1,
+          "confidence": 0.9
+        }
+      ]
+    }
+  ]
+}

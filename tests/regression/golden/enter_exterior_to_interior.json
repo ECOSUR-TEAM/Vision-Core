@@ -1,0 +1,19 @@
+[
+  {
+    "event": "PERSON_ENTERED",
+    "metadata": {
+      "confirmation_frames": 2,
+      "from_zone": "exterior",
+      "people_inside": 1,
+      "position": [
+        300.0,
+        240.0
+      ],
+      "returning_person": false,
+      "to_zone": "interior",
+      "unique_people_entered": 1
+    },
+    "person_id": "person-1",
+    "timestamp": 0.3
+  }
+]

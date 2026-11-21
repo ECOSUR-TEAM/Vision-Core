@@ -34,12 +34,12 @@ y registrar `VISION_CORE_*`, versión de PyTorch y driver en el reporte.
    saltarse etapas.
 3. `FrameProfiler` entrega p50/p95 por etapa: `decode`, `detection`, `embedding`,
    `reid_tracking`, `analytics`, `serialization` y `frame_total`.
-4. La memoria se mide con `tracemalloc` en todos los sistemas y con `VmRSS`/`VmHWM`
-   de `/proc/self/status` cuando el runner es Linux. El reporte indica la fuente
-   usada. El crecimiento por hora se estima como
-   `(memoria_final - memoria_inicial) / segundos_transcurridos * 3600`; con
-   ejecuciones muy cortas esa extrapolación es ruidosa, por eso la regresión de
-   memoria usa un suelo de 50 MB/h.
+ 4. La memoria se mide con `tracemalloc` en todos los sistemas y con `VmRSS`/`VmHWM`
+    de `/proc/self/status` cuando el runner es Linux. El reporte indica la fuente
+    usada, pero la tendencia usa siempre el delta de `tracemalloc` para que el
+    resultado sea comparable entre plataformas. Con ejecuciones cortas se normaliza
+    con una ventana mínima de 30 s antes de extrapolar a una hora, y la regresión de
+    memoria usa un suelo de 10 MB/h.
 5. El arranque se mide hasta el primer frame processado y la reconexión con un
    `RtspVideoSource` alimentado por una captura simulada: exercisea el código de
    reintento sin abrir sockets.

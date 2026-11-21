@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "baseline",
   "scenario": "synthetic-cpu-320x240",
-  "captured_at": "2026-11-21T03:42:52.121590+00:00",
+  "captured_at": "2026-11-21T04:23:25.163142+00:00",
   "environment": {
     "generator_version": "1.0.0",
     "device": "cpu",
@@ -19,17 +19,17 @@
     "device": "cpu",
     "context": "nightly",
     "frames": 450,
-    "elapsed_seconds": 2.574799,
-    "fps": 174.77,
-    "frame_p50_ms": 2.7253,
-    "frame_p95_ms": 6.4289,
-    "inference_p50_ms": 1.2089,
-    "inference_p95_ms": 2.8067,
-    "serialization_p95_ms": 1.033,
-    "startup_ms": 67.9233,
-    "reconnect_ms": 0.1215,
-    "memory_peak_mb": 0.673,
-    "memory_growth_mb_per_hour": 327.171,
+    "elapsed_seconds": 1.639508,
+    "fps": 274.47,
+    "frame_p50_ms": 1.7618,
+    "frame_p95_ms": 3.026,
+    "inference_p50_ms": 0.7744,
+    "inference_p95_ms": 1.2244,
+    "serialization_p95_ms": 0.598,
+    "startup_ms": 21.4292,
+    "reconnect_ms": 0.1112,
+    "memory_peak_mb": 0.674,
+    "memory_growth_mb_per_hour": 28.2,
     "memory": {
       "initial": {
         "tracemalloc_current_mb": 0.0,
@@ -39,8 +39,8 @@
         "source": "tracemalloc"
       },
       "final": {
-        "tracemalloc_current_mb": 0.234,
-        "tracemalloc_peak_mb": 0.673,
+        "tracemalloc_current_mb": 0.235,
+        "tracemalloc_peak_mb": 0.674,
         "rss_current_mb": null,
         "rss_peak_mb": null,
         "source": "tracemalloc"
@@ -69,57 +69,57 @@
     },
     "profiler": {
       "frames": 450,
-      "elapsed_seconds": 2.574799,
-      "fps": 174.77,
+      "elapsed_seconds": 1.639508,
+      "fps": 274.47,
       "stages": {
         "decode": {
           "samples": 451,
-          "p50_ms": 1.7027,
-          "p95_ms": 4.1413,
-          "mean_ms": 2.0491,
-          "max_ms": 21.1994
+          "p50_ms": 1.2849,
+          "p95_ms": 1.9422,
+          "mean_ms": 1.4753,
+          "max_ms": 33.9081
         },
         "detection": {
           "samples": 450,
-          "p50_ms": 1.2089,
-          "p95_ms": 2.8067,
-          "mean_ms": 1.3903,
-          "max_ms": 10.9615
+          "p50_ms": 0.7744,
+          "p95_ms": 1.2244,
+          "mean_ms": 0.8469,
+          "max_ms": 8.9596
         },
         "embedding": {
           "samples": 450,
-          "p50_ms": 0.0269,
-          "p95_ms": 0.0727,
-          "mean_ms": 0.0339,
-          "max_ms": 0.3031
+          "p50_ms": 0.0162,
+          "p95_ms": 0.0338,
+          "mean_ms": 0.0187,
+          "max_ms": 0.1325
         },
         "reid_tracking": {
           "samples": 900,
-          "p50_ms": 0.161,
-          "p95_ms": 0.5357,
-          "mean_ms": 0.2221,
-          "max_ms": 6.219
+          "p50_ms": 0.1234,
+          "p95_ms": 0.2837,
+          "mean_ms": 0.1184,
+          "max_ms": 1.7179
         },
         "analytics": {
           "samples": 450,
-          "p50_ms": 0.2126,
-          "p95_ms": 0.4896,
-          "mean_ms": 0.2581,
-          "max_ms": 1.989
+          "p50_ms": 0.1505,
+          "p95_ms": 0.2619,
+          "mean_ms": 0.1644,
+          "max_ms": 1.3642
         },
         "serialization": {
           "samples": 178,
-          "p50_ms": 0.5739,
-          "p95_ms": 1.033,
-          "mean_ms": 0.6256,
-          "max_ms": 3.1383
+          "p50_ms": 0.3864,
+          "p95_ms": 0.598,
+          "mean_ms": 0.4289,
+          "max_ms": 0.7767
         },
         "frame_total": {
           "samples": 450,
-          "p50_ms": 2.7253,
-          "p95_ms": 6.4289,
-          "mean_ms": 3.1191,
-          "max_ms": 12.1108
+          "p50_ms": 1.7618,
+          "p95_ms": 3.026,
+          "mean_ms": 1.8831,
+          "max_ms": 14.8726
         }
       }
     },
@@ -131,17 +131,17 @@
       "histograms": {
         "vision_core_inference_latency_ms": {
           "count": 450,
-          "sum": 662.6631011022255,
-          "min": 0.21389999892562628,
-          "max": 11.034199967980385,
-          "avg": 1.4725846691160567
+          "sum": 397.69199898000807,
+          "min": 0.20399992354214191,
+          "max": 9.018699987791479,
+          "avg": 0.8837599977333512
         },
         "vision_core_reid_latency_ms": {
           "count": 450,
-          "sum": 218.7959006987512,
-          "min": 0.1623999560251832,
-          "max": 6.323199952021241,
-          "avg": 0.48621311266389156
+          "sum": 117.2098012175411,
+          "min": 0.15199999324977398,
+          "max": 1.8403999274596572,
+          "avg": 0.2604662249278691
         }
       }
     }

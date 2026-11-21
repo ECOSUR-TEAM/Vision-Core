@@ -9,6 +9,7 @@ from vision_core.scripts.benchmark_nightly import (
     compare_baseline,
     evaluate_budgets,
     load_budgets,
+    memory_growth_mb_per_hour,
     render_summary,
 )
 
@@ -30,6 +31,13 @@ def test_budgets_and_baseline_are_tracked():
     assert baseline["kind"] == "baseline"
     assert baseline["metrics"]["scenario"] == SCENARIO
     assert baseline["metrics"]["frames"] == 450
+
+
+def test_growth_uses_tracemalloc_and_clamps_short_runs():
+    initial = {"tracemalloc_current_mb": 10.0, "rss_current_mb": 50.0}
+    final = {"tracemalloc_current_mb": 12.0, "rss_current_mb": 500.0}
+    assert memory_growth_mb_per_hour(initial, final, 1.0) == 240.0
+    assert memory_growth_mb_per_hour(initial, final, 60.0) == 120.0
 
 
 def test_evaluate_budgets_flags_degraded_metrics():

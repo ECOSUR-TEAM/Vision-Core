@@ -6,24 +6,24 @@ referencia; el hardware del runner y el modelo Real pueden cambiar el orden.
 
 | Métrica | Valor | Presupuesto | Estado |
 |---|---:|---:|---|
-| FPS | 174.77 | >= 30.0 | OK |
-| Frame p50 (ms) | 2.73 | <= 33.3 | OK |
-| Frame p95 (ms) | 6.43 | <= 60.0 | OK |
-| Inferencia p50 (ms) | 1.21 | <= 20.0 | OK |
-| Inferencia p95 (ms) | 2.81 | <= 40.0 | OK |
+| FPS | 274.47 | >= 30.0 | OK |
+| Frame p50 (ms) | 1.76 | <= 33.3 | OK |
+| Frame p95 (ms) | 3.03 | <= 60.0 | OK |
+| Inferencia p50 (ms) | 0.77 | <= 20.0 | OK |
+| Inferencia p95 (ms) | 1.22 | <= 40.0 | OK |
 | Memoria pico (MB) | 0.67 | <= 512.0 | OK |
-| Crecimiento memoria (MB/h) | 327.17 | <= 1024.0 | OK |
-| Arranque a primer frame (ms) | 67.92 | <= 8000.0 | OK |
-| Reconexión (ms) | 0.12 | <= 3000.0 | OK |
+| Crecimiento memoria (MB/h) | 28.20 | <= 1024.0 | OK |
+| Arranque a primer frame (ms) | 21.43 | <= 8000.0 | OK |
+| Reconexión (ms) | 0.11 | <= 3000.0 | OK |
 
 ## Hotspots por p95
 
-- captura/decode: p95 4.141 ms, max 21.199 ms
-- detección: p95 2.807 ms, max 10.961 ms
-- serialización: p95 1.033 ms, max 3.138 ms
-- tracking/ReID: p95 0.536 ms, max 6.219 ms
-- puerta/zonas: p95 0.490 ms, max 1.989 ms
-- embedding ReID: p95 0.073 ms, max 0.303 ms
+- captura/decode: p95 1.942 ms, max 33.908 ms
+- detección: p95 1.224 ms, max 8.960 ms
+- serialización: p95 0.598 ms, max 0.777 ms
+- tracking/ReID: p95 0.284 ms, max 1.718 ms
+- puerta/zonas: p95 0.262 ms, max 1.364 ms
+- embedding ReID: p95 0.034 ms, max 0.133 ms
 
 ## Interpretación
 

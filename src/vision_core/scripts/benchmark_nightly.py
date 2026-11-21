@@ -40,6 +40,7 @@ BUDGET_RULES = {
     "startup_ms": ("startup_max_ms", "max"),
     "reconnect_ms": ("reconnect_max_ms", "max"),
 }
+MIN_GROWTH_SAMPLE_SECONDS = 30.0
 REGRESSION_RULES = {
     "fps": "min",
     "frame_p50_ms": "max",
@@ -78,8 +79,15 @@ def load_budgets(path: str | Path) -> dict[str, Any]:
     return data
 
 
-def _current_mb(snapshot: dict[str, Any]) -> float:
-    return float(snapshot.get("rss_current_mb") or snapshot["tracemalloc_current_mb"])
+def memory_growth_mb_per_hour(
+    initial: dict[str, Any],
+    final: dict[str, Any],
+    elapsed_seconds: float,
+) -> float:
+    initial_mb = float(initial["tracemalloc_current_mb"])
+    final_mb = float(final["tracemalloc_current_mb"])
+    window = max(float(elapsed_seconds), MIN_GROWTH_SAMPLE_SECONDS)
+    return round(max(0.0, (final_mb - initial_mb) / window * 3600), 3)
 
 
 def _memory_usage() -> dict[str, Any]:
@@ -205,7 +213,7 @@ def run_benchmark(
     elapsed = max(float(summary["elapsed_seconds"]), 1e-9)
     stages = summary["stages"]
     memory_peak = float(final_memory.get("rss_peak_mb") or final_memory["tracemalloc_peak_mb"])
-    growth = max(0.0, (_current_mb(final_memory) - _current_mb(initial_memory)) / elapsed * 3600)
+    growth = memory_growth_mb_per_hour(initial_memory, final_memory, elapsed)
     startup_ms = (first_frame.get("at", time.perf_counter()) - build_started) * 1000
     telemetry = observability.snapshot()
     selected_histograms = {
@@ -290,7 +298,7 @@ def compare_baseline(
             threshold = float(previous) * (1 - factor)
             degraded = current < threshold
         else:
-            floor = 50.0 if metric == "memory_growth_mb_per_hour" else 1.0
+            floor = 10.0 if metric == "memory_growth_mb_per_hour" else 1.0
             threshold = max(float(previous) * (1 + factor), floor if metric.startswith("memory") else 0.0)
             degraded = current > threshold
         if degraded:

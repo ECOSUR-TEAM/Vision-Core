@@ -1,3 +1,4 @@
+import logging
 import time
 import uuid
 from collections.abc import Callable
@@ -24,24 +25,30 @@ from vision_core.infrastructure.persistence.persistence_service import Persisten
 from vision_core.infrastructure.persistence.persisting_reid_memory import PersistingReIDMemory
 from vision_core.infrastructure.persistence.retention_job import RetentionJob
 from vision_core.infrastructure.persistence.retention_worker import RetentionWorker
+from vision_core.model_registry.activation import resolve_active_models
 from vision_core.settings import Settings
 from vision_core.settings.persistence import PersistenceSettings
 from vision_core.shared.observability.health import HealthStatus
 from vision_core.shared.observability.metrics import get_observability_metrics
+
+logger = logging.getLogger(__name__)
 
 
 def build_video_with(source=None, *, path=None, latest=False):
     return build_video(source=source, path=path, latest=latest)
 
 
-def build_monitor_state(*, demo=False, settings=None):
+def build_monitor_state(*, demo=False, settings=None, models=None):
     settings = settings or Settings.from_env(validate_startup=False)
+    models = models or resolve_active_models(settings)
     metrics = get_observability_metrics()
     health = HealthStatus(
         minimum_free_disk_mb=settings.monitor.minimum_free_disk_mb,
         disk_path=settings.monitor.disk_check_path,
+        model_metadata=models.as_health_metadata(),
     )
     health.set_ready(config_valid=True)
+    logger.info("Modelos activos resueltos del registro", extra=models.as_log_identity())
     return build_monitor(
         demo=demo,
         event_serializer=event_to_json_dict,
@@ -75,8 +82,11 @@ def build_monitor_pipeline(
     start_retention=True,
     config=None,
     render_enabled=None,
+    models=None,
 ):
     settings = settings or Settings.from_env(validate_startup=False)
+    models = models or resolve_active_models(settings)
+    state.health.set_model_metadata(models.as_health_metadata())
     config = config or PipelineConfig.from_env()
     if render_enabled is not None:
         config = replace(config, render_enabled=render_enabled)
@@ -119,6 +129,7 @@ def build_monitor_pipeline(
                 classes=settings.detection.classes,
                 tracking_enabled=settings.detection.tracking_enabled,
                 max_missed_frames=settings.detection.max_missed_frames,
+                model_descriptor=models.detection,
             )
             reid = build_reid()
             memory = build_reid_with_persistence(reid.memory, persistence)
@@ -240,8 +251,11 @@ def build_monitor_runtime(
     start_retention=True,
     config=None,
     render_enabled=None,
+    models=None,
 ):
     settings = settings or Settings.from_env()
+    models = models or resolve_active_models(settings)
+    state.health.set_model_metadata(models.as_health_metadata())
     return MonitorRuntime(
         build_monitor_pipeline(
             state,
@@ -251,6 +265,7 @@ def build_monitor_runtime(
             start_retention=start_retention,
             config=config,
             render_enabled=render_enabled,
+            models=models,
         ),
         state,
         exit_on_error=exit_on_error,

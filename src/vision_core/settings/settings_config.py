@@ -9,6 +9,7 @@ from .settings_detection import DetectionSettings
 from .settings_error import SettingsError
 from .settings_helpers import parse_bool, valid_rtsp_url
 from .settings_logging import LoggingSettings
+from .settings_model_registry import DEFAULT_MODEL_REGISTRY_FILE, ModelRegistrySettings
 from .settings_monitor import MonitorSettings
 from .settings_performance import PerformanceSettings
 from .settings_reid import ReIDSettings
@@ -26,6 +27,7 @@ class Settings:
     logging: LoggingSettings
     performance: PerformanceSettings
     camera: CameraSettings
+    models: ModelRegistrySettings
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None, *, validate_startup: bool = True) -> "Settings":
@@ -125,6 +127,9 @@ class Settings:
             errors.append("VISION_CORE_TRACK_MAX_MISSED_FRAMES: debe ser mayor que 0")
 
         reid_model = env.get("VISION_CORE_EMBEDDING_MODEL", "mobilenet_v3_small").strip()
+        reid_weights = env.get("VISION_CORE_EMBEDDING_WEIGHTS", "DEFAULT").strip().upper()
+        weights_raw = env.get("VISION_CORE_EMBEDDING_WEIGHTS_PATH", "").strip()
+        weights_path = Path(weights_raw).expanduser() if weights_raw else None
         reid_device = env.get("VISION_CORE_EMBEDDING_DEVICE", "").strip() or None
         reid_threshold = floating("VISION_CORE_REID_THRESHOLD", 0.85)
         ambiguity_margin = floating("VISION_CORE_REID_AMBIGUITY_MARGIN", 0.03)
@@ -132,6 +137,10 @@ class Settings:
         gallery_size = integer("VISION_CORE_REID_GALLERY_SIZE", 8)
         if reid_model not in {"mobilenet_v3_small", "resnet50"}:
             errors.append("VISION_CORE_EMBEDDING_MODEL: use mobilenet_v3_small o resnet50")
+        if reid_weights != "DEFAULT":
+            errors.append("VISION_CORE_EMBEDDING_WEIGHTS: use DEFAULT")
+        if weights_path is not None and validate_startup and not weights_path.is_file():
+            errors.append(f"VISION_CORE_EMBEDDING_WEIGHTS_PATH: el archivo no existe: {weights_path}")
         if reid_device is not None and reid_device not in {"cpu", "cuda"} and not reid_device.startswith("cuda:"):
             errors.append("VISION_CORE_EMBEDDING_DEVICE: use cpu, cuda o cuda:<indice>")
         if not isfinite(reid_threshold) or not 0 < reid_threshold <= 1:
@@ -187,6 +196,18 @@ class Settings:
         if camera_url is not None and not valid_rtsp_url(camera_url):
             errors.append("FRIGATE_CAMERA_RTSP_URL: debe ser una URL rtsp:// o rtsps:// válida")
 
+        registry_raw = env.get("VISION_CORE_MODEL_REGISTRY_FILE", "").strip()
+        registry_file = Path(registry_raw).expanduser() if registry_raw else DEFAULT_MODEL_REGISTRY_FILE
+        detection_model_id = env.get("VISION_CORE_DETECTION_MODEL_ID", "detection.person.yolov8n").strip()
+        embedding_model_id = env.get("VISION_CORE_EMBEDDING_MODEL_ID", "embedding.person.mobilenet_v3_small").strip()
+        verify_checksums = boolean("VISION_CORE_MODEL_CHECKSUM_VERIFY", True)
+        if validate_startup and not registry_file.is_file():
+            errors.append(f"VISION_CORE_MODEL_REGISTRY_FILE: el archivo no existe: {registry_file}")
+        if not detection_model_id:
+            errors.append("VISION_CORE_DETECTION_MODEL_ID: no puede estar vacío")
+        if not embedding_model_id:
+            errors.append("VISION_CORE_EMBEDDING_MODEL_ID: no puede estar vacío")
+
         if errors:
             raise SettingsError("Configuración inválida:\n- " + "\n- ".join(errors))
 
@@ -204,10 +225,25 @@ class Settings:
                 ffmpeg_options,
             ),
             detection=DetectionSettings(model_path, detection_device, confidence, classes, tracking, max_missed),
-            reid=ReIDSettings(reid_model, reid_device, reid_threshold, ambiguity_margin, reid_ttl, gallery_size),
+            reid=ReIDSettings(
+                reid_model,
+                reid_weights,
+                weights_path,
+                reid_device,
+                reid_threshold,
+                ambiguity_margin,
+                reid_ttl,
+                gallery_size,
+            ),
             zones=ZonesSettings(zones_file, confirmation_frames, demo_zones, uncalibrated),
             monitor=MonitorSettings(monitor_host, monitor_port, exit_on_error, minimum_free_disk_mb, disk_check_path),
             logging=LoggingSettings(log_level, log_json, camera_id),
             performance=PerformanceSettings(performance_interval),
             camera=CameraSettings(camera_url),
+            models=ModelRegistrySettings(
+                registry_file,
+                detection_model_id,
+                embedding_model_id,
+                verify_checksums,
+            ),
         )

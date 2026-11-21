@@ -5,7 +5,7 @@
 | Endpoint | Uso | Respuesta |
 |---|---|---|
 | `/health` | Liveness del proceso | `200` mientras el HTTP server puede atender |
-| `/ready` | Configuracion, modelo, fuente de video y disco | `200` cuando todo esta listo; `503` si falla un chequeo |
+| `/ready` | Configuracion, modelo, fuente de video, disco e identidad de modelos | `200` cuando todo esta listo; `503` si falla un chequeo |
 | `/metrics` | Telemetria JSON equivalente a metricas | Contadores, gauges e histogramas |
 | `/api/state` | Estado operativo del monitor | Estado, FPS y eventos existentes |
 
@@ -17,12 +17,19 @@ curl http://127.0.0.1:8080/ready
 curl http://127.0.0.1:8080/metrics
 ```
 
+`/ready` conserva `ready`, `checks`, `disk_free_mb` y `minimum_free_disk_mb`, y añade
+`model_id`, `model_version`, `model_hash` y `models` con la identidad de deteccion y embedding.
+`/health` sigue siendo solo liveness, sin metadata de modelos. `model_hash=unverified` indica
+que el registro no tiene checksum comprobado para ese artefacto.
+
 ## Logs
 
 Cuando `VISION_CORE_LOG_JSON=1`, los logs son JSON con estos campos:
 
 - `timestamp`, `level`, `service`, `camera_id`
 - `event_id`, `person_id`, `duration_ms`, `error_code`
+- `model_id`, `model_version`, `model_hash`
+- `embedding_model_id`, `embedding_model_version`, `embedding_model_hash`
 - `message`
 
 `VISION_CORE_LOG_LEVEL` controla el nivel y `VISION_CORE_CAMERA_ID` identifica la camara.

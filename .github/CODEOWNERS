@@ -1,0 +1,103 @@
+# CODEOWNERS de Vision Core
+#
+# El último patrón que coincide gana. Los owners se solicitan automáticamente
+# cuando el PR cambia una ruta. Para cambios transversales, además del owner de
+# cada feature tocada se requiere aprobación de un owner transversal.
+#
+# Transversal: @Ameth-Toledo @bchanona @Carlosss2
+
+# Regla general
+* @Ameth-Toledo @bchanona @Carlosss2
+
+# Gobernanza y documentación
+/.github/ @Ameth-Toledo @bchanona @Carlosss2 @MelissaZarate08
+/docs/ @Ameth-Toledo @bchanona @Carlosss2
+/tests/ @Ameth-Toledo @bchanona @Carlosss2
+
+# Infraestructura, CI/CD y herramientas
+/.devcontainer/ @bchanona @Carlosss2
+/.github/workflows/ @bchanona @Carlosss2
+/.github/dependabot.yml @bchanona @Carlosss2
+/.github/security-exceptions* @bchanona @Carlosss2
+/.pre-commit-config.yaml @bchanona @Carlosss2
+/.env.example @bchanona @Carlosss2
+/.gitignore @bchanona @Carlosss2
+/Dockerfile @bchanona @Carlosss2
+/docker-compose*.yml @bchanona @Carlosss2
+/Makefile @bchanona @Carlosss2
+/pyproject.toml @bchanona @Carlosss2
+/requirements*.txt @bchanona @Carlosss2
+/scripts/ @bchanona @Carlosss2
+/src/vision_core/scripts/ @bchanona @Carlosss2
+/src/vision_core/settings/ @bchanona
+/src/vision_core/infrastructure/persistence/ @bchanona @MelissaZarate08
+/config/ @bchanona @MelissaZarate08
+/config/zones.example.json @MelissaZarate08
+/dev-data/zones.json @MelissaZarate08
+
+# Seguridad y decisiones de arquitectura
+/SECURITY.md @bchanona @Carlosss2
+/docs/security.md @bchanona @Carlosss2
+/docs/adr/ @Ameth-Toledo @bchanona @Carlosss2
+
+# Proceso y plantillas
+/CONTRIBUTING.md @Ameth-Toledo @bchanona @Carlosss2 @MelissaZarate08
+/.github/CODEOWNERS @Ameth-Toledo @bchanona @Carlosss2 @MelissaZarate08
+/.github/PULL_REQUEST_TEMPLATE.md @Ameth-Toledo @MelissaZarate08
+/.github/ISSUE_TEMPLATE/ @Ameth-Toledo @MelissaZarate08
+
+# Componentes compartidos y composition root
+/src/vision_core/shared/ @Ameth-Toledo @bchanona
+/src/vision_core/domain/ @Ameth-Toledo @bchanona
+/src/vision_core/application/ @FabricioPRZ @Ameth-Toledo
+/main.py @FabricioPRZ @Ameth-Toledo
+/tests/test_composition.py @FabricioPRZ @Ameth-Toledo
+/tests/contracts/test_dto_boundary_contract.py @FabricioPRZ @Ameth-Toledo
+
+# Video
+/src/vision_core/features/video/ @bchanona @Ameth-Toledo
+/src/vision_core/infrastructure/video/ @bchanona @Ameth-Toledo
+/tests/features/video/ @bchanona @Ameth-Toledo
+/tests/contracts/test_video_contract.py @bchanona @Ameth-Toledo
+
+# Detection
+/src/vision_core/features/detection/ @Carlosss2 @Ameth-Toledo
+/src/vision_core/infrastructure/detection/ @Carlosss2 @Ameth-Toledo
+/tests/features/detection/ @Carlosss2 @Ameth-Toledo
+/tests/infrastructure/detection/ @Carlosss2 @Ameth-Toledo
+/tests/contracts/test_detector_contract.py @Carlosss2 @Ameth-Toledo
+
+# ReID
+/src/vision_core/features/reid/ @bchanona
+/src/vision_core/infrastructure/reid/ @bchanona
+/tests/features/reid/ @bchanona
+/tests/infrastructure/reid/ @bchanona
+/tests/contracts/test_reid_contract.py @bchanona
+
+# Door y zonas
+/src/vision_core/features/door/ @MelissaZarate08
+/src/vision_core/infrastructure/door/ @MelissaZarate08
+/tests/features/door/ @MelissaZarate08
+/tests/infrastructure/door/ @MelissaZarate08
+/tests/contracts/test_door_contract.py @MelissaZarate08
+
+# Monitor, HTTP y UI
+/src/vision_core/features/monitor/ @bchanona
+/src/vision_core/infrastructure/monitor/ @bchanona
+/src/vision_core/infrastructure/monitor/index.html @bchanona @Carlosss2
+/tests/features/monitor/ @bchanona
+/tests/infrastructure/monitor/ @bchanona
+/tests/contracts/test_monitor_contract.py @bchanona
+/tests/e2e/test_monitor_e2e.py @bchanona
+/tests/test_ui_security.py @bchanona @Carlosss2
+/tests/test_renderer_pipeline.py @bchanona
+
+# Pipeline y orquestación
+/src/vision_core/features/pipeline/ @FabricioPRZ
+/tests/features/pipeline/ @FabricioPRZ
+/tests/integration/ @FabricioPRZ @Ameth-Toledo
+
+# Persistencia y observabilidad
+/tests/infrastructure/persistence/ @bchanona @MelissaZarate08
+/tests/test_persistence_integration.py @bchanona @MelissaZarate08
+/tests/test_observability.py @bchanona

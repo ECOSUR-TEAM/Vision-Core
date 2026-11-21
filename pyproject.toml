@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=78.1.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -19,6 +19,7 @@ testpaths = ["tests"]
 addopts = "--import-mode=importlib"
 markers = [
     "slow: pruebas e2e pesadas; se ejecutan en nightly o workflow manual",
+    "replay_extended: replay golden opcional; se ejecuta en job extendido",
 ]
 
 [tool.coverage.run]

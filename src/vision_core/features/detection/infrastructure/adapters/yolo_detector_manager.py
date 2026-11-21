@@ -8,6 +8,7 @@ from vision_core.features.detection.domain.ports.detector_manager import Detecto
 from vision_core.features.detection.infrastructure.adapters.motion_tracker import (
     MotionTracker,
 )
+from vision_core.model_registry.model_descriptor import ModelDescriptor
 from vision_core.shared.domain.bbox import BBox
 from vision_core.shared.errors import ModelError, ValidationError, codes
 from vision_core.shared.inference.tensor_boxes import iter_prediction_boxes
@@ -32,19 +33,27 @@ class YoloDetectorManager(DetectorManager):
         classes: tuple[int, ...] = (PERSON_CLASS_ID,),
         tracking_enabled: bool = True,
         max_missed_frames: int = 30,
+        model_descriptor: ModelDescriptor | None = None,
     ) -> None:
         try:
             from ultralytics import YOLO
         except ImportError as error:
             raise ModelError("La librería de detección no está instalada.") from error
         self._model_path = model_path
+        self._model_descriptor = model_descriptor
         self._device = device or "cpu"
         try:
             self._model = YOLO(model_path)
         except Exception as error:
+            context: dict[str, object] = {"operation": "load_model"}
+            if model_descriptor is not None:
+                context.update(model_descriptor.expected_config)
+                context["model_id"] = model_descriptor.id
+                context["model_version"] = model_descriptor.version
+                context["model_hash"] = model_descriptor.model_hash
             raise ModelError(
                 "No se pudo cargar el modelo de detección.",
-                context={"operation": "load_model"},
+                context=context,
             ) from error
         self._confidence = confidence
         self._classes = classes

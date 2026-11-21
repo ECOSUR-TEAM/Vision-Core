@@ -10,6 +10,7 @@ from torchvision.models import (
     resnet50,
 )
 
+from vision_core.model_registry.model_descriptor import ModelDescriptor
 from vision_core.settings import Settings
 from vision_core.shared.errors import (
     ConfigurationError,
@@ -24,7 +25,12 @@ class TorchvisionEmbeddingExtractor:
     """Extrae embeddings visuales de un recorte de persona usando un modelo
     preentrenado de torchvision. Los pesos se descargan si no están en caché."""
 
-    def __init__(self, model_name: str = "mobilenet_v3_small", device: str | None = None) -> None:
+    def __init__(
+        self,
+        model_name: str = "mobilenet_v3_small",
+        device: str | None = None,
+        model_descriptor: ModelDescriptor | None = None,
+    ) -> None:
         if model_name not in {"resnet50", "mobilenet_v3_small"}:
             raise ConfigurationError(
                 "El modelo de embeddings configurado no es válido.",
@@ -36,6 +42,7 @@ class TorchvisionEmbeddingExtractor:
         if self.device.type == "cuda" and not torch.cuda.is_available():
             raise ReIDModelUnavailableError("Se solicitó CUDA, pero no está disponible")
         self.model_name = model_name
+        self.model_descriptor = model_descriptor
 
         if model_name == "resnet50":
             weights = ResNet50_Weights.DEFAULT
@@ -53,11 +60,12 @@ class TorchvisionEmbeddingExtractor:
         self._model.eval().to(self.device)
 
     @classmethod
-    def from_env(cls):
+    def from_env(cls, model_descriptor: ModelDescriptor | None = None):
         settings = Settings.from_env(validate_startup=False).reid
         return cls(
             settings.model_name,
             settings.device,
+            model_descriptor,
         )
 
     def __call__(self, crop: np.ndarray) -> np.ndarray:

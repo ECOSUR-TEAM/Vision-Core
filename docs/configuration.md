@@ -24,6 +24,19 @@ Los valores invalidos producen `SettingsError` con la variable exacta y una acci
 | `VISION_CORE_DECODER_THREADS` | `1` | Entero no negativo |
 | `OPENCV_FFMPEG_CAPTURE_OPTIONS` | Ninguno | Opciones globales de OpenCV/FFmpeg |
 
+### Registro de modelos
+
+| Variable | Predeterminado | Validacion |
+|---|---|---|
+| `VISION_CORE_MODEL_REGISTRY_FILE` | `config/models.yml` | YAML versionado debe existir al arranque |
+| `VISION_CORE_DETECTION_MODEL_ID` | `detection.person.yolov8n` | ID presente, activo y de tarea `detection` |
+| `VISION_CORE_EMBEDDING_MODEL_ID` | `embedding.person.mobilenet_v3_small` | ID presente, activo y de tarea `embedding` |
+| `VISION_CORE_MODEL_CHECKSUM_VERIFY` | `1` | Booleano: compara checksum cuando hay archivo local |
+
+El registro es texto (`config/models.yml`), no una base de datos ni un servidor de modelos.
+Si el `model_id` no existe, el arranque termina con `ConfigurationError` antes de abrir el stream.
+Si el checksum registrado no es `null` y el archivo local existe, un desajuste también detiene el arranque.
+
 ### Deteccion
 
 | Variable | Predeterminado | Validacion |
@@ -40,6 +53,8 @@ Los valores invalidos producen `SettingsError` con la variable exacta y una acci
 | Variable | Predeterminado | Validacion |
 |---|---|---|
 | `VISION_CORE_EMBEDDING_MODEL` | `mobilenet_v3_small` | Modelo soportado |
+| `VISION_CORE_EMBEDDING_WEIGHTS` | `DEFAULT` | Perfil de pesos declarado en el registro |
+| `VISION_CORE_EMBEDDING_WEIGHTS_PATH` | Ninguno | Archivo local existente para verificar checksum |
 | `VISION_CORE_EMBEDDING_DEVICE` | Automatico | `cpu`, `cuda` o `cuda:<indice>` |
 | `VISION_CORE_REID_THRESHOLD` | `0.85` | Mayor que 0 y menor o igual a 1 |
 | `VISION_CORE_REID_AMBIGUITY_MARGIN` | `0.03` | Entre 0 y 1 |

@@ -11,6 +11,7 @@ from tests.fakes.fake_detector import FakeDetector
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
 from vision_core.features.video.infrastructure.adapters.file_video_source import FileVideoSource
+from vision_core.shared.observability.metrics import ObservabilityMetrics
 
 
 @pytest.mark.slow
@@ -19,6 +20,8 @@ def test_monitor_e2e_with_video_file_and_real_zones(monkeypatch, synthetic_sampl
     video_path = synthetic_sample / "sample.avi"
     zones_path = synthetic_sample / "zones.json"
     video_source = FileVideoSource(video_path)
+    metrics = ObservabilityMetrics()
+    monkeypatch.setattr(main, "get_observability_metrics", lambda: metrics)
     state = main.build_monitor_state()
 
     monkeypatch.setenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "2")
@@ -74,6 +77,16 @@ def test_monitor_e2e_with_video_file_and_real_zones(monkeypatch, synthetic_sampl
         assert len(snapshot["people"]) == 1
         assert snapshot["people"][0]["zone"] == "exterior"
         assert snapshot["people"][0]["display_name"] == "Persona 1"
+
+        with urlopen(f"{base_url}/health") as response:
+            assert json.load(response) == {"status": "alive", "live": True}
+
+        with urlopen(f"{base_url}/metrics") as response:
+            telemetry = json.load(response)
+        assert telemetry["counters"]["vision_core_events_emitted_total"] == 5
+        assert telemetry["counters"]["vision_core_tracks_created_total"] >= 1
+        assert "vision_core_inference_latency_ms" in telemetry["histograms"]
+        assert telemetry["histograms"]["vision_core_inference_latency_ms"]["count"] >= 1
 
         with urlopen(f"{base_url}/api/frame") as response:
             assert response.status == 200

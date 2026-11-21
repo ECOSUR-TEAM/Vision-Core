@@ -5,9 +5,11 @@ fakes y zonas generadas en `tmp_path`; no necesitan RTSP, GPU ni internet.
 
 | Nivel | Selección | Qué cubre | Dónde corre |
 |---|---|---|---|
+| Smoke | `python -m pytest -q -m smoke` | Pipeline de 35 frames con umbral de rendimiento amplio | Cada PR (`ci.yml`, job `smoke`) |
 | Unidad | `python -m pytest -q -m "not slow"` | DTOs, mappers, casos de uso, puertos y reglas de arquitectura | Cada PR (`ci.yml`) |
-| Integración | incluida en el comando anterior | Pipeline completo con `create_pipeline_sample`, detector/ReID fakes, zonas y eventos reales | Cada PR (`ci.yml`) |
+| Integración | `python -m pytest -q -m integration` | Pipeline completo con `create_pipeline_sample`, detector/ReID fakes, zonas y eventos reales | Cada PR (`ci.yml`) |
 | E2E | `python -m pytest -q -m slow` | Monitor HTTP real: estado, eventos, personas, métricas y frames sobre archivo de video | Nightly o manual (`e2e.yml`) |
+| Rendimiento | `python -m pytest -q -m performance` | Presupuestos, regresiones, generador sintético y baseline | Cada PR; benchmark completo en `benchmark.yml` |
 
 No existe una carpeta `scripts/` versionada en la raíz: el generador vive en
 `vision_core.scripts.create_pipeline_sample` y produce `sample.avi` y `zones.json`
@@ -32,6 +34,14 @@ python -m vision_core.scripts.check_coverage coverage.json
 
 # E2E pesado (igual que el job nightly)
 python -m pytest -q -m slow
+
+# Selección por nivel
+python -m pytest -q -m smoke
+python -m pytest -q -m integration
+python -m pytest -q -m performance
+
+# Benchmark nocturno y baseline
+make benchmark
 
 # Suite completa, incluyendo e2e
 python -m pytest -q
@@ -69,27 +79,39 @@ cruzando exterior → interior → exterior → fuera. Verifica:
 
 No se comprueban timestamps exactos: los eventos solo deben ser finitos.
 
+`tests/performance/test_performance_smoke.py` reutiliza la misma muestra para
+ejecutar el pipeline real con `pr-smoke` y verificar FPS, latencia, memoria y
+serialización con umbrales amplios. `tests/performance/test_benchmark_analysis.py`
+inyecta una regresión artificial de FPS y p95 para demostrar que la comparación
+contra baseline funciona; una fluctuación pequeña no se marca como regresión.
+
 ## E2E
 
 `tests/e2e/test_monitor_e2e.py` usa la misma muestra, carga `zones.json` real desde
 el composition root (`main.build_monitor_pipeline`) y levanta un
-`ThreadingHTTPServer` en `127.0.0.1:0`. Valida `/`, `/api/state`, `/api/frame` y
-`/api/frame?after=35`: estado `running`, 35 frames, eventos y contadores,
-persona con zona y etiqueta, JPEG con cabecera de secuencia y métricas
-(`fps`, `processing_ms`, `dropped_frames`, `age_seconds`) coherentes. El detector,
-ReID y extractor son fakes; el video es archivo local.
-
-`develop` aún no incluye los endpoints `/api/health` y `/api/metrics` de ECM-75;
-cuando se integren, este e2e debe ampliarse para consultarlos.
+`ThreadingHTTPServer` en `127.0.0.1:0`. Valida `/`, `/api/state`, `/api/frame`,
+`/api/frame?after=35`, `/health` y `/metrics`: estado `running`, 35 frames,
+eventos y contadores, persona con zona y etiqueta, JPEG con cabecera de secuencia
+y métricas (`fps`, `processing_ms`, `dropped_frames`, `age_seconds`) coherentes.
+El contador `vision_core_events_emitted_total` y el histograma de inferencia se
+leen desde un `ObservabilityMetrics` fresco inyectado en el composition root.
+El detector, ReID y extractor son fakes; el video es archivo local.
 
 ## CI y artefactos
 
 - `ci.yml`: instala dependencias, ejecuta unit + integración con cobertura,
   verifica umbrales globales y por módulo, y sube `coverage-pr` (XML, JSON y HTML)
-  siempre. En fallo sube `pytest-pr-logs`.
+  siempre. En fallo sube `pytest-pr-logs`. El job `smoke` ejecuta `-m smoke`,
+  publica un resumen y sube `performance-smoke.json` y `pytest-smoke.log`.
 - `e2e.yml`: `schedule` diario y `workflow_dispatch` manual. Ejecuta solo `-m slow`
   y sube `pytest-e2e-logs` siempre.
+- `benchmark.yml`: `schedule` nocturno y `workflow_dispatch` manual. Genera video
+  sintético, ejecuta el pipeline con presupuestos estrictos, compara contra
+  baseline, publica el resumen en el job y sube JSON/CSV/Markdown y logs.
 - El job `build` solo compila; `lint.yml` mantiene Ruff y formato.
+
+Los presupuestos, la metodología y los hotspots están en
+[performance.md](performance.md).
 
 Las pruebas reales optativas con cámara, modelos pesados o CUDA siguen fuera de
 estos jobs y se documentan en [validation.md](validation.md).

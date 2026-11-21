@@ -1,7 +1,13 @@
 PYTHON = $(if $(wildcard .venv/bin/python),.venv/bin/python,python)
 PIP = .venv/bin/python -m pip
+SCENARIO ?= synthetic-cpu-320x240
+BENCHMARK_DIR ?= benchmark-data/$(SCENARIO)
+BENCHMARK_FRAMES ?= 450
+BENCHMARK_FPS ?= 15
+BENCHMARK_WIDTH ?= 320
+BENCHMARK_HEIGHT ?= 240
 
-.PHONY: setup test lint format format-check run docker-build synthetic clean
+.PHONY: setup test lint format format-check run docker-build synthetic clean coverage smoke integration e2e benchmark
 
 setup:
 	@python3 -m venv .venv
@@ -17,6 +23,34 @@ setup:
 
 test:
 	@$(PYTHON) -m pytest -q
+
+coverage:
+	@$(PYTHON) -m pytest -q -m "not slow" \
+		--cov=vision_core --cov-branch \
+		--cov-report=term-missing \
+		--cov-report=xml:coverage.xml \
+		--cov-report=json:coverage.json \
+		--cov-report=html:htmlcov \
+		--cov-fail-under=80
+	@$(PYTHON) -m vision_core.scripts.check_coverage coverage.json
+
+smoke:
+	@$(PYTHON) -m pytest -q -m smoke
+
+integration:
+	@$(PYTHON) -m pytest -q -m integration
+
+e2e:
+	@$(PYTHON) -m pytest -q -m slow
+
+benchmark:
+	@$(PYTHON) -m vision_core.scripts.create_benchmark_video $(BENCHMARK_DIR) \
+		--frames $(BENCHMARK_FRAMES) --fps $(BENCHMARK_FPS) \
+		--width $(BENCHMARK_WIDTH) --height $(BENCHMARK_HEIGHT) --allow-existing
+	@$(PYTHON) -m vision_core.scripts.benchmark_nightly \
+		--scenario $(SCENARIO) --video $(BENCHMARK_DIR)/benchmark.avi \
+		--zones $(BENCHMARK_DIR)/zones.json --scene $(BENCHMARK_DIR)/scene.json \
+		--output benchmark-$(SCENARIO).json --fail-on-budget
 
 lint:
 	@$(PYTHON) -m ruff check .

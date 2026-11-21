@@ -163,7 +163,9 @@ def _run_monitor_js(state, driver):
     parser.feed(INDEX.read_text(encoding="utf-8"))
     script = "".join(parser.parts)
     program = DOM_HARNESS + f"\nglobalThis.__STATE__ = {json.dumps(state)};\n" + script + "\n" + driver
-    result = subprocess.run(["node", "-e", program], capture_output=True, text=True, timeout=15, check=False)
+    result = subprocess.run(
+        ["node", "-e", program], capture_output=True, text=True, encoding="utf-8", timeout=15, check=False
+    )
     assert result.returncode == 0, f"El renderizado JS falló: {result.stderr}"
     return result.stdout.strip()
 

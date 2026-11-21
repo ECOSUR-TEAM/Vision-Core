@@ -72,6 +72,14 @@ delta del acumulado de la captura, no el total en cada frame.
 2. Busca el log con `level=ERROR` y `error_code`.
 3. Verifica `VISION_CORE_MODEL_PATH`, formato del archivo y peso disponible localmente.
 
+## Benchmark
+
+El benchmark nocturno guarda un snapshot de estos contadores e histogramas como
+telemetría de apoyo y usa `FrameProfiler` para el gate de presupuestos. El e2e
+con `ObservabilityMetrics` fresco comprueba `vision_core_events_emitted_total` y
+`vision_core_inference_latency_ms` a través de `/metrics`. Consulta
+[performance.md](performance.md) para las cifras y los hotspots.
+
 ## Variables
 
 - `VISION_CORE_LOG_LEVEL`: `CRITICAL`, `ERROR`, `WARNING`, `INFO` o `DEBUG`

@@ -7,6 +7,9 @@ All notable changes to this project are documented here using
 
 ### Added
 - Automated semantic versioning, changelog extraction and GitHub Releases.
+- Performance budgets, deterministic synthetic-video benchmark, baseline comparison and nightly workflow.
+- Integration/e2e coverage for the synthetic pipeline and monitor health/metrics endpoints.
+- PR performance smoke test with wide thresholds and per-module coverage thresholds.
 
 ### Changed
 - Docker and CI workflows publish and validate versioned artifacts.

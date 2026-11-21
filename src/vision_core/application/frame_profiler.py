@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from time import perf_counter
 
-STAGES = ("decode", "detection", "embedding", "reid_tracking", "analytics", "frame_total")
+STAGES = ("decode", "detection", "embedding", "reid_tracking", "analytics", "serialization", "frame_total")
 
 
 def _percentile(samples: list[float], quantile: float) -> float:

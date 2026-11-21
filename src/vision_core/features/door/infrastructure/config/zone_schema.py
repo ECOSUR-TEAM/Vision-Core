@@ -29,7 +29,7 @@ def load_validated_zone_document(path: str | Path) -> dict[str, Any]:
 
     if size > MAX_CONFIG_FILE_BYTES:
         raise ZoneConfigurationError(
-            f"el archivo de zonas '{source}' supera el límite de {MAX_CONFIG_FILE_BYTES} bytes " f"(tiene {size} bytes)"
+            f"el archivo de zonas '{source}' supera el límite de {MAX_CONFIG_FILE_BYTES} bytes (tiene {size} bytes)"
         )
 
     try:

@@ -10,7 +10,9 @@ de firewall. Consulta [la guía de arranque](startup.md).
 
 - Equipo con Python/PyTorch/torchvision compatibles, CPU y memoria suficientes para
   cargar YOLOv8n y el extractor. No hay mínimo RAM/CPU ni FPS garantizados medidos
-  en la sala. Considera además el coste independiente de Frigate si comparte host.
+  en la sala. Los [presupuestos sintéticos](performance.md) detectan regresiones
+  del pipeline, pero no sustituyen una medición con la cámara real. Considera
+  además el coste independiente de Frigate si comparte host.
 - Espacio para entorno Python, pesos y videos. El tamaño depende de las versiones,
   duración y resolución; CUDA instala dependencias adicionales.
 - GPU opcional: NVIDIA con driver, PyTorch CUDA y acceso al dispositivo para el

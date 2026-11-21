@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=78.1.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -19,6 +19,10 @@ testpaths = ["tests"]
 addopts = "--import-mode=importlib"
 markers = [
     "slow: pruebas e2e pesadas; se ejecutan en nightly o workflow manual",
+    "smoke: prueba de humo de rendimiento con umbral amplio en cada PR",
+    "integration: prueba de integración del pipeline con video sintético",
+    "e2e: prueba de punta a punta del monitor con servidor HTTP local",
+    "performance: análisis de presupuestos, regresiones y generador sintético",
 ]
 
 [tool.coverage.run]

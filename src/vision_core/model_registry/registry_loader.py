@@ -6,10 +6,10 @@ from typing import Any
 
 import yaml
 
+from vision_core.core.errors import ConfigurationError
 from vision_core.model_registry.model_descriptor import ModelDescriptor
 from vision_core.model_registry.model_registry import ModelRegistry
 from vision_core.model_registry.unique_key_loader import UniqueKeySafeLoader
-from vision_core.shared.errors import ConfigurationError
 
 SUPPORTED_SCHEMA_VERSION = "1.0"
 MAX_REGISTRY_FILE_BYTES = 256 * 1024

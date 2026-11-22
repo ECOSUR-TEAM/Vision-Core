@@ -11,9 +11,9 @@ from urllib.request import urlopen
 
 import pytest
 
+from vision_core.core.domain.event import Event
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.features.monitor.infrastructure.state import MonitorState
-from vision_core.shared.domain.event import Event
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_ROOTS = (

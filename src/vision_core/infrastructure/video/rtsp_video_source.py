@@ -9,14 +9,14 @@ from urllib.parse import urlsplit
 import cv2
 import numpy as np
 
-from vision_core.domain.ports import VideoSource
-from vision_core.settings import Settings
-from vision_core.shared.errors import (
+from vision_core.core.errors import (
     ConfigurationError,
     VideoSourceError,
     VideoSourceStateError,
     VisionCoreError,
 )
+from vision_core.domain.ports import VideoSource
+from vision_core.settings import Settings
 
 from .frame_validation import validate_frame
 

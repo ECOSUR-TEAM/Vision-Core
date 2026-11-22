@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from vision_core.shared.errors import VisionCoreError, codes
+from vision_core.core.errors import VisionCoreError, codes
 
 _STATUS_BY_CODE = {
     codes.CONFIGURATION_INVALID: 500,

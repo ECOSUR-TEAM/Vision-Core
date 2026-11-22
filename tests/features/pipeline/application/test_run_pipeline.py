@@ -5,12 +5,12 @@ from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.core.domain.bbox import BBox
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.infrastructure.reid import memory_reid
 from vision_core.infrastructure.reid.memory_reid import InMemoryReID
-from vision_core.shared.domain.bbox import BBox
 
 
 def test_run_emits_event_per_frame():

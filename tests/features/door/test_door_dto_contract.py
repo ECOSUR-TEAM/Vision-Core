@@ -4,15 +4,15 @@ from typing import get_type_hints
 
 import pytest
 
+from vision_core.core.domain.event import Event
+from vision_core.core.domain.event_type import EventType
+from vision_core.core.dto import EventPayload, ObservationPayload
+from vision_core.core.serialization import dumps_json
 from vision_core.features.door.application.dto.request.request_get_history import RequestGetHistory
 from vision_core.features.door.application.dto.request.request_update import RequestUpdate
 from vision_core.features.door.application.dto.response.response_get_history import ResponseGetHistory
 from vision_core.features.door.application.dto.response.response_update import ResponseUpdate
 from vision_core.features.door.application.mappers.door_mapper import event_to_dto
-from vision_core.shared.application.dto import EventPayload, ObservationPayload
-from vision_core.shared.application.dto.serialization import dumps_json
-from vision_core.shared.domain.event import Event
-from vision_core.shared.domain.event_type import EventType
 
 DTO_CLASSES = (RequestGetHistory, RequestUpdate, ResponseGetHistory, ResponseUpdate)
 

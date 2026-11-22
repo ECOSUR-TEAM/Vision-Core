@@ -13,9 +13,9 @@ from typing import Any, cast
 
 import numpy as np
 
-from vision_core.shared.application.dto.bbox_payload import BBoxPayload
-from vision_core.shared.application.dto.json_value import JSONValue
-from vision_core.shared.application.dto.serialization import to_json_value
+from vision_core.core.dto.bbox_payload import BBoxPayload
+from vision_core.core.serialization import to_json_value
+from vision_core.core.serialization.json_value import JSONValue
 
 _BBOX_FIELDS = ("x1", "y1", "x2", "y2")
 

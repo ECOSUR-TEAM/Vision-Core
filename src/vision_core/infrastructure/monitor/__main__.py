@@ -4,10 +4,10 @@ import argparse
 import signal
 from pathlib import Path
 
+from vision_core.core.telemetry.structured_logging import configure_structured_logging
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.model_registry.activation import resolve_active_models
 from vision_core.settings import Settings
-from vision_core.shared.observability.structured_logging import configure_structured_logging
 
 
 def main(*, state=None, build_state=None, build_runtime=None, config=None):

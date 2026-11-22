@@ -2,10 +2,10 @@ import math
 import time
 from collections import deque
 
+from vision_core.core.errors import ValidationError, ZoneConfigurationError, codes
 from vision_core.domain.model.event import Event
 from vision_core.domain.model.polygon import Polygon
 from vision_core.domain.ports import DoorAnalytics
-from vision_core.shared.errors import ValidationError, ZoneConfigurationError, codes
 
 from .geometry import on_segment
 from .polygon_validation import validate_polygon

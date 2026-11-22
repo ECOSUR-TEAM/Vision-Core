@@ -2,11 +2,11 @@ import sys
 
 import pytest
 
+from vision_core.core.domain.bbox import BBox
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 from vision_core.features.video.infrastructure.adapters.file_video_source import FileVideoSource
 from vision_core.scripts.create_pipeline_sample import main as create_pipeline_sample
-from vision_core.shared.domain.bbox import BBox
 
 FRAME_COUNT = 35
 EXPECTED_EVENTS = (

@@ -66,15 +66,14 @@ main.py                         # composition root / entrypoint (raíz, obligato
 src/
   vision_core/
     settings.py                 # env/config
-    shared/
+    core/
       domain/
         bbox.py
         polygon.py
         event.py
         event_type.py
-      application/
-        dto/
-          base.py               # base/protocolos opcionales
+      dto/
+        base.py                 # base/protocolos opcionales
     features/
       detection/
         application/
@@ -218,15 +217,15 @@ son código del feature y permanecen fuera de `src/vision_core/`.
   devolviendo payloads tipados. Un mapper no importa adaptadores concretos y
   valida finitud/rango antes de convertir.
 - La lista blanca de imports es: stdlib/`typing`, re-exports del propio paquete
-  `application/dto` y `shared/application/dto`. Todo lo demás (dominio,
-  infraestructura, frameworks de visión u otros features) queda fuera del DTO.
-- La serialización JSON usa `shared/application/dto/serialization.py`
+  `application/dto` y `core/dto`. Todo lo demás (dominio, infraestructura,
+  frameworks de visión u otros features) queda fuera del DTO.
+- La serialización JSON usa `core/serialization/serialization.py`
   (`to_json_value`/`dumps_json`, con `allow_nan=False`). Los payloads binarios
   viajan como `bytes`, se sirven como `image/jpeg` y `to_json_value` los
   sustituye por `null` en JSON; su contenido binario nunca viaja en ese JSON.
 - No existe un `dto/` global de operaciones. Los payloads compartidos por
   varios slices (bbox, event, observation, track, monitor person) viven en
-  `shared/application/dto/` para no duplicar el contrato en cada feature.
+  `core/dto/` para no duplicar el contrato en cada feature.
 
 La guía practica y los ejemplos de esta convención están en
 [`docs/architecture.md`](../architecture.md#convención-dto).
@@ -237,7 +236,7 @@ dominio no cruzan ese borde.
 
 ### Reglas de dependencia
 
-1. `shared/` no importa `features/`.
+1. `core/` no importa `features/` ni `scripts/`.
 2. `features/<X>/domain` no importa `application` ni `infrastructure`.
 3. `features/<X>/application` no importa `infrastructure`.
 4. `features/<X>` no importa `features/<Y>/infrastructure`; solo puede usar
@@ -246,7 +245,7 @@ dominio no cruzan ese borde.
    cada feature y cablea todo.
 6. No se permiten ciclos de imports.
 
-Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
+Si un tipo se usa en un solo feature, no va a `core/`. `core/` contiene
 únicamente kernel compartido por varios slices.
 
 ### Inyección de dependencias
@@ -277,7 +276,7 @@ Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
 
 | Slice | Ticket de migración | Estado |
 |---|---|---|
-| `shared/` | ECM-60 | Definido; ver mapa de migración |
+| `core/` | ECM-105 / ECM-106 | Migrado; ver ADR 0008 |
 | `features/detection/` | ECM-61 | Definido; ver mapa de migración |
 | `features/door/` | ECM-64 | Definido; ver mapa de migración |
 | `features/monitor/` | ECM-65 | Definido; ver mapa de migración |
@@ -360,11 +359,11 @@ la limpieza final.
 
 | Archivo viejo | Archivo nuevo | Ticket |
 |---|---|---|
-| `domain/model/bbox.py` | `src/vision_core/shared/domain/bbox.py` | ECM-60 |
-| `domain/model/event.py` | `src/vision_core/shared/domain/event.py` | ECM-60 |
-| `domain/model/event_type.py` | `src/vision_core/shared/domain/event_type.py` | ECM-60 |
-| `domain/model/polygon.py` | `src/vision_core/shared/domain/polygon.py` | ECM-60 |
-| `domain/types.py` | shim temporal; `Frame`/`Embedding` se ubican en el slice que los use o en `shared/domain/types.py` solo si varios slices los usan | propuesto |
+| `domain/model/bbox.py` | `src/vision_core/core/domain/bbox.py` | ECM-60 / ECM-106 |
+| `domain/model/event.py` | `src/vision_core/core/domain/event.py` | ECM-60 / ECM-106 |
+| `domain/model/event_type.py` | `src/vision_core/core/domain/event_type.py` | ECM-60 / ECM-106 |
+| `domain/model/polygon.py` | `src/vision_core/core/domain/polygon.py` | ECM-60 / ECM-106 |
+| `domain/types.py` | `Frame`/`Embedding` se ubican en el slice que los use o en `src/vision_core/core/domain/types.py` solo si varios slices los usan | propuesto |
 | `domain/attendance.py` | `src/vision_core/features/reid/domain/entities/session_attendance.py` | propuesto |
 | `domain/model/__init__.py`, `domain/ports/__init__.py` | `__init__.py` de los paquetes nuevos | ECM-60 |
 
@@ -463,7 +462,7 @@ la limpieza final.
 | `config/zones.example.json`, `config/frigate.*.yml` | permanecen en `config/` (datos estáticos de ejemplo, nunca dentro de un feature) | sin cambio |
 | `tests/application/test_vision_core_app.py` | `tests/features/pipeline/test_run_pipeline.py` | propuesto |
 | `tests/application/test_event_serializer.py` | `tests/features/pipeline/application/test_pipeline_mapper.py` | ECM-67 |
-| `tests/domain/test_event.py`, `tests/test_event.py` | `tests/shared/domain/test_event.py` (se consolida duplicado) | ECM-60 |
+| `tests/domain/test_event.py`, `tests/test_event.py` | `tests/core/domain/test_event.py` (se consolida duplicado) | ECM-60 / ECM-106 |
 | `tests/domain/test_attendance.py` | `tests/features/reid/test_session_attendance.py` | propuesto |
 | `tests/infrastructure/detection/*` | `tests/features/detection/*` | ECM-61 |
 | `tests/infrastructure/door/*` | `tests/features/door/*` | ECM-64 |

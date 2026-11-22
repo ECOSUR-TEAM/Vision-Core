@@ -2,7 +2,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from vision_core.shared.domain.event_type import EventType
+from vision_core.core.domain.event_type import EventType
 
 
 @dataclass

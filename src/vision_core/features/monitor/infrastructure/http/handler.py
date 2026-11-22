@@ -16,12 +16,12 @@ from http.server import BaseHTTPRequestHandler
 from typing import TYPE_CHECKING, cast
 from urllib.parse import SplitResult, parse_qs, urlsplit
 
+from vision_core.core.errors import ValidationError, VisionCoreError, codes
+from vision_core.core.serialization import dumps_json
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
 from vision_core.features.monitor.infrastructure.http.api import API_PREFIX, LEGACY_PREFIX
 from vision_core.features.monitor.infrastructure.http.error_response import describe_error, error_envelope
-from vision_core.shared.application.dto.serialization import dumps_json
-from vision_core.shared.errors import ValidationError, VisionCoreError, codes
 
 _LOGGER = logging.getLogger(__name__)
 

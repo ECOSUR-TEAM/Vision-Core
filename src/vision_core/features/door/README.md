@@ -6,7 +6,7 @@ The door feature keeps zone-crossing behavior behind a domain port.
 - `application/` exposes `UpdateZone` and `GetHistory` through immutable DTOs.
 - `infrastructure/` contains polygon analytics, zone configuration, validation,
   loading, and dependency construction.
-- Shared `Polygon` and `Event` types come from `vision_core.shared`.
+- Shared `Polygon` and `Event` types come from `vision_core.core.domain`.
 
 The same three-layer structure is used by the detection pilot and should be
 preserved by future vertical slices.

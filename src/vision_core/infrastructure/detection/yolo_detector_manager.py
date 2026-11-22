@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, cast
 import numpy as np
 import torch
 
+from vision_core.core.errors import ModelError, ValidationError, codes
+from vision_core.core.inference.tensor_boxes import iter_prediction_boxes
 from vision_core.domain.model.bbox import BBox
 from vision_core.domain.model.detection import Detection
 from vision_core.domain.ports import DetectorManager
-from vision_core.shared.errors import ModelError, ValidationError, codes
-from vision_core.shared.inference.tensor_boxes import iter_prediction_boxes
 
 from .motion_tracker import MotionTracker
 

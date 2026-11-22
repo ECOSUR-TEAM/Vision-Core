@@ -8,7 +8,7 @@ MODULES = {
     "monitor": (("/features/monitor/",), 85.0),
     "application": (("/features/", "/application/"), 90.0),
     "profiling": (("/application/frame_profiler.py",), 90.0),
-    "observability": (("/shared/observability/",), 85.0),
+    "observability": (("/core/telemetry/",), 85.0),
     "global": ((), 80.0),
 }
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from vision_core.shared.domain.polygon import Polygon
+from vision_core.core.domain.polygon import Polygon
 
 
 @dataclass(frozen=True)

@@ -8,10 +8,10 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from vision_core.core.errors import ConfigurationError, ReIDError, codes
 from vision_core.domain.model.bbox import BBox
 from vision_core.domain.ports import ReIDMemory
 from vision_core.settings import Settings
-from vision_core.shared.errors import ConfigurationError, ReIDError, codes
 
 TTL_SECONDS = 60
 SIMILARITY_THRESHOLD = 0.85

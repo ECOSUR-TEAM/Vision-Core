@@ -1,7 +1,7 @@
 """Fallo durante la orquestación del pipeline de visión."""
 
-from vision_core.shared.errors.codes import PIPELINE_FAILED
-from vision_core.shared.errors.vision_core_error import VisionCoreError
+from vision_core.core.errors.codes import PIPELINE_FAILED
+from vision_core.core.errors.vision_core_error import VisionCoreError
 
 
 class PipelineError(VisionCoreError, RuntimeError):

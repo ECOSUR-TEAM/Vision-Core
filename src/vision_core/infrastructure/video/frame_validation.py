@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from vision_core.shared.errors import ValidationError, codes
+from vision_core.core.errors import ValidationError, codes
 
 
 def validate_frame(frame: np.ndarray, expected_size=None) -> None:

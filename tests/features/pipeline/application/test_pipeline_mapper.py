@@ -2,10 +2,10 @@ import json
 
 import numpy as np
 
+from vision_core.core.domain.event import Event
+from vision_core.core.domain.event_type import EventType
+from vision_core.core.serialization import EVENT_SCHEMA_VERSION
 from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json, event_to_json_dict
-from vision_core.shared.domain.event import Event
-from vision_core.shared.domain.event_type import EventType
-from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 
 def test_event_to_json_dict_preserves_public_contract():

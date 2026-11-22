@@ -2,6 +2,8 @@ import json
 
 import numpy as np
 
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.serialization import dumps_json
 from vision_core.features.detection.application.mappers.detection_mapper import (
     detection_from_dto,
     detection_to_dto,
@@ -9,8 +11,6 @@ from vision_core.features.detection.application.mappers.detection_mapper import 
     response_to_detections,
 )
 from vision_core.features.detection.domain.entities.detection import Detection
-from vision_core.shared.application.dto.serialization import dumps_json
-from vision_core.shared.domain.bbox import BBox
 
 
 def test_detection_mapper_round_trips_domain_entity():

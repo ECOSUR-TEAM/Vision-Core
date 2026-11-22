@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from vision_core.core.errors import ZoneConfigurationError
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones as load_zones_feature
 from vision_core.features.door.infrastructure.config.zone_schema import (
@@ -13,7 +14,6 @@ from vision_core.features.door.infrastructure.config.zone_schema import (
 )
 from vision_core.infrastructure.door.zone_config import ZoneConfig
 from vision_core.infrastructure.door.zone_loader import load_zones
-from vision_core.shared.errors import ZoneConfigurationError
 
 EXAMPLE = Path(__file__).resolve().parents[3] / "config" / "zones.example.json"
 LOADERS = (load_zones, load_zones_feature)

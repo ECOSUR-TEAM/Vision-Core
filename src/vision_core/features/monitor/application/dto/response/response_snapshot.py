@@ -1,9 +1,9 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from vision_core.shared.application.dto.event_payload import EventPayload
-from vision_core.shared.application.dto.json_value import JSONValue
-from vision_core.shared.application.dto.monitor_person_payload import MonitorPersonPayload
+from vision_core.core.dto import JSONValue
+from vision_core.core.dto.event_payload import EventPayload
+from vision_core.core.dto.monitor_person_payload import MonitorPersonPayload
 
 
 @dataclass(frozen=True, slots=True)

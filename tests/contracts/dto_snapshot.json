@@ -1,0 +1,940 @@
+[
+  {
+    "class": "RequestDetector",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "frame",
+        "type": "<class 'vision_core.shared.application.dto.frame_like.FrameLike'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.detection.application.dto.request.request_detector",
+    "slots": true
+  },
+  {
+    "class": "DetectionPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "bbox",
+        "type": "<class 'vision_core.shared.application.dto.bbox_payload.BBoxPayload'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "class_id",
+        "type": "<class 'int'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "confidence",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "track_id",
+        "type": "int | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.detection.application.dto.response.response_detector",
+    "slots": true
+  },
+  {
+    "class": "ResponseDetector",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "detections",
+        "type": "tuple[vision_core.shared.application.dto.detection_payload.DetectionPayload, ...]"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.detection.application.dto.response.response_detector",
+    "slots": true
+  },
+  {
+    "class": "RequestGetHistory",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.door.application.dto.request.request_get_history",
+    "slots": true
+  },
+  {
+    "class": "RequestUpdate",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "position",
+        "type": "tuple[float, float]"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.door.application.dto.request.request_update",
+    "slots": true
+  },
+  {
+    "class": "ObservationPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "position",
+        "type": "tuple[float, float]"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "zone",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "timestamp",
+        "type": "<class 'float'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.door.application.dto.response.response_get_history",
+    "slots": true
+  },
+  {
+    "class": "ResponseGetHistory",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "observations",
+        "type": "tuple[vision_core.shared.application.dto.observation_payload.ObservationPayload, ...]"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.door.application.dto.response.response_get_history",
+    "slots": true
+  },
+  {
+    "class": "EventPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "event",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "timestamp",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "metadata",
+        "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]]"
+      },
+      {
+        "default": "'1.0.0'",
+        "default_factory": false,
+        "name": "schema_version",
+        "type": "<class 'str'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.door.application.dto.response.response_update",
+    "slots": true
+  },
+  {
+    "class": "ResponseUpdate",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "event",
+        "type": "vision_core.shared.application.dto.event_payload.EventPayload | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.door.application.dto.response.response_update",
+    "slots": true
+  },
+  {
+    "class": "RequestFrame",
+    "fields": [
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "after",
+        "type": "int | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.monitor.application.dto.request.request_frame",
+    "slots": true
+  },
+  {
+    "class": "RequestSnapshot",
+    "fields": [],
+    "frozen": true,
+    "module": "vision_core.features.monitor.application.dto.request.request_snapshot",
+    "slots": true
+  },
+  {
+    "class": "ResponseFrame",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "jpeg",
+        "type": "bytes | None"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "sequence",
+        "type": "<class 'int'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.monitor.application.dto.response.response_frame",
+    "slots": true
+  },
+  {
+    "class": "EventPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "event",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "timestamp",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "metadata",
+        "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]]"
+      },
+      {
+        "default": "'1.0.0'",
+        "default_factory": false,
+        "name": "schema_version",
+        "type": "<class 'str'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.monitor.application.dto.response.response_snapshot",
+    "slots": true
+  },
+  {
+    "class": "MonitorPersonPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "bbox",
+        "type": "vision_core.shared.application.dto.bbox_payload.BBoxPayload | None"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "confidence",
+        "type": "float | None"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "track_id",
+        "type": "int | None"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "zone",
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "display_name",
+        "type": "str | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.monitor.application.dto.response.response_snapshot",
+    "slots": true
+  },
+  {
+    "class": "ResponseSnapshot",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "status",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "error",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "demo_zones",
+        "type": "<class 'bool'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "frame",
+        "type": "<class 'int'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "updated_at",
+        "type": "float | None"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "age_seconds",
+        "type": "float | None"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "people",
+        "type": "tuple[vision_core.shared.application.dto.monitor_person_payload.MonitorPersonPayload, ...]"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "events",
+        "type": "tuple[vision_core.shared.application.dto.event_payload.EventPayload, ...]"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "counts",
+        "type": "collections.abc.Mapping[str, int]"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "processing_ms",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "fps",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "dropped_frames",
+        "type": "<class 'int'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "persistence",
+        "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]] | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.monitor.application.dto.response.response_snapshot",
+    "slots": true
+  },
+  {
+    "class": "RequestProcessFrame",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "frame",
+        "type": "<class 'vision_core.shared.application.dto.frame_like.FrameLike'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.pipeline.application.dto.request.request_process_frame",
+    "slots": true
+  },
+  {
+    "class": "RequestRunPipeline",
+    "fields": [
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "expected_frame_size",
+        "type": "tuple[int, int] | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.pipeline.application.dto.request.request_run_pipeline",
+    "slots": true
+  },
+  {
+    "class": "ResponsePipelineEvent",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "event",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "timestamp",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "metadata",
+        "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]]"
+      },
+      {
+        "default": "'1.0.0'",
+        "default_factory": false,
+        "name": "schema_version",
+        "type": "<class 'str'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.pipeline.application.dto.response.response_pipeline_event",
+    "slots": true
+  },
+  {
+    "class": "ResolvedTrackPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "bbox",
+        "type": "<class 'vision_core.shared.application.dto.bbox_payload.BBoxPayload'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "confidence",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "track_id",
+        "type": "int | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.pipeline.application.dto.response.response_process_frame",
+    "slots": true
+  },
+  {
+    "class": "ResponsePipelineEvent",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "event",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "timestamp",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "metadata",
+        "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]]"
+      },
+      {
+        "default": "'1.0.0'",
+        "default_factory": false,
+        "name": "schema_version",
+        "type": "<class 'str'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.pipeline.application.dto.response.response_process_frame",
+    "slots": true
+  },
+  {
+    "class": "ResponseProcessFrame",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "people",
+        "type": "tuple[vision_core.shared.application.dto.resolved_track_payload.ResolvedTrackPayload, ...]"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "events",
+        "type": "tuple[vision_core.features.pipeline.application.dto.response.response_pipeline_event.ResponsePipelineEvent, ...]"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "processing_ms",
+        "type": "<class 'float'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.pipeline.application.dto.response.response_process_frame",
+    "slots": true
+  },
+  {
+    "class": "RequestCloseVideo",
+    "fields": [],
+    "frozen": true,
+    "module": "vision_core.features.video.application.dto.request.request_close_video",
+    "slots": true
+  },
+  {
+    "class": "RequestOpenVideo",
+    "fields": [],
+    "frozen": true,
+    "module": "vision_core.features.video.application.dto.request.request_open_video",
+    "slots": true
+  },
+  {
+    "class": "RequestReadFrame",
+    "fields": [],
+    "frozen": true,
+    "module": "vision_core.features.video.application.dto.request.request_read_frame",
+    "slots": true
+  },
+  {
+    "class": "ResponseCloseVideo",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "closed",
+        "type": "<class 'bool'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.video.application.dto.response.response_close_video",
+    "slots": true
+  },
+  {
+    "class": "ResponseOpenVideo",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "opened",
+        "type": "<class 'bool'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.video.application.dto.response.response_open_video",
+    "slots": true
+  },
+  {
+    "class": "ResponseReadFrame",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "frame_png",
+        "type": "bytes | None"
+      },
+      {
+        "default": "0",
+        "default_factory": false,
+        "name": "width",
+        "type": "<class 'int'>"
+      },
+      {
+        "default": "0",
+        "default_factory": false,
+        "name": "height",
+        "type": "<class 'int'>"
+      },
+      {
+        "default": "'png'",
+        "default_factory": false,
+        "name": "format",
+        "type": "<class 'str'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.video.application.dto.response.response_read_frame",
+    "slots": true
+  },
+  {
+    "class": "BBoxPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "x1",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "y1",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "x2",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "y2",
+        "type": "<class 'float'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.shared.application.dto.bbox_payload",
+    "slots": true
+  },
+  {
+    "class": "BBoxPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "x1",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "y1",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "x2",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "y2",
+        "type": "<class 'float'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.shared.application.dto.detection_payload",
+    "slots": true
+  },
+  {
+    "class": "DetectionPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "bbox",
+        "type": "<class 'vision_core.shared.application.dto.bbox_payload.BBoxPayload'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "class_id",
+        "type": "<class 'int'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "confidence",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "track_id",
+        "type": "int | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.shared.application.dto.detection_payload",
+    "slots": true
+  },
+  {
+    "class": "EventPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "event",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "timestamp",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "metadata",
+        "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]]"
+      },
+      {
+        "default": "'1.0.0'",
+        "default_factory": false,
+        "name": "schema_version",
+        "type": "<class 'str'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.shared.application.dto.event_payload",
+    "slots": true
+  },
+  {
+    "class": "BBoxPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "x1",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "y1",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "x2",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "y2",
+        "type": "<class 'float'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.shared.application.dto.monitor_person_payload",
+    "slots": true
+  },
+  {
+    "class": "MonitorPersonPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "bbox",
+        "type": "vision_core.shared.application.dto.bbox_payload.BBoxPayload | None"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "confidence",
+        "type": "float | None"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "track_id",
+        "type": "int | None"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "zone",
+        "type": "str | None"
+      },
+      {
+        "default": "None",
+        "default_factory": false,
+        "name": "display_name",
+        "type": "str | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.shared.application.dto.monitor_person_payload",
+    "slots": true
+  },
+  {
+    "class": "ObservationPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "position",
+        "type": "tuple[float, float]"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "zone",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "timestamp",
+        "type": "<class 'float'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.shared.application.dto.observation_payload",
+    "slots": true
+  },
+  {
+    "class": "BBoxPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "x1",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "y1",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "x2",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "y2",
+        "type": "<class 'float'>"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.shared.application.dto.resolved_track_payload",
+    "slots": true
+  },
+  {
+    "class": "ResolvedTrackPayload",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "person_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "bbox",
+        "type": "<class 'vision_core.shared.application.dto.bbox_payload.BBoxPayload'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "confidence",
+        "type": "<class 'float'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "track_id",
+        "type": "int | None"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.shared.application.dto.resolved_track_payload",
+    "slots": true
+  }
+]

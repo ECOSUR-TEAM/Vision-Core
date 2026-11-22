@@ -413,7 +413,9 @@ La estructura Vertical Slice y Screaming Architecture está registrada en
 y retención en [ADR 0002](docs/adr/0002-persistence-and-retention.md); el modelo de
 ejecución multi-cámara y la decisión condicional de ReID compartido, en
 [ADR 0003](docs/adr/0003-modelo-ejecucion-multi-camara.md); el registro de modelos y
-model cards, en [ADR 0007](docs/adr/0007-registro-de-modelos-y-model-cards.md).
+model cards, en [ADR 0007](docs/adr/0007-registro-de-modelos-y-model-cards.md); y el
+contrato de capas `features/`, `core/` y `scripts/`, en
+[ADR 0008](docs/adr/0008-core-layer-and-dependency-rules.md).
 
 ## Convención: una clase por archivo
 
@@ -490,7 +492,7 @@ de PR publica cobertura y el nightly publica logs. Consulta:
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
 - [Diagramas C4 y flujo](docs/diagrams.md) y [runbooks](docs/runbooks/README.md).
 - [Type checking con mypy](docs/type-checking.md).
-- [Decisiones de arquitectura](docs/adr/README.md) ([0001](docs/adr/0001-screaming-architecture-vertical-slice.md), [0002](docs/adr/0002-persistence-and-retention.md), [0003](docs/adr/0003-modelo-ejecucion-multi-camara.md), [0004](docs/adr/0004-configuracion-tipada-y-validacion-de-entorno.md), [0005](docs/adr/0005-observabilidad-y-contratos-versionados.md), [0006](docs/adr/0006-versionado-y-releases.md) y [0007](docs/adr/0007-registro-de-modelos-y-model-cards.md)).
+- [Decisiones de arquitectura](docs/adr/README.md) ([0001](docs/adr/0001-screaming-architecture-vertical-slice.md), [0002](docs/adr/0002-persistence-and-retention.md), [0003](docs/adr/0003-modelo-ejecucion-multi-camara.md), [0004](docs/adr/0004-configuracion-tipada-y-validacion-de-entorno.md), [0005](docs/adr/0005-observabilidad-y-contratos-versionados.md), [0006](docs/adr/0006-versionado-y-releases.md), [0007](docs/adr/0007-registro-de-modelos-y-model-cards.md) y [0008](docs/adr/0008-core-layer-and-dependency-rules.md)).
 - [Registro de modelos, upgrade y rollback](docs/model-registry.md) y [model cards](docs/model-cards/TEMPLATE.md).
 - [Persistencia, retención y backup](docs/persistence.md).
 - [Orquestación y cierre](docs/operations.md).

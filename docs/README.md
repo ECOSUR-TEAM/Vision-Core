@@ -22,6 +22,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 |---|---|
 | [Índice de ADR](adr/README.md) | Todas las decisiones de arquitectura, su estado y sus enmiendas |
 | [ADR 0007: registro de modelos](adr/0007-registro-de-modelos-y-model-cards.md) | Identidad, checksum y trazabilidad de modelos |
+| [ADR 0008: capa core](adr/0008-core-layer-and-dependency-rules.md) | Contrato de dependencias entre `features/`, `core/` y `scripts/` |
 | [Plantilla de ADR](adr/_template.md) | Cómo registrar una decisión nueva |
 
 ## Operación
@@ -80,3 +81,4 @@ hecha hasta que esa persona la confirme.
 | ECM-84: ADR 0004-0006, diagramas, runbooks, onboarding y glosario | Autor del PR ECM-84 | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-85: proceso de PR, CODEOWNERS y DoD | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-99: registro de modelos y model cards | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-105: ADR 0008 y contrato de capas | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |

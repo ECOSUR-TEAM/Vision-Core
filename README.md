@@ -54,6 +54,22 @@ make run
 La guía completa, Dev Container, perfiles de Compose y troubleshooting están en
 [docs/development.md](docs/development.md).
 
+## Documentación viva
+
+El mapa completo y el estado de revisión están en
+[docs/README.md](docs/README.md). Empieza por la
+[guía de onboarding](docs/onboarding.md) y el
+[glosario](docs/glossary.md).
+
+- [Diagramas C4 y flujo de datos en Mermaid](docs/diagrams.md).
+- [Decisiones de arquitectura](docs/adr/README.md), incluidas
+  [configuración](docs/adr/0004-configuracion-tipada-y-validacion-de-entorno.md),
+  [observabilidad](docs/adr/0005-observabilidad-y-contratos-versionados.md) y
+  [releases](docs/adr/0006-versionado-y-releases.md).
+- [Runbooks de incidentes](docs/runbooks/README.md): cámara, modelo, disco,
+  FPS, eventos, arranque y rollback.
+- Cada feature enlaza su documentación desde su propio `README.md`.
+
 ## Instalación local (Linux, Bash)
 
 El proyecto declara Python ≥3.11; para una instalación nueva usa Python 3.11 o
@@ -251,8 +267,9 @@ de calibrar. La aplicación falla si el tamaño del frame difiere de `frame_size
 python main.py
 ```
 
-Los eventos se imprimen como JSON en stdout; los diagnósticos de bibliotecas pueden
-compartir esa salida. Para un registro estructurado de pruebas usa el runner:
+Los eventos se publican en el estado del monitor, se registran como logs
+estructurados y, si hay persistencia configurada, se guardan en SQLite. Para un
+registro estructurado de pruebas usa el runner:
 
 ```bash
 python -m vision_core.scripts.validate_pipeline --zones config/zones.json --frames 3000 --output sala.jsonl
@@ -464,11 +481,13 @@ locales o CUDA; una omisión no es una validación. La suite mezcla pruebas unit
 integración con video sintético, e2e del monitor y pruebas reales optativas. El job
 de PR publica cobertura y el nightly publica logs. Consulta:
 
+- [Índice de documentación](docs/README.md), [onboarding](docs/onboarding.md) y [glosario](docs/glossary.md).
 - [Niveles de prueba, cobertura y comandos](docs/testing.md).
 - [Presupuestos de rendimiento, benchmark y hotspots](docs/performance.md).
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
+- [Diagramas C4 y flujo](docs/diagrams.md) y [runbooks](docs/runbooks/README.md).
 - [Type checking con mypy](docs/type-checking.md).
-- [Decisiones de arquitectura](docs/adr/README.md), [ADR 0001](docs/adr/0001-screaming-architecture-vertical-slice.md), [ADR 0002](docs/adr/0002-persistence-and-retention.md) y [ADR 0003](docs/adr/0003-modelo-ejecucion-multi-camara.md).
+- [Decisiones de arquitectura](docs/adr/README.md) ([0001](docs/adr/0001-screaming-architecture-vertical-slice.md), [0002](docs/adr/0002-persistence-and-retention.md), [0003](docs/adr/0003-modelo-ejecucion-multi-camara.md), [0004](docs/adr/0004-configuracion-tipada-y-validacion-de-entorno.md), [0005](docs/adr/0005-observabilidad-y-contratos-versionados.md) y [0006](docs/adr/0006-versionado-y-releases.md)).
 - [Persistencia, retención y backup](docs/persistence.md).
 - [Orquestación y cierre](docs/operations.md).
 - [Catálogo de errores](docs/errors.md) y [contratos versionados](docs/api-contracts.md).

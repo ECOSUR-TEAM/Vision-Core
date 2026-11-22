@@ -9,10 +9,10 @@ from urllib.request import urlopen
 
 import pytest
 
+from vision_core.core.errors import codes
 from vision_core.features.monitor.infrastructure.http.handler import MAX_HEADER_COUNT, MAX_REQUEST_LINE
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.infrastructure.monitor.state import MonitorState
-from vision_core.shared.errors import codes
 
 
 @pytest.fixture

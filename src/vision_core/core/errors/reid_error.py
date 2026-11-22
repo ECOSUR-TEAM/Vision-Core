@@ -1,7 +1,7 @@
 """Fallo en la memoria o extracción de identidades ReID."""
 
-from vision_core.shared.errors.codes import REID_MODEL_INVALID
-from vision_core.shared.errors.vision_core_error import VisionCoreError
+from vision_core.core.errors.codes import REID_MODEL_INVALID
+from vision_core.core.errors.vision_core_error import VisionCoreError
 
 
 class ReIDError(VisionCoreError, ValueError):

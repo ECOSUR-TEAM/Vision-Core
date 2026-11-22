@@ -9,6 +9,7 @@ FEATURES = SRC / "features"
 CORE = SRC / "core"
 CORE_DTO_ROOT = CORE / "dto"
 CORE_DTO = "vision_core.core.dto"
+CORE_SERIALIZATION = "vision_core.core.serialization"
 FORBIDDEN_DTO_IMPORTS = {"numpy", "cv2", "torch", "torchvision", "ultralytics"}
 ALLOWED_DTO_STDLIB_IMPORTS = {
     "__future__",
@@ -66,14 +67,6 @@ def _assert_no_imports(paths, predicate, message):
     assert not violations, f"{message}: {violations}"
 
 
-def test_shared_does_not_import_features_or_infrastructure():
-    _assert_no_imports(
-        _python_files(SRC / "shared"),
-        lambda module: module.startswith("vision_core.features") or module.startswith("vision_core.infrastructure"),
-        "shared import boundary violated",
-    )
-
-
 def test_core_does_not_import_features_or_scripts():
     _assert_no_imports(
         _python_files(CORE),
@@ -107,6 +100,38 @@ def test_core_layout_is_present():
     ]
     missing = [part for part in expected if not (CORE / part).is_file()]
     assert not missing, f"core layout incomplete: {missing}"
+
+
+@pytest.mark.parametrize(
+    "module",
+    [
+        "vision_core.core.domain",
+        "vision_core.core.dto",
+        "vision_core.core.errors",
+        "vision_core.core.errors.codes",
+        "vision_core.core.serialization",
+        "vision_core.core.telemetry",
+        "vision_core.core.validation",
+    ],
+)
+def test_core_subpackages_are_importable(module):
+    __import__(module)
+
+
+def test_shared_package_is_absent():
+    assert not (SRC / "shared").exists()
+
+
+def test_no_shared_imports_remain():
+    roots = (SRC, PROJECT_ROOT / "tests", PROJECT_ROOT / "main.py")
+    violations = []
+    for root in roots:
+        paths = (root,) if root.is_file() else _python_files(root)
+        for path in paths:
+            for module in _imports(path):
+                if module == "vision_core.shared" or module.startswith("vision_core.shared."):
+                    violations.append((path.as_posix(), module))
+    assert not violations, f"shared import boundary violated: {violations}"
 
 
 def test_core_rule_detects_forbidden_imports(tmp_path, monkeypatch):
@@ -164,8 +189,9 @@ def test_features_do_not_import_another_features_infrastructure():
 
 def test_dtos_do_not_import_domain_infrastructure_or_frameworks():
     violations = []
-    for dto in FEATURES.glob("*/application/dto"):
-        for path in _python_files(dto):
+    dto_roots = (*FEATURES.glob("*/application/dto"), CORE_DTO_ROOT)
+    for dto_root in dto_roots:
+        for path in _python_files(dto_root):
             for module in _imports(path):
                 root = module.split(".", 1)[0]
                 if ".domain" in module or ".infrastructure" in module or root in FORBIDDEN_DTO_IMPORTS:
@@ -181,26 +207,28 @@ def test_dtos_only_import_allowed_modules():
         if feature.is_dir()
     ]
     dto_roots.append((CORE_DTO_ROOT, CORE_DTO))
-    shared_dto = "vision_core.shared.application.dto"
     for dto_root, own_dto in dto_roots:
         if not dto_root.exists():
             continue
         for path in _python_files(dto_root):
             for module, level in _import_records(path):
                 resolved = _resolve_relative_import(path, module, level)
+                core_allowed = (
+                    resolved == CORE_DTO
+                    or resolved.startswith(f"{CORE_DTO}.")
+                    or resolved == CORE_SERIALIZATION
+                    or resolved.startswith(f"{CORE_SERIALIZATION}.")
+                )
                 allowed = (
                     resolved in ALLOWED_DTO_STDLIB_IMPORTS
                     or resolved.split(".", 1)[0] in ALLOWED_DTO_STDLIB_ROOTS
                     or resolved == own_dto
                     or resolved.startswith(f"{own_dto}.")
-                    or resolved == shared_dto
-                    or resolved.startswith(f"{shared_dto}.")
-                    or resolved == CORE_DTO
-                    or resolved.startswith(f"{CORE_DTO}.")
+                    or core_allowed
                 )
                 if not allowed:
                     violations.append((path.relative_to(SRC), resolved))
-    assert not violations, f"DTO imports must use stdlib, own DTO package or shared/core DTO base: {violations}"
+    assert not violations, f"DTO imports must use stdlib, own DTO package or core DTO/serialization base: {violations}"
 
 
 def test_only_composition_roots_import_multiple_feature_factories():

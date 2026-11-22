@@ -10,8 +10,10 @@ Python 3.11). Se eligió mypy por ser una herramienta Python pura, sin runtime d
 Node, y por integrarse con `pyproject.toml` y variables de entorno.
 
 Los chequeos son **graduales**: mypy analiza `src/` y `main.py`, incluidos los
-scripts de `src/vision_core/scripts/`; no se activa `strict` ni se exige anotar
-todas las funciones.
+scripts de `src/vision_core/scripts/` y el kernel de `src/vision_core/core/`;
+no se activa `strict` ni se exige anotar todas las funciones. Los contratos
+compartidos de `core/dto/` y `core/serialization/` se comprueban con el mismo
+perfil que el resto de `src/`.
 
 ## Ejecutar localmente
 

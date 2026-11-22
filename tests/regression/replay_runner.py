@@ -9,13 +9,13 @@ from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
 from tests.regression.scripted_detector import ScriptedDetector
 from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.serialization.serialization import to_json_value
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.door.infrastructure.adapters import polygon_door_analytics
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 from vision_core.features.pipeline.infrastructure.dependencies import build_pipeline
-from vision_core.shared.application.dto.serialization import to_json_value
-from vision_core.shared.domain.bbox import BBox
 
 TIMING_TOLERANCE_SECONDS = 0.25
 FIXTURES_DIR = Path(__file__).parent / "fixtures"

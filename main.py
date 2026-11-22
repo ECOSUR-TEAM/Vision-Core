@@ -5,6 +5,8 @@ from collections.abc import Callable
 from dataclasses import replace
 
 from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.telemetry.health import HealthStatus
+from vision_core.core.telemetry.metrics import get_observability_metrics
 from vision_core.features.detection.infrastructure.dependencies import build_detection
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
@@ -28,8 +30,6 @@ from vision_core.infrastructure.persistence.retention_worker import RetentionWor
 from vision_core.model_registry.activation import resolve_active_models
 from vision_core.settings import Settings
 from vision_core.settings.persistence import PersistenceSettings
-from vision_core.shared.observability.health import HealthStatus
-from vision_core.shared.observability.metrics import get_observability_metrics
 
 logger = logging.getLogger(__name__)
 

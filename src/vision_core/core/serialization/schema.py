@@ -6,7 +6,7 @@ aumentan la parte menor; cambiar tipos, quitar campos o cambiar su significado
 exige una versión mayor y una migración anunciada.
 """
 
-from vision_core.shared.application.dto.schema_version import EVENT_SCHEMA_VERSION
+from vision_core.core.serialization.schema_version import EVENT_SCHEMA_VERSION
 
 
 def with_schema_version(payload: dict[str, object]) -> dict[str, object]:

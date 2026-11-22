@@ -1,7 +1,7 @@
 """Fallo al abrir, leer o reconectar una fuente de video."""
 
-from vision_core.shared.errors.codes import VIDEO_SOURCE_UNAVAILABLE
-from vision_core.shared.errors.vision_core_error import VisionCoreError
+from vision_core.core.errors.codes import VIDEO_SOURCE_UNAVAILABLE
+from vision_core.core.errors.vision_core_error import VisionCoreError
 
 
 class VideoSourceError(VisionCoreError, ConnectionError):

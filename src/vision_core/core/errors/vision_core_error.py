@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from vision_core.shared.errors.codes import INTERNAL_ERROR
-from vision_core.shared.errors.context import sanitize_context
+from vision_core.core.errors.codes import INTERNAL_ERROR
+from vision_core.core.errors.context import sanitize_context
 
 
 class VisionCoreError(Exception):

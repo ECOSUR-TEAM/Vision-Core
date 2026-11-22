@@ -10,15 +10,15 @@ from torchvision.models import (
     resnet50,
 )
 
-from vision_core.model_registry.model_descriptor import ModelDescriptor
-from vision_core.settings import Settings
-from vision_core.shared.errors import (
+from vision_core.core.errors import (
     ConfigurationError,
     ReIDError,
     ReIDModelUnavailableError,
     ValidationError,
     codes,
 )
+from vision_core.model_registry.model_descriptor import ModelDescriptor
+from vision_core.settings import Settings
 
 
 class TorchvisionEmbeddingExtractor:

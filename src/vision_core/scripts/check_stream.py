@@ -8,10 +8,10 @@ import time
 
 import numpy as np
 
+from vision_core.core.errors import codes
 from vision_core.infrastructure.video.frame_validation import validate_frame
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
 from vision_core.settings import Settings, apply_ffmpeg_capture_options
-from vision_core.shared.errors import codes
 
 
 def probe(url, transport):

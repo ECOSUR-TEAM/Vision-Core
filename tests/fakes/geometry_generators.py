@@ -2,7 +2,7 @@ import json
 import math
 import random
 
-from vision_core.shared.domain.polygon import Polygon
+from vision_core.core.domain.polygon import Polygon
 
 SEED = 20240517
 MAX_ZONE_POINTS = 100

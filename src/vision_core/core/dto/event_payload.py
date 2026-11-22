@@ -3,8 +3,8 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from vision_core.shared.application.dto.json_value import JSONValue
-from vision_core.shared.application.dto.schema_version import EVENT_SCHEMA_VERSION
+from vision_core.core.serialization.json_value import JSONValue
+from vision_core.core.serialization.schema_version import EVENT_SCHEMA_VERSION
 
 
 @dataclass(frozen=True, slots=True)

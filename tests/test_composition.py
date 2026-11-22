@@ -10,9 +10,9 @@ from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.core.domain.event import Event
+from vision_core.core.errors import ConfigurationError, VisionCoreError
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
-from vision_core.shared.domain.event import Event
-from vision_core.shared.errors import ConfigurationError, VisionCoreError
 
 
 def test_infrastructure_does_not_import_application():

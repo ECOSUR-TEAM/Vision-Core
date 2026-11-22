@@ -82,3 +82,4 @@ hecha hasta que esa persona la confirme.
 | ECM-85: proceso de PR, CODEOWNERS y DoD | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-99: registro de modelos y model cards | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-105: ADR 0008 y contrato de capas | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-106: migración de `shared/` a `core/` | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |

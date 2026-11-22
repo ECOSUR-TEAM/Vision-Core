@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from vision_core.shared.application.dto.event_payload import EventPayload
+from vision_core.core.dto.event_payload import EventPayload
 
 
 @dataclass(frozen=True, slots=True)

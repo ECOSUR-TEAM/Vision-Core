@@ -1,6 +1,6 @@
+from vision_core.core.domain.bbox import BBox
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
-from vision_core.shared.domain.bbox import BBox
 
 
 class FakeDetector(DetectorManager):

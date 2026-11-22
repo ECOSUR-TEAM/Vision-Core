@@ -1,13 +1,13 @@
 import json
 import sqlite3
 
+from vision_core.core.serialization import to_json_value
 from vision_core.domain.model.event import Event
 from vision_core.domain.repositories.event_repository import EventRepository
 from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dto
 from vision_core.infrastructure.persistence.connection import Database
 from vision_core.infrastructure.persistence.event_identity import event_id_for
 from vision_core.infrastructure.persistence.utc import utc_text
-from vision_core.shared.application.dto.serialization import to_json_value
 
 
 class SqliteEventRepository(EventRepository):

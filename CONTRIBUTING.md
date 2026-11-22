@@ -94,10 +94,10 @@ Los owners se solicitan automáticamente según
 | Pipeline / orquestación | `features/pipeline/`, `main.py`, `tests/integration/` | @FabricioPRZ; composition root también @Ameth-Toledo |
 | Infra / CI / seguridad | `.github/`, `Dockerfile`, `docker-compose*.yml`, `Makefile`, `pyproject.toml`, `scripts/`, `SECURITY.md` | @bchanona, @Carlosss2 |
 | Persistencia | `infrastructure/persistence/`, `tests/infrastructure/persistence/`, `tests/test_persistence_integration.py` | @bchanona, @MelissaZarate08 |
-| Transversal | `shared/`, `domain/`, `settings/`, `application/`, `docs/`, regla `*` | @Ameth-Toledo, @bchanona, @Carlosss2 |
+| Transversal | `core/`, `domain/`, `settings/`, `application/`, `docs/`, regla `*` | @Ameth-Toledo, @bchanona, @Carlosss2 |
 
 Se considera **transversal** cualquier cambio que toque dos o más features,
-contratos DTO compartidos, `shared/`, `domain/`, `settings/`, `application/`,
+contratos DTO compartidos, `core/`, `domain/`, `settings/`, `application/`,
 `main.py`, CI o esquemas de configuración. En ese caso se requieren:
 
 - aprobación de un owner transversal; y

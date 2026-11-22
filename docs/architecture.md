@@ -2,10 +2,10 @@
 
 Vision Core usa Vertical Slice: cada feature es dueño de sus casos de uso,
 dominio y adaptadores. `core/` contiene únicamente el kernel compartido; no debe
-convertirse en un segundo dominio global. Durante la migración siguen existiendo
-`application/`, `domain/`, `infrastructure/`, `settings/`, `shared/` y
-`model_registry/` como paths viejos, que se eliminan al final del sprint
-(ADR 0008).
+convertirse en un segundo dominio global. `shared/` ya fue eliminado y su
+contenido migró a `core/` (ECM-106). Durante la migración siguen existiendo
+`application/`, `domain/`, `infrastructure/`, `settings/` y `model_registry/`
+como paths viejos, que se eliminan al final del sprint (ADR 0008).
 
 ## Estructura objetivo
 
@@ -49,7 +49,7 @@ compartida por varios slices vive en `core/infrastructure`.
 Ejemplos permitidos:
 
 ```python
-from vision_core.core.contracts import PolygonRepository
+from vision_core.core.dto import ObservationPayload
 from vision_core.features.door.application.use_cases.update_zone import UpdateZone
 ```
 
@@ -77,10 +77,10 @@ Los tests transversales están en `tests/architecture/`, `tests/contracts/`,
 
 Cada operación pública del slice se expresa con un DTO de request y, cuando
 devuelve datos, uno de response. No se crea un `dto/` global de operaciones: los
-DTOs son propiedad de su feature y solo se mueven a `shared/application/dto/`
-(migrando a `core/dto/` a medida que avance el sprint) si varios slices comparten
-el contrato y el movimiento queda justificado. `core/dto/` es path legítimo de
-transporte; `core/domain/` es kernel y no es destino de imports desde DTOs.
+DTOs son propiedad de su feature y solo se mueven a `core/dto/` si varios slices
+comparten el contrato y el movimiento queda justificado. `core/dto/` es path
+legítimo de transporte; `core/domain/` es kernel y no es destino de imports
+desde DTOs.
 
 - Ubicación:
   `features/<feature>/application/dto/request/request_<operacion>.py` y
@@ -95,19 +95,20 @@ transporte; `core/domain/` es kernel y no es destino de imports desde DTOs.
   como tipo del contrato. Los mappings transportados se entregan como
   `Mapping` inmutable (`MappingProxyType`) y las colecciones como tuplas, para
   que `frozen=True` no deje dicts anidados mutables. Los payloads compartidos
-  por varios slices viven en `shared/application/dto/` (bbox, detection,
-  event, observation, resolved track, monitor person y `FrameLike`) porque,
-  de otro modo, cada feature duplicaría el mismo contrato de transporte.
+   por varios slices viven en `core/dto/` (bbox, detection, event,
+   observation, resolved track, monitor person y `FrameLike`) porque,
+   de otro modo, cada feature duplicaría el mismo contrato de transporte.
+
 - Excepción documentada: el frame crudo cruza como `FrameLike`, un Protocol
   estructural. En producción es un `numpy.ndarray`, pero el DTO no importa
   numpy: `validate_frame()` valida dtype y forma en la frontera del caso de uso
   (y `video_mapper` al codificar/decodificar).
 - Imports permitidos en un DTO: stdlib/`typing`, re-exports de su propio
-  paquete `application/dto`, `shared/application/dto` y `core/dto`.
+  paquete `application/dto` y `core/dto`.
 - Mappers: `application/mappers/` convierte DTO ↔ dominio y devuelve payloads
   tipados. La validación de formato, finitud y rango, y la conversión de tipos
   pesados viven ahí, no en el DTO.
-- Serialización: `shared/application/dto/serialization.py` expone
+- Serialización: `core/serialization/serialization.py` expone
   `to_json_value`/`dumps_json`. Los payloads `bytes` son de transporte (JPEG/
   PNG), se sirven como `image/jpeg` y `to_json_value` los sustituye por `null`
   en JSON (nunca viaja su contenido binario); los floats no finitos se
@@ -120,14 +121,14 @@ La convención normativa está en
 
 `tests/architecture/test_import_rules.py` verifica que:
 
-- `shared/` no importe features ni infraestructura.
+- No queden imports de `vision_core.shared` ni el paquete `shared/`.
 - El dominio de un feature no importe `application` ni `infrastructure`.
 - `application/` no importe `infrastructure`.
 - Un feature no importe la infraestructura de otro feature. Los imports
   relativos se resuelven a su ruta absoluta antes de evaluar estas reglas, así
   que `from ..infrastructure import ...` no las evade.
-- Los DTOs solo importen stdlib/`typing`, su propio paquete `application/dto`,
-  `shared/application/dto` y `core/dto` (lista blanca).
+- Los DTOs solo importen stdlib/`typing`, su propio paquete `application/dto` y
+  `core/dto` (lista blanca).
 - `core/` no importe `features/` ni `scripts/`.
 - `features/` y `core/` no importen `scripts/`.
 - Los archivos `request_*.py`/`response_*.py` tengan la clase esperada, usen
@@ -140,8 +141,7 @@ La convención normativa está en
   levante.
 
 `tests/architecture/test_dto_convention.py` verifica naming, decoradores,
-ausencia de lógica y tipos concretos en los DTOs de features, `shared/` y
-`core/dto/`.
+ausencia de lógica y tipos concretos en los DTOs de features y `core/dto/`.
 
 `tests/architecture/test_one_class_per_file.py` mantiene la política de una
 clase de nivel superior por archivo.

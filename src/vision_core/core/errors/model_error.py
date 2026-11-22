@@ -1,7 +1,7 @@
 """Fallo al cargar o ejecutar un modelo de visión."""
 
-from vision_core.shared.errors.codes import MODEL_UNAVAILABLE
-from vision_core.shared.errors.vision_core_error import VisionCoreError
+from vision_core.core.errors.codes import MODEL_UNAVAILABLE
+from vision_core.core.errors.vision_core_error import VisionCoreError
 
 
 class ModelError(VisionCoreError, RuntimeError):

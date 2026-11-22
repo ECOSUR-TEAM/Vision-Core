@@ -1,14 +1,14 @@
 import pytest
 
 from tests.fakes.fake_monitor_state import FakeMonitorState
+from vision_core.core.domain.event import Event
+from vision_core.core.serialization import EVENT_SCHEMA_VERSION
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
 from vision_core.features.monitor.application.use_cases.get_frame import GetFrame
 from vision_core.features.monitor.application.use_cases.get_snapshot import GetSnapshot
 from vision_core.features.monitor.application.use_cases.publish_monitor_state import PublishMonitorState
 from vision_core.features.monitor.infrastructure.state import MonitorState
-from vision_core.shared.domain.event import Event
-from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 
 @pytest.mark.parametrize("factory", [MonitorState, FakeMonitorState])

@@ -7,7 +7,7 @@ remain explicit (``None``) rather than becoming untyped dict entries.
 
 from dataclasses import dataclass
 
-from vision_core.shared.application.dto.bbox_payload import BBoxPayload
+from vision_core.core.dto.bbox_payload import BBoxPayload
 
 
 @dataclass(frozen=True, slots=True)

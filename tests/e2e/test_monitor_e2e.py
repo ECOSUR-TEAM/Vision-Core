@@ -76,6 +76,9 @@ def test_monitor_e2e_with_video_file_and_real_zones(monkeypatch, synthetic_sampl
         assert snapshot["people"][0]["zone"] == "exterior"
         assert snapshot["people"][0]["display_name"] == "Persona 1"
 
+        with urlopen(f"{base_url}/health") as response:
+            assert json.load(response) == {"status": "alive", "live": True}
+
         with urlopen(f"{base_url}/metrics") as response:
             metrics = json.load(response)
         assert metrics["counters"]["vision_core_frames_processed_total"] == 35

@@ -9,6 +9,8 @@ All notable changes to this project are documented here using
 - Automated semantic versioning, changelog extraction and GitHub Releases.
 - G0 baseline with `camera_id` in profiling and camera-labelled metrics.
 - Synthetic integration and 30-second e2e baseline tests with coverage artifacts.
+- Performance budgets, deterministic synthetic-video benchmark, baseline comparison and nightly workflow.
+- PR performance smoke test with wide thresholds and per-module coverage thresholds.
 
 ### Changed
 - Frame buffer mantiene capacidad 1 con política drop-old explícita.

@@ -18,6 +18,18 @@ EXPECTED_EVENTS = (
 )
 
 
+def pytest_collection_modifyitems(items):
+    for item in items:
+        path = str(item.fspath).replace("\\", "/")
+        if "/tests/e2e/" in path:
+            item.add_marker(pytest.mark.e2e)
+            item.add_marker(pytest.mark.slow)
+        elif "/tests/integration/" in path:
+            item.add_marker(pytest.mark.integration)
+        elif "/tests/performance/" in path:
+            item.add_marker(pytest.mark.performance)
+
+
 def _detection(x, track_id=1):
     return Detection(
         bbox=BBox(x - 10, 100, x + 10, 140),

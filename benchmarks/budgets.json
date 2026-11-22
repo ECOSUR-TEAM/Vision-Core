@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "kind": "performance-budgets",
+  "scenarios": {
+    "synthetic-cpu-320x240": {
+      "description": "Pipeline secuencial, detector sintético, 320x240 a 15 fps en runner CPU",
+      "fps_min": 30.0,
+      "frame_p50_max_ms": 33.3,
+      "frame_p95_max_ms": 60.0,
+      "inference_p50_max_ms": 20.0,
+      "inference_p95_max_ms": 40.0,
+      "memory_peak_max_mb": 512.0,
+      "memory_growth_per_hour_max_mb": 1024.0,
+      "startup_max_ms": 8000.0,
+      "reconnect_max_ms": 3000.0,
+      "regression_tolerance_pct": 10.0
+    },
+    "synthetic-cpu-640x480": {
+      "description": "Pipeline secuencial, detector sintético, 640x480 a 15 fps en runner CPU",
+      "fps_min": 15.0,
+      "frame_p50_max_ms": 66.7,
+      "frame_p95_max_ms": 120.0,
+      "inference_p50_max_ms": 60.0,
+      "inference_p95_max_ms": 100.0,
+      "memory_peak_max_mb": 768.0,
+      "memory_growth_per_hour_max_mb": 1536.0,
+      "startup_max_ms": 10000.0,
+      "reconnect_max_ms": 3000.0,
+      "regression_tolerance_pct": 15.0
+    },
+    "synthetic-gpu-640x480": {
+      "description": "Escenario GPU opcional; requiere runner con CUDA y detector real fijado",
+      "fps_min": 25.0,
+      "frame_p50_max_ms": 40.0,
+      "frame_p95_max_ms": 80.0,
+      "inference_p50_max_ms": 35.0,
+      "inference_p95_max_ms": 70.0,
+      "memory_peak_max_mb": 1536.0,
+      "memory_growth_per_hour_max_mb": 1024.0,
+      "startup_max_ms": 15000.0,
+      "reconnect_max_ms": 3000.0,
+      "regression_tolerance_pct": 15.0
+    },
+    "pr-smoke": {
+      "description": "Umbral amplio para PR; detecta rupturas grandes, no fluctuaciones normales",
+      "fps_min": 5.0,
+      "frame_p50_max_ms": 200.0,
+      "frame_p95_max_ms": 500.0,
+      "inference_p50_max_ms": 200.0,
+      "inference_p95_max_ms": 500.0,
+      "memory_peak_max_mb": 2048.0,
+      "memory_growth_per_hour_max_mb": 2048.0,
+      "startup_max_ms": 30000.0,
+      "reconnect_max_ms": 30000.0,
+      "regression_tolerance_pct": 50.0
+    }
+  }
+}

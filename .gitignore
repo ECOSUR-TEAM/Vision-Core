@@ -24,4 +24,12 @@ coverage.xml
 coverage-*.json
 htmlcov/
 pytest*.log
+.mypy_cache/
 dev-data/*.avi
+benchmark-data/
+benchmark-*.json
+benchmark-*.csv
+benchmark-*.md
+benchmark-*.log
+profiling_results.json
+profiling.json

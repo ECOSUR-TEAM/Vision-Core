@@ -32,6 +32,11 @@ El monitor estará disponible en `http://127.0.0.1:8080`.
 |---|---|
 | `make setup` | Crear entorno, instalar dependencias y datos sintéticos |
 | `make test` | Ejecutar pytest completo |
+| `make coverage` | Unit + integración con cobertura y umbrales por módulo |
+| `make smoke` | Ejecutar el smoke de rendimiento de PR |
+| `make integration` | Ejecutar solo tests de integración con video sintético |
+| `make e2e` | Ejecutar el e2e pesado del monitor |
+| `make benchmark` | Generar video sintético y ejecutar el benchmark con presupuestos |
 | `make lint` | Ejecutar Ruff lint |
 | `make format` | Aplicar Ruff format |
 | `make format-check` | Comprobar formato sin modificar |

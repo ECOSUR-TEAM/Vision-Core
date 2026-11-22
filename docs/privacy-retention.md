@@ -26,7 +26,7 @@ quedar registrada en `docs/legal-review.md`.
 Señalización mínima recomendada en la entrada:
 
 > Esta instalación procesa imágenes de video para contabilizar personas y
-> generar eventos de acceso. No se guardan imágenes de video. Los eventos se
+> generar eventos de acceso. El monitor no conserva video. Los eventos se
 > conservan solo durante el plazo establecido en la política de retención.
 > Responsable y contacto: `<completar antes de producción>`.
 
@@ -35,14 +35,23 @@ es consentimiento, el cartel debe incluir la forma de ejercerlo.
 
 ## Minimización
 
-- No se guarda video ni frames en disco por defecto. Solo existen en memoria
+- El monitor no escribe video ni frames en disco; solo existen en memoria
   mientras se procesan.
+- Las utilidades explícitas `capture_reference`, `check_zones`,
+  `create_pipeline_sample` y `create_benchmark_video` pueden escribir PNG/AVI
+  locales para calibración o pruebas. No forman parte del flujo productivo, pero
+  sus artefactos deben borrarse o tratarse como datos personales.
 - `/api/frame` devuelve un JPEG efímero para el visor; no se persiste.
 - Los eventos guardan `person_id`, tipo de evento, timestamp, zonas de origen
   y destino, posición y contadores de asistencia. No guardan imágenes de rostro.
+- Cuando hay persistencia activa, `identity_gallery.embedding_json` conserva
+  embeddings de ReID asociados a `person_id`; son datos biométricos operativos
+  y requieren la base legal registrada en `docs/legal-review.md`.
 - Los logs estructurados no incluyen frames ni crops; el evento serializado
-  usa la misma forma que la API (`event_to_json_dict`). No se registran datos
-  personales adicionales en mensajes de error (coordinado con ticket 31).
+  usa la misma forma que la API (`event_to_json_dict`). `person_id` sí se
+  propaga a los logs (`structured_logging.py` y `state.py`), por lo que debe
+  tratarse como identificador seudónimo; su retención sigue pendiente
+  (coordinado con ECM-87 y ticket 31).
 
 ## Flujo de datos
 
@@ -51,6 +60,7 @@ flowchart LR
     A[Cámara / webcam / archivo] -->|frames en memoria| B[Detector YOLO + ReID]
     B -->|posiciones por persona| C[Analítica de zonas]
     C -->|eventos| D[SQLite opcional]
+    B -->|embedding de ReID opcional| D
     C -->|eventos| E[Estado del monitor en memoria]
     E -->|HTTP loopback| F[Operador / dashboard]
     D -->|worker de retención| G[Borrado automático]
@@ -68,44 +78,53 @@ La persistencia se activa si `VISION_CORE_DB_PATH` está definido o si
 
 | Dato | Configuración | Plazo por defecto | Borrado |
 |---|---|---|---|
-| Video/frames | no configurable; nunca se escriben | 0 (memoria) | al descartar el frame |
+| Video/frames del monitor | no configurable; el monitor nunca los escribe | 0 (memoria) | al descartar el frame |
+| Capturas de utilidades | no configurable; artefactos locales de calibración/prueba | sin plazo automático | borrado manual; tratar como dato personal |
 | JPEG del visor | no configurable | 0 (memoria) | respuesta HTTP / cierre |
 | Eventos | `VISION_CORE_EVENT_TTL_SECONDS` | 30 días | `RetentionJob` |
 | Observaciones de zona | `VISION_CORE_HISTORY_TTL_SECONDS` | 7 días | `RetentionJob` |
-| Embeddings/identidades | `VISION_CORE_IDENTITY_TTL_SECONDS` | 1 día | `RetentionJob` |
+| Embeddings (`identity_gallery`) | `VISION_CORE_IDENTITY_TTL_SECONDS` | 1 día | `RetentionJob` |
+| Personas (`persons`) | `VISION_CORE_IDENTITY_TTL_SECONDS` | 1 día | `RetentionJob` |
 | Tracks | `VISION_CORE_TRACK_TTL_SECONDS` | 1 día | `RetentionJob` |
 | Sesiones | `VISION_CORE_SESSION_TTL_SECONDS` | 30 días | `RetentionJob` |
 | Métricas | `VISION_CORE_METRICS_TTL_SECONDS` | 30 días | `RetentionJob` |
-| Logs | rotación externa (pendiente) | objetivo 30 días | pendiente de implementar |
+| Logs con `person_id` | rotación externa (pendiente) | objetivo 30 días | pendiente de implementar |
 
 Un TTL de `0` desactiva el borrado por tiempo de ese tipo; debe usarse solo con
 autorización legal y una política compensatoria documentada.
 
 ### Verificación del borrado
 
-Tras un intervalo mayor que el TTL, comprobar que no quedan filas viejas. Cada
-consulta debe usar la columna de retención y el TTL configurado para ese tipo:
+Tras un intervalo mayor que el TTL **y** al menos un ciclo de
+`VISION_CORE_DB_PRUNE_INTERVAL_SECONDS`, comprobar que no quedan filas viejas.
+Cada consulta debe usar la columna de retención y el TTL configurado para ese
+tipo:
 
 ```bash
 python - <<'PY'
-import sqlite3, time
+import os
+import sqlite3
+import time
 
-conn = sqlite3.connect("/app/data/vision-core.sqlite3")
+from vision_core.core.config.persistence import PersistenceSettings
+
+settings = PersistenceSettings.from_env(dict(os.environ))
+conn = sqlite3.connect(os.environ.get("VISION_CORE_DB_PATH", "vision-core.sqlite3"))
 now = time.time()
 checks = (
-    ("events", "timestamp_utc", 30 * 86400),
-    ("zone_observations", "timestamp_utc", 7 * 86400),
-    ("tracks", "timestamp_utc", 86400),
-    ("identity_gallery", "last_seen_at_utc", 86400),
-    ("sessions", "started_at_utc", 30 * 86400),
-    ("metrics", "timestamp_utc", 30 * 86400),
+    ("events", "SELECT COUNT(*) FROM events WHERE timestamp_utc < ?", settings.event_ttl_seconds),
+    ("zone_observations", "SELECT COUNT(*) FROM zone_observations WHERE timestamp_utc < ?", settings.history_ttl_seconds),
+    ("tracks", "SELECT COUNT(*) FROM tracks WHERE timestamp_utc < ?", settings.track_ttl_seconds),
+    ("identity_gallery", "SELECT COUNT(*) FROM identity_gallery WHERE last_seen_at_utc < ?", settings.identity_ttl_seconds),
+    ("persons", "SELECT COUNT(*) FROM persons WHERE last_seen_utc < ?", settings.identity_ttl_seconds),
+    ("sessions", "SELECT COUNT(*) FROM sessions WHERE started_at_utc < ?", settings.session_ttl_seconds),
+    ("metrics", "SELECT COUNT(*) FROM metrics WHERE timestamp_utc < ?", settings.metrics_ttl_seconds),
 )
-for table, column, ttl in checks:
-    cutoff = now - ttl
-    count = conn.execute(
-        f"SELECT COUNT(*) FROM {table} WHERE {column} < ?", (cutoff,)
-    ).fetchone()[0]
-    print(f"{table}: {count}")
+for label, query, ttl in checks:
+    if ttl <= 0:
+        print(f"{label}: disabled")
+        continue
+    print(f"{label}: {conn.execute(query, (now - ttl,)).fetchone()[0]}")
 conn.close()
 PY
 ```
@@ -114,26 +133,37 @@ También puede verificarse con el resultado del job en el proceso:
 
 ```python
 result = retention_job.run_once()
-print(result.events, result.zone_observations, result.tracks, result.total)
+print(
+    result.events,
+    result.zone_observations,
+    result.tracks,
+    result.identities,
+    result.persons,
+    result.sessions,
+    result.metrics,
+    result.total,
+)
 ```
 
 `docs/persistence.md` describe el esquema y las consultas adicionales.
 
 ## Acceso y exposición
 
-- El monitor escucha en `127.0.0.1` por defecto (`VISION_CORE_MONITOR_HOST`).
-- Los archivos Compose publican los puertos solo en `127.0.0.1`.
-- `0.0.0.0` es una decisión explícita de configuración/deploy; actualmente no
-  genera una advertencia automática en runtime. Dentro de Docker puede ser
-  necesario para el port mapping, pero el control real es la publicación del
-  puerto.
-- **Pendiente bloqueante antes de exponer fuera de localhost (ticket 42 /
-  criterio de acceso restringido de este trabajo):** autenticación, RBAC, TLS y
-  registro de accesos. Sin esos controles, cualquier cliente que alcance el
-  puerto puede ver video y eventos de personas; no se asume que la red de
-  Docker aísla suficiente.
-- Los tickets 46 (límites HTTP) y 47 (headers) son complementarios, no
-  sustitutos de los controles de acceso.
+- El proceso Python escucha en `127.0.0.1` si no se define
+  `VISION_CORE_MONITOR_HOST`.
+- La imagen Docker fija `0.0.0.0` en `Dockerfile` y los archivos Compose también
+  lo configuran dentro del contenedor; no debe afirmarse que el contenedor
+  escucha en localhost.
+- Los archivos Compose publican los puertos solo en `127.0.0.1` del host, que es
+  el control efectivo de exposición.
+- `0.0.0.0` dentro del contenedor es necesario para el port mapping; hoy no
+  genera advertencia automática en runtime.
+- **Pendiente bloqueante antes de exponer fuera de localhost (criterio ECM-87):**
+  autenticación, RBAC, TLS y registro de accesos. Sin esos controles, cualquier
+  cliente que alcance el puerto puede ver video y eventos de personas; no se
+  asume que la red de Docker aísla suficiente.
+- Los tickets 42 (criterio original), 46 (límites HTTP) y 47 (headers) son
+  complementarios, no sustitutos de los controles de acceso.
 
 Verificación local:
 
@@ -146,19 +176,25 @@ docker compose port vision-core 8080   # debe devolver 127.0.0.1:<puerto>
 
 - Responsable del tratamiento: `<completar antes de producción>`.
 - Contacto de privacidad: `<completar antes de producción>`.
-- Procedimiento: la persona puede solicitar acceso, rectificación, supresión,
-  limitación o portabilidad al contacto indicado. La respuesta debe identificar
-  los datos por `person_id` o rango temporal, aplicar la supresión en SQLite y
-  dejar evidencia de la acción en el registro de solicitudes.
+- Procedimiento **pendiente de implementar antes de producción**: la persona
+  podrá solicitar acceso, rectificación, supresión, limitación o portabilidad al
+  contacto indicado. La respuesta deberá identificar los datos por `person_id` o
+  rango temporal, aplicar la supresión en SQLite y dejar evidencia de la acción
+  en el registro de solicitudes.
+- Estado: documentado pero sin tooling ni registro operativo; bloqueante según
+  `docs/legal-review.md`.
 - Plazo objetivo de respuesta: 30 días, sujeto a la normativa aplicable.
 
 ## Riesgos y pendientes
 
 | Riesgo / pendiente | Estado | Mitigación |
 |---|---|---|
-| AGPL de Ultralytics en distribución/SaaS | Abierto | Decisión en `THIRD_PARTY_NOTICES.md`; licencia comercial, sustitución del detector o publicación AGPL |
+| AGPL de Ultralytics en distribución/SaaS | Abierto | Decisión en `THIRD_PARTY_NOTICES.md`; publicación GHCR bloqueada por defecto; licencia comercial, sustitución del detector o publicación AGPL |
 | Base legal y responsable sin completar | Abierto | Completar `docs/legal-review.md` antes de producción |
-| Rotación de logs de 30 días | Abierto | Configurar rotación/colector en despliegue |
-| Acceso restringido fuera de localhost (auth, RBAC, TLS, registro de accesos) | **Bloqueante abierto** | Ticket 42 / criterio de este trabajo; no publicar hasta implementarlo |
+| Embeddings como dato biométrico | Abierto | Registrar base legal, DPIA y plazo de `identity_gallery` antes de producción |
+| `person_id` en logs y rotación de 30 días | Abierto | Definir retención real y configurar rotación/colector en despliegue |
+| Procedimiento de derechos sin implementar | **Bloqueante abierto** | Implementar búsqueda/supresión por `person_id` y registro de evidencia |
+| Artefactos PNG/AVI de utilidades | Abierto | Borrar capturas de prueba o gobernarlas como datos personales |
+| Acceso restringido fuera de localhost (auth, RBAC, TLS, registro de accesos) | **Bloqueante abierto** | ECM-87 y tickets 42/46/47; no publicar hasta implementarlo |
 | Anonimización avanzada de rostros | Fuera de alcance | Ticket posterior |
 | Certificaciones ISO/SOC2 | Fuera de alcance | No requeridas por este ticket |

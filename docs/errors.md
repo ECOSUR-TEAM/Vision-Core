@@ -1,7 +1,7 @@
 # Catálogo de errores de Vision Core
 
 Los errores esperados usan la jerarquía definida en
-`src/vision_core/shared/errors/`. Todas las clases derivan de `VisionCoreError`
+`src/vision_core/core/errors/`. Todas las clases derivan de `VisionCoreError`
 y exponen cuatro datos: `code` (estable), `message` (seguro para usuarios),
 `retryable` y `context` (depuración, sin secretos). Las clases de dominio no
 importan HTTP, frameworks ni infrastructure.

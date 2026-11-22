@@ -1,7 +1,7 @@
 import math
 
+from vision_core.core.errors import ZoneConfigurationError, codes
 from vision_core.features.door.infrastructure.geometry import cross, on_segment
-from vision_core.shared.errors import ZoneConfigurationError, codes
 
 
 def validate_polygon(polygon):

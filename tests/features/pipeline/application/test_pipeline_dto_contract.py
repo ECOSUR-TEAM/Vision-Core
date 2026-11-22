@@ -6,6 +6,11 @@ from typing import get_type_hints
 import numpy as np
 import pytest
 
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.domain.event import Event
+from vision_core.core.domain.event_type import EventType
+from vision_core.core.dto import BBoxPayload, FrameLike, JSONValue, ResolvedTrackPayload
+from vision_core.core.serialization import EVENT_SCHEMA_VERSION, dumps_json
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.dto.request.request_run_pipeline import RequestRunPipeline
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
@@ -16,12 +21,6 @@ from vision_core.features.pipeline.application.mappers.pipeline_mapper import (
     resolved_track_to_dto,
 )
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
-from vision_core.shared.application.dto import BBoxPayload, FrameLike, JSONValue, ResolvedTrackPayload
-from vision_core.shared.application.dto.serialization import dumps_json
-from vision_core.shared.domain.bbox import BBox
-from vision_core.shared.domain.event import Event
-from vision_core.shared.domain.event_type import EventType
-from vision_core.shared.events import EVENT_SCHEMA_VERSION
 
 DTO_CLASSES = (
     RequestProcessFrame,

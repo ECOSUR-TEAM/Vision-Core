@@ -4,8 +4,10 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from vision_core.application.frame_profiler import FrameProfiler
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config.pipeline_config import PipelineConfig
+from vision_core.core.errors import PipelineError, ValidationError, codes
+from vision_core.core.inference.frame_profiler import FrameProfiler
+from vision_core.core.validation import validate_frame
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
@@ -19,8 +21,6 @@ from vision_core.features.pipeline.domain.ports.event_consumer import EventConsu
 from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
 from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 from vision_core.features.video.domain.ports.video_source import VideoSource
-from vision_core.shared.application.validation import validate_frame
-from vision_core.shared.errors import PipelineError, ValidationError, codes
 
 logger = logging.getLogger(__name__)
 

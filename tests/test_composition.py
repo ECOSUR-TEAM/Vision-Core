@@ -10,20 +10,26 @@ from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.core.domain.event import Event
+from vision_core.core.errors import ConfigurationError, VisionCoreError
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
-from vision_core.shared.domain.event import Event
-from vision_core.shared.errors import ConfigurationError, VisionCoreError
 
 
 def test_infrastructure_does_not_import_application():
-    root = Path(__file__).resolve().parents[1] / "infrastructure"
-    for path in root.rglob("*.py"):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom):
-                assert not (node.module or "").startswith("application"), path
-            elif isinstance(node, ast.Import):
-                assert all(not alias.name.startswith("application") for alias in node.names), path
+    project_root = Path(__file__).resolve().parents[1]
+    roots = (
+        project_root / "src/vision_core/features",
+        project_root / "src/vision_core/core/infrastructure/persistence",
+    )
+    legacy_application = ("application", "vision_core.application")
+    for root in roots:
+        for path in root.rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ImportFrom) and node.level == 0:
+                    assert not (node.module or "").startswith(legacy_application), path
+                elif isinstance(node, ast.Import):
+                    assert all(not alias.name.startswith(legacy_application) for alias in node.names), path
 
 
 def test_build_pipeline_accepts_injected_adapters():
@@ -55,7 +61,7 @@ def test_expected_errors_keep_python_exception_compatibility():
 
 
 def test_monitor_main_uses_injected_state_and_runtime(monkeypatch):
-    from vision_core.infrastructure.monitor import __main__ as monitor
+    from vision_core.features.monitor.infrastructure import __main__ as monitor
 
     calls = {}
 
@@ -99,7 +105,7 @@ def test_monitor_main_uses_injected_state_and_runtime(monkeypatch):
 
 
 def test_monitor_main_no_render_forces_override(monkeypatch):
-    from vision_core.infrastructure.monitor import __main__ as monitor
+    from vision_core.features.monitor.infrastructure import __main__ as monitor
 
     calls = {}
 

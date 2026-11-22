@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from vision_core.settings import (
+from vision_core.core.config import (
     Settings,
     SettingsError,
     environment_with_relay_camera,
     redact_sensitive,
 )
-from vision_core.settings.settings_helpers import valid_rtsp_url
+from vision_core.core.config.settings_helpers import valid_rtsp_url
 
 MODEL = str(Path("yolov8n.pt").resolve())
 
@@ -59,6 +59,8 @@ def test_settings_overrides():
         ("VISION_CORE_MONITOR_UNCALIBRATED", "quizas"),
         ("VISION_CORE_REID_THRESHOLD", "-0.1"),
         ("VISION_CORE_MONITOR_PORT", "70000"),
+        ("VISION_CORE_MONITOR_HOST", ""),
+        ("VISION_CORE_MONITOR_HOST", "bad host"),
         ("VISION_CORE_MODEL_PATH", "/missing/yolov8n.pt"),
     ],
 )

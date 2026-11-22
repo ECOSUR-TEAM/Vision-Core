@@ -5,7 +5,7 @@ import pytest
 import torch
 from torch import nn
 
-from vision_core.infrastructure.reid import embedder as module
+from vision_core.features.reid.infrastructure.adapters import embedder as module
 
 
 @pytest.fixture

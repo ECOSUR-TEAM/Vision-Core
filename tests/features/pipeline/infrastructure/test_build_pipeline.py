@@ -6,10 +6,10 @@ from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.core.serialization import dumps_json
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.features.pipeline.infrastructure.dependencies import build_pipeline
-from vision_core.shared.application.dto.serialization import dumps_json
 
 
 def test_build_pipeline_wires_all_port_fakes():

@@ -24,13 +24,11 @@ def _core_dto_files() -> list[Path]:
 
 
 def _all_dto_files() -> list[Path]:
-    shared_dto = PROJECT_ROOT / "src" / "vision_core" / "shared" / "application" / "dto"
-    shared = [path for path in sorted(shared_dto.glob("*.py")) if path.name != "__init__.py"]
-    return _dto_files() + shared + _core_dto_files()
+    return _dto_files() + _core_dto_files()
 
 
 def _contract_dto_files() -> list[Path]:
-    return _dto_files() + _core_dto_files()
+    return [path for path in _all_dto_files() if path.name != "frame_like.py"]
 
 
 def _expected_class_name(path: Path) -> str:

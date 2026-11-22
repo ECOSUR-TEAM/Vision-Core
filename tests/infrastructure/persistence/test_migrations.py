@@ -2,8 +2,8 @@ import sqlite3
 
 import pytest
 
-from vision_core.infrastructure.persistence.connection import Database
-from vision_core.infrastructure.persistence.migration_runner import MigrationRunner
+from vision_core.core.infrastructure.persistence.connection import Database
+from vision_core.core.infrastructure.persistence.migration_runner import MigrationRunner
 
 
 def test_migrations_create_schema_from_scratch(tmp_path):

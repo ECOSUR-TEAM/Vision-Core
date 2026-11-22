@@ -14,12 +14,12 @@ from http import HTTPStatus
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
+from vision_core.core.errors import codes
 from vision_core.features.monitor.application.use_cases.get_frame import GetFrame
 from vision_core.features.monitor.application.use_cases.get_snapshot import GetSnapshot
 from vision_core.features.monitor.infrastructure.http.error_response import error_envelope
 from vision_core.features.monitor.infrastructure.http.handler import Handler, security_headers
 from vision_core.features.monitor.infrastructure.http.limits_metrics import MonitorLimitsMetrics
-from vision_core.shared.errors import codes
 
 MAX_CONNECTIONS = 4
 MAX_LONG_POLLS = 2
@@ -102,7 +102,7 @@ class MonitorHTTPServer(ThreadingHTTPServer):
 
 
 def make_server(host, port, state, page_path=None, metrics=None, health=None):
-    default_page = Path(__file__).resolve().parents[4] / "infrastructure/monitor/index.html"
+    default_page = Path(__file__).with_name("index.html")
     page = Path(page_path or default_page).read_bytes()
     if page.count(_CSP_PLACEHOLDER) != _REQUIRED_PLACEHOLDERS:
         raise ValueError(

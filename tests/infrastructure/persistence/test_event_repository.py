@@ -1,10 +1,10 @@
 import sqlite3
 import time
 
-from vision_core.domain.model.event import Event
-from vision_core.infrastructure.persistence.event_identity import event_id_for
-from vision_core.infrastructure.persistence.persistence_service import PersistenceService
-from vision_core.settings.persistence import PersistenceSettings
+from vision_core.core.config.persistence import PersistenceSettings
+from vision_core.core.domain.event import Event
+from vision_core.core.infrastructure.persistence.event_identity import event_id_for
+from vision_core.core.infrastructure.persistence.persistence_service import PersistenceService
 
 
 def _service(tmp_path):

@@ -5,10 +5,10 @@ import numpy as np
 import pytest
 
 from tests.fakes.fake_detector import FakeDetector
+from vision_core.core.errors import ValidationError, codes
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
-from vision_core.shared.errors import ValidationError, codes
 
 FRAME = np.zeros((40, 80, 3), dtype=np.uint8)
 

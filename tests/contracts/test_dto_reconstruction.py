@@ -4,7 +4,7 @@ import dataclasses
 import pytest
 
 from tests.contracts.dto_contract_helpers import build_from_external_dict, dto_classes, sample_value
-from vision_core.shared.application.dto.serialization import to_json_value
+from vision_core.core.serialization.serialization import to_json_value
 
 
 @pytest.mark.parametrize(

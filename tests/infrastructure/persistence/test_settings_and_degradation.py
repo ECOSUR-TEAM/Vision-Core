@@ -1,9 +1,9 @@
 import pytest
 
-from vision_core.domain.model.event import Event
-from vision_core.infrastructure.persistence.connection import Database
-from vision_core.infrastructure.persistence.persistence_service import PersistenceService
-from vision_core.settings.persistence import PersistenceSettings
+from vision_core.core.config.persistence import PersistenceSettings
+from vision_core.core.domain.event import Event
+from vision_core.core.infrastructure.persistence.connection import Database
+from vision_core.core.infrastructure.persistence.persistence_service import PersistenceService
 
 
 def test_persistence_is_disabled_without_db_path():

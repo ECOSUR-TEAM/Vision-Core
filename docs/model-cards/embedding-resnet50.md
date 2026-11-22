@@ -56,7 +56,7 @@ Antes de adoptar esta variante hay que repetir el benchmark del ticket 36 con
 
 | Componente | Versión declarada | Licencia |
 |---|---|---|
-| `torchvision` | `0.25.0` en `requirements-cpu.txt` | BSD-3-Clause para el código |
+| `torchvision` | `0.29.2+cpu` en `requirements-cpu.txt` | BSD-3-Clause para el código |
 | Pesos `IMAGENET1K_V2` | Fijados por el enum de torchvision | No declarada en metadatos (`UNKNOWN`) |
 | `torch` / `opencv-python` / `pillow` | Ver `requirements*.txt` | Según paquetes |
 

@@ -1,5 +1,5 @@
+from vision_core.core.domain.event import Event
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
-from vision_core.shared.domain.event import Event
 
 
 class FakeDoor(DoorAnalytics):

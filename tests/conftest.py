@@ -27,6 +27,20 @@ def _detection(x, track_id=1):
     )
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--regen-golden",
+        action="store_true",
+        default=False,
+        help="Regenerate deterministic replay golden files (requires explicit approval).",
+    )
+
+
+@pytest.fixture
+def regen_golden(request):
+    return request.config.getoption("--regen-golden")
+
+
 @pytest.fixture(scope="session")
 def synthetic_sample(tmp_path_factory):
     folder = tmp_path_factory.mktemp("synthetic_video") / "demo"

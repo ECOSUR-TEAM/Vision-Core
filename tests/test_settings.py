@@ -59,6 +59,8 @@ def test_settings_overrides():
         ("VISION_CORE_MONITOR_UNCALIBRATED", "quizas"),
         ("VISION_CORE_REID_THRESHOLD", "-0.1"),
         ("VISION_CORE_MONITOR_PORT", "70000"),
+        ("VISION_CORE_MONITOR_HOST", ""),
+        ("VISION_CORE_MONITOR_HOST", "bad host"),
         ("VISION_CORE_MODEL_PATH", "/missing/yolov8n.pt"),
     ],
 )

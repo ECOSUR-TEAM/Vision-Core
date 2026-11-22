@@ -36,6 +36,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Observabilidad](observability.md) | `/health`, `/ready`, `/metrics`, logs y métricas |
 | [Persistencia y retención](persistence.md) | SQLite, TTLs, backup y degradación |
 | [Monitor](monitor.md) | Interfaz web, API y render |
+| [Exposición del monitor y binding](monitor-exposure.md) | Binding seguro, advertencias y verificación de puertos |
 | [Cámara Ethernet](ethernet-camera.md) | Evidencia y diagnóstico de la cámara FD8134 |
 | [Frigate](frigate.md) | Integración local con webcam y go2rtc |
 | [Catálogo de errores](errors.md) | Códigos estables y jerarquía |
@@ -87,3 +88,4 @@ hecha hasta que esa persona la confirme.
 | ECM-106: migración de `shared/` a `core/` | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-111: eliminación de los paquetes legacy y documentación viva | @bchanona | @Carlosss2 | [x] Revisado por otra persona |
 | ECM-87: licencias, privacidad y retención de video | @bchanona | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
+| ECM-95: binding seguro y exposición del monitor | @bchanona | @Ameth-Toledo, @Carlosss2 | [x] Revisado por otra persona |

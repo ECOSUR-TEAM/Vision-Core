@@ -158,9 +158,13 @@ son flags preparatorios: todavía no cambian el número de inferencias.
 
 El monitor conserva imágenes y eventos solo en memoria. Está pensado para pruebas
 locales, sin autenticación. El bind predeterminado es `127.0.0.1`; `--host 0.0.0.0`
-permite acceso desde otros equipos de una red de confianza mediante la IP de la
-laptop. El Compose publica solo en loopback, aun cuando el servidor dentro del
-contenedor escucha en `0.0.0.0`.
+(o `VISION_CORE_MONITOR_HOST=0.0.0.0`) expone el servicio en todas las interfaces
+y solo debe usarse con controles de acceso del ticket 42 (autenticación, RBAC,
+TLS y registro de accesos). El Compose publica solo en loopback, aun cuando el
+servidor dentro del contenedor escucha en `0.0.0.0`.
+
+Ver [Exposición del monitor y binding](monitor-exposure.md) para riesgos y
+verificación de puertos.
 
 ## Verificación realizada
 

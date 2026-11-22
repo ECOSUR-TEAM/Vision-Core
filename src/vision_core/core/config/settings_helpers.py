@@ -1,9 +1,11 @@
+import ipaddress
 import os
 import re
 from urllib.parse import urlsplit
 
 _TRUE_VALUES = frozenset({"1", "true", "yes", "on"})
 _FALSE_VALUES = frozenset({"0", "false", "no", "off"})
+_HOST_LABEL = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
 
 
 def parse_bool(name: str, value: str | None, default: bool) -> bool | None:
@@ -15,6 +17,32 @@ def parse_bool(name: str, value: str | None, default: bool) -> bool | None:
     if normalized in _FALSE_VALUES:
         return False
     return None
+
+
+def normalize_monitor_host(value: object) -> str:
+    if value is None:
+        raise ValueError("host inválido")
+    host = str(value).strip()
+    if host in {"", "0"}:
+        return "0.0.0.0"
+    try:
+        ipaddress.ip_address(host)
+        return host
+    except ValueError:
+        pass
+    if len(host) > 253 or any(character.isspace() for character in host):
+        raise ValueError("host inválido")
+    if not all(_HOST_LABEL.fullmatch(label) for label in host.split(".")):
+        raise ValueError("host inválido")
+    return host
+
+
+def is_exposed_monitor_host(value: object) -> bool:
+    host = normalize_monitor_host(value)
+    try:
+        return ipaddress.ip_address(host).is_unspecified
+    except ValueError:
+        return False
 
 
 def valid_rtsp_url(value: str) -> bool:

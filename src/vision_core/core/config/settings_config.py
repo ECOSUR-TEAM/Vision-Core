@@ -7,7 +7,7 @@ from typing import Mapping
 from .settings_camera import CameraSettings
 from .settings_detection import DetectionSettings
 from .settings_error import SettingsError
-from .settings_helpers import parse_bool, valid_rtsp_url
+from .settings_helpers import normalize_monitor_host, parse_bool, valid_rtsp_url
 from .settings_logging import LoggingSettings
 from .settings_model_registry import DEFAULT_MODEL_REGISTRY_FILE, ModelRegistrySettings
 from .settings_monitor import MonitorSettings
@@ -165,12 +165,19 @@ class Settings:
         if confirmation_frames < 1:
             errors.append("VISION_CORE_ZONE_CONFIRMATION_FRAMES: debe ser mayor que 0")
 
-        monitor_host = env.get("VISION_CORE_MONITOR_HOST", "127.0.0.1").strip()
+        monitor_host_raw = env.get("VISION_CORE_MONITOR_HOST", "127.0.0.1").strip()
+        monitor_host = monitor_host_raw or "127.0.0.1"
+        if not monitor_host_raw:
+            errors.append("VISION_CORE_MONITOR_HOST: no puede estar vacío")
+        else:
+            try:
+                monitor_host = normalize_monitor_host(monitor_host_raw)
+            except ValueError:
+                errors.append("VISION_CORE_MONITOR_HOST: debe ser una IP o un hostname válido")
+                monitor_host = "127.0.0.1"
         monitor_port = integer("VISION_CORE_MONITOR_PORT", 8080)
         exit_on_error = boolean("VISION_CORE_MONITOR_EXIT_ON_ERROR", False)
         disk_check_path = env.get("VISION_CORE_DISK_CHECK_PATH", ".").strip() or "."
-        if not monitor_host:
-            errors.append("VISION_CORE_MONITOR_HOST: no puede estar vacío")
         if not 1 <= monitor_port <= 65535:
             errors.append("VISION_CORE_MONITOR_PORT: debe estar entre 1 y 65535")
 

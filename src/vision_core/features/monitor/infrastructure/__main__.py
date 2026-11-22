@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from vision_core.core.config import Settings
+from vision_core.core.config.settings_helpers import is_exposed_monitor_host, normalize_monitor_host
 from vision_core.core.telemetry.structured_logging import configure_structured_logging
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.model_registry.activation import resolve_active_models
@@ -45,6 +46,16 @@ def main(*, state=None, build_state=None, build_runtime=None, config=None):
         help="Omitir render/JPEG por completo (sin visor conectado)",
     )
     args = parser.parse_args()
+    try:
+        args.host = normalize_monitor_host(args.host)
+    except ValueError:
+        parser.error("Host inválido")
+    if is_exposed_monitor_host(args.host):
+        print(
+            "WARNING: binding to all interfaces (0.0.0.0/::) exposes monitor without auth; "
+            "use only with ticket 42 controls.",
+            flush=True,
+        )
     if not 1 <= args.port <= 65535:
         parser.error("Puerto inválido")
     if args.uncalibrated:

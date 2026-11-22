@@ -8,8 +8,8 @@ from time import perf_counter
 
 import cv2
 
-from vision_core.domain.ports import DetectorManager
-from vision_core.infrastructure.detection.yolo_detector_manager import (
+from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
+from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import (
     YoloDetectorManager,
 )
 

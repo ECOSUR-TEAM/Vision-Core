@@ -8,15 +8,15 @@ import cv2
 import numpy as np
 import pytest
 
-from vision_core.domain.model.polygon import Polygon
-from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
-from vision_core.infrastructure.detection.yolo_detector_manager import (
+from vision_core.core.domain.polygon import Polygon
+from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import (
     YoloDetectorManager,
 )
-from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from vision_core.infrastructure.reid.memory_reid import InMemoryReID
-from vision_core.infrastructure.video.file_video_source import FileVideoSource
-from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
+from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
+from vision_core.features.video.infrastructure.adapters.file_video_source import FileVideoSource
+from vision_core.features.video.infrastructure.adapters.rtsp_video_source import RtspVideoSource
 from vision_core.scripts.pipeline_tools.limited_source import LimitedSource
 
 

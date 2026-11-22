@@ -8,13 +8,13 @@ from urllib.parse import urlsplit
 import cv2
 import numpy as np
 
+from vision_core.core.config import Settings
 from vision_core.core.errors import (
     ConfigurationError,
     VideoSourceError,
     VideoSourceStateError,
     VisionCoreError,
 )
-from vision_core.settings import Settings
 
 from ...domain.ports.video_source import VideoSource
 from ..frame_validation import validate_frame

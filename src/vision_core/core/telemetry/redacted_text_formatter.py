@@ -1,6 +1,6 @@
 import logging
 
-from vision_core.settings import redact_sensitive
+from vision_core.core.config import redact_sensitive
 
 
 class RedactedTextFormatter(logging.Formatter):

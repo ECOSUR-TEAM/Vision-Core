@@ -3,13 +3,16 @@
 Vision Core usa Vertical Slice: cada feature es dueño de sus casos de uso,
 dominio y adaptadores. `core/` contiene únicamente el kernel compartido; no debe
 convertirse en un segundo dominio global. `shared/` ya fue eliminado y su
-contenido migró a `core/` (ECM-106). Durante la migración siguen existiendo
-`application/`, `domain/`, `infrastructure/`, `settings/` y `model_registry/`
-como paths viejos, que se eliminan al final del sprint (ADR 0008).
+contenido migró a `core/` (ECM-106). Los antiguos paquetes de primer nivel
+`application/`, `domain/`, `infrastructure/` y `settings/` fueron eliminados por
+ECM-111; solo `model_registry/` permanece como excepción transitoria (ADR 0007,
+ticket 67). El kernel, los contratos y la infraestructura comunes viven en
+`core/` (ADR 0008).
 
-## Estructura objetivo
+## Estructura
 
-El árbol final de `src/vision_core/` tiene solo tres paquetes de primer nivel:
+El árbol de `src/vision_core/` tiene tres paquetes de primer nivel, más
+`model_registry/` como excepción transitoria:
 
 ```text
 src/vision_core/
@@ -24,7 +27,7 @@ src/vision_core/
     inference/
     telemetry/
     infrastructure/
-    model_registry/             # ADR 0007; path transitorio hasta su migración
+  model_registry/               # ADR 0007; excepción transitoria, ticket 67
   features/
     <slice>/application/
     <slice>/domain/
@@ -34,9 +37,10 @@ src/vision_core/
 
 `core/` es el destino del kernel compartido: dominio y contratos transversales,
 errores, configuración, DTOs y serialización compartidos, validación, inferencia,
-telemetría, infraestructura compartida y registro de modelos. La infraestructura
-específica de un feature permanece en `features/<slice>/infrastructure`; la
-compartida por varios slices vive en `core/infrastructure`.
+telemetría e infraestructura compartida. La infraestructura específica de un
+feature permanece en `features/<slice>/infrastructure`; la compartida por varios
+slices vive en `core/infrastructure`. `model_registry/` se migrará a
+`core/model_registry/` en el ticket 67.
 
 ## Reglas de capas
 
@@ -62,7 +66,7 @@ from vision_core.features.monitor.infrastructure.state import MonitorState  # en
 ```
 
 La decisión completa, incluida la política "sin shims nuevos" y el diferimiento
-de la prohibición de paths viejos al ticket 67, está en
+de la prohibición de `model_registry/` al ticket 67, está en
 [ADR 0008](adr/0008-core-layer-and-dependency-rules.md).
 
 ## Estructura de tests
@@ -89,7 +93,7 @@ desde DTOs.
   `response_<operacion>.py` define `Response<Operacion>`; una clase por archivo.
 - Declaración: `@dataclass(frozen=True, slots=True)`, sin lógica de negocio.
 - Contenido: solo datos y tipos transportables de stdlib o `typing`. No se
-  importan `numpy`, `cv2`, `torch`, `domain/` ni `infrastructure/`.
+  importan `numpy`, `cv2`, `torch`, ni módulos de dominio o infraestructura.
 - Contratos anidados: los payloads son `@dataclass(frozen=True, slots=True)`
   o alias concretos (`JSONValue`); no se usan `dict[str, object]` ni `Any`
   como tipo del contrato. Los mappings transportados se entregan como
@@ -150,10 +154,9 @@ Estos checks se ejecutan junto con toda la suite mediante `python -m pytest` en
 cada pull request. Si un check falla, mueve la dependencia al límite correcto
 (normalmente un port o un mapper) en lugar de relajar la regla.
 
-Los repository ports transversales viven hoy en
-`vision_core.domain.repositories` y sus implementaciones SQLite en
-`vision_core.infrastructure.persistence`; el dominio no conoce SQL. Ambos paths
-son viejos: su destino es `core/domain` y `core/infrastructure` respectivamente.
+Los repository ports transversales viven en
+`vision_core.core.contracts` y sus implementaciones SQLite en
+`vision_core.core.infrastructure.persistence`; el dominio no conoce SQL.
 `main.py` inyecta los adaptadores y hace degradar la persistencia ante errores sin
 detener el video.
 

@@ -16,8 +16,8 @@ from vision_core.core.errors import (
     codes,
 )
 from vision_core.features.monitor.infrastructure.http import handler as handler_module
-from vision_core.infrastructure.monitor.http_server import make_server
-from vision_core.infrastructure.monitor.state import MonitorState
+from vision_core.features.monitor.infrastructure.http.server import make_server
+from vision_core.features.monitor.infrastructure.state import MonitorState
 
 
 @pytest.fixture

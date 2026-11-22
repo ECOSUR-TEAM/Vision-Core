@@ -10,11 +10,11 @@ from tests.fakes.fake_monitor_source import FakeMonitorSource
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_runtime_app import FakeRuntimeApp
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.core.config import Settings
+from vision_core.core.config.persistence import PersistenceSettings
 from vision_core.core.domain.bbox import BBox
-from vision_core.infrastructure.persistence.persisting_reid_memory import PersistingReIDMemory
-from vision_core.infrastructure.reid.memory_reid import InMemoryReID
-from vision_core.settings import Settings
-from vision_core.settings.persistence import PersistenceSettings
+from vision_core.core.infrastructure.persistence.persisting_reid_memory import PersistingReIDMemory
+from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
 
 
 def test_monitor_runtime_persists_events_tracks_and_health(monkeypatch, tmp_path):

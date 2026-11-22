@@ -60,7 +60,10 @@ Este montaje usa RTSP/TCP; no reenvía RTP por UDP.
 
 La imagen de Vision Core usa PyTorch para CPU. No se monta el entorno `venv` de
 la laptop. La caché de torchvision se conserva en el volumen `vision-model-cache`.
-YOLO usa `yolov8n.pt` si existe al construir, o descarga sus pesos al primer uso.
+El Dockerfile no copia pesos `.pt`: YOLO descarga `yolov8n.pt` al primer uso y los
+pesos de torchvision se guardan en esa caché. Los `model_id` configurados deben existir
+en `config/models.yml`; el arranque valida el registro antes de abrir el stream. Ver
+[registro de modelos](model-registry.md).
 
 ## Cuando calibremos la sala
 

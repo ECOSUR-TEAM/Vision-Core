@@ -4,6 +4,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True, slots=True)
 class ReIDSettings:
     model_name: str
+    weights_profile: str
     device: str | None
     threshold: float
     ambiguity_margin: float

@@ -15,6 +15,11 @@ Versión actual: `v1`. Prefijo: `/api/v1/`. El panel en `/` no está versionado.
 | `GET /api/v1/frame?after=N` | 200 con imagen nueva, 204 sin imagen nueva tras 1 s. | 400 `VALIDATION_FAILED` si `N` no es entero no negativo. |
 | Cualquier otra ruta | — | 404 `REQUEST_NOT_FOUND`. |
 
+Los endpoints no versionados `/health`, `/ready` y `/metrics` no forman parte de `v1`.
+`/health` sigue respondiendo solo `{"status": "alive", "live": true}`. `/ready` puede
+añadir campos de forma compatible: `model_id`, `model_version`, `model_hash` y `models`
+con la identidad declarada en `config/models.yml`.
+
 La API puede responder `400` (`VALIDATION_FAILED`, `VIDEO_FRAME_INVALID`,
 `MODEL_INPUT_INVALID`), `404` (`REQUEST_NOT_FOUND`), `409`
 (`PIPELINE_CALIBRATION_MISMATCH`), `422` (`ZONE_CONFIG_INVALID`,

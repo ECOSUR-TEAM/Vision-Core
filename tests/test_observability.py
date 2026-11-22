@@ -65,6 +65,43 @@ def test_metrics_counter_gauge_and_histogram():
     assert payload["histograms"]["vision_core_frame_processing_duration_ms"]["avg"] == 15
 
 
+def test_metrics_keep_legacy_keys_and_add_camera_labels():
+    metrics = ObservabilityMetrics()
+    metrics.increment("vision_core_frames_processed_total", 2, camera_id="camera-g0")
+    metrics.set_gauge("vision_core_fps", 12.5, camera_id="camera-g0")
+    metrics.observe("vision_core_inference_latency_ms", 8, camera_id="camera-g0")
+    metrics.increment("vision_core_errors_total", camera_id="default")
+
+    payload = metrics.snapshot()
+    assert payload["counters"]["vision_core_frames_processed_total"] == 2
+    assert payload["counters"]["vision_core_frames_processed_total{camera_id=camera-g0}"] == 2
+    assert payload["gauges"]["vision_core_fps"] == 12.5
+    assert payload["gauges"]["vision_core_fps{camera_id=camera-g0}"] == 12.5
+    assert payload["histograms"]["vision_core_inference_latency_ms"]["count"] == 1
+    assert payload["histograms"]["vision_core_inference_latency_ms{camera_id=camera-g0}"]["avg"] == 8
+    assert "vision_core_errors_total{camera_id=default}" not in payload["counters"]
+
+
+def test_metrics_camera_label_is_sanitized():
+    metrics = ObservabilityMetrics()
+    metrics.increment("vision_core_frames_processed_total", camera_id="camera/1\nregion")
+
+    payload = metrics.snapshot()
+    assert "vision_core_frames_processed_total{camera_id=camera_1_region}" in payload["counters"]
+
+
+def test_monitor_state_publishes_camera_labelled_metrics():
+    metrics = ObservabilityMetrics()
+    state = MonitorState(metrics=metrics, camera_id="camera-g0")
+    state.publish(b"jpeg", [], 2, dropped=5, queue_size=1)
+
+    payload = metrics.snapshot()
+    assert payload["counters"]["vision_core_frames_discarded_total{camera_id=camera-g0}"] == 5
+    assert payload["gauges"]["vision_core_queue_size{camera_id=camera-g0}"] == 1
+    assert "vision_core_frames_discarded_total{camera_id=camera-g0}" in payload["counters"]
+    assert "vision_core_frames_discarded_total" in payload["counters"]
+
+
 def test_readiness_reports_individual_checks():
     health = HealthStatus(minimum_free_disk_mb=0)
     health.set_ready(config_valid=True, model_loaded=True, source_connected=False)
@@ -183,6 +220,25 @@ def test_ready_endpoint_follows_actual_stream_state(tmp_path):
         with pytest.raises(HTTPError) as error:
             urlopen(f"{base_url}/ready")
         assert error.value.code == 503
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+def test_metrics_endpoint_exposes_camera_labelled_and_legacy_keys():
+    state = MonitorState(camera_id="camera-http")
+    state.publish(b"jpeg", [], 1, dropped=1, queue_size=0)
+    server = make_server("127.0.0.1", 0, state)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base_url = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(f"{base_url}/metrics") as response:
+            payload = json.load(response)
+        assert payload["counters"]["vision_core_frames_processed_total"] == 1
+        assert payload["counters"]["vision_core_frames_processed_total{camera_id=camera-http}"] == 1
+        assert payload["gauges"]["vision_core_queue_size{camera_id=camera-http}"] == 0
     finally:
         server.shutdown()
         server.server_close()

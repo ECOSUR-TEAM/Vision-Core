@@ -36,7 +36,8 @@ HTTP es una conveniencia para clientes.
 El cuerpo de `/api/v1/state` contiene: `status`, `error`, `demo_zones`, `frame`,
 `updated_at`, `age_seconds`, `people`, `events`, `counts`, `processing_ms`,
 `fps`, `dropped_frames`. Cada elemento de `events` sigue el esquema descrito
-más abajo.
+más abajo. El cuerpo no incorpora `camera_id` en G0: la dimension se expone solo
+en `/metrics` y en `profiling_results.json` para preservar este contrato.
 
 ### Envelope de error
 

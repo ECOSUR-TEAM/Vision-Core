@@ -52,6 +52,13 @@ mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan
 `person_id`, rutas o URLs como labels. `vision_core_frames_discarded_total` suma el
 delta del acumulado de la captura, no el total en cada frame.
 
+Cuando `VISION_CORE_CAMERA_ID` no es `default`, cada metrica se publica dos veces:
+con su nombre historico (agregado) y con el sufijo `{camera_id=<id>}`. Por ejemplo,
+`vision_core_frames_discarded_total{camera_id=camera-1}` complementa a
+`vision_core_frames_discarded_total` sin romper consumidores anteriores. Los
+caracteres no válidos en `camera_id` se normalizan a `_` en la clave de métrica;
+el valor original se conserva en `profiling_results.json` y en logs JSON.
+
 ## Diagnostico
 
 ### FPS bajo
@@ -76,6 +83,7 @@ delta del acumulado de la captura, no el total en cada frame.
 
 - `VISION_CORE_LOG_LEVEL`: `CRITICAL`, `ERROR`, `WARNING`, `INFO` o `DEBUG`
 - `VISION_CORE_LOG_JSON`: `1` para JSON; `0` para texto
-- `VISION_CORE_CAMERA_ID`: identificador estable de la camara
+- `VISION_CORE_CAMERA_ID`: identificador estable de la camara en logs, estado,
+  metricas y profiling (baseline G0)
 - `VISION_CORE_MINIMUM_FREE_DISK_MB`: espacio libre minimo para readiness
 - `VISION_CORE_DISK_CHECK_PATH`: ruta comprobada por readiness (`.` por defecto; `/model-cache` en Compose)

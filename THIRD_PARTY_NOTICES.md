@@ -10,8 +10,8 @@ el `LICENSE` del wheel instalado.
 | Componente | Versión | Uso | Licencia | Fuente |
 |---|---|---|---|---|
 | ultralytics | 8.4.201 | Detector de personas (YOLO) | **AGPL-3.0** | `ultralytics/LICENSE` |
-| torch | 2.10.0 | Inferencia (índice CPU) | BSD-3-Clause y componentes incluidos (Apache-2.0, BSD-2/3, MIT, BSL-1.0, LLVM-exception) | `torch/LICENSE` |
-| torchvision | 0.25.0 | Transformaciones de visión (índice CPU) | BSD-3-Clause | `torchvision/LICENSE` |
+| torch | 2.15.0+cpu | Inferencia (índice CPU) | BSD-3-Clause y componentes incluidos (Apache-2.0, BSD-2/3, MIT, BSL-1.0, LLVM-exception) | `torch/LICENSE` |
+| torchvision | 0.29.2+cpu | Transformaciones de visión (índice CPU) | BSD-3-Clause | `torchvision/LICENSE` |
 | opencv-python | 5.0.0.93 | Captura/decodificación de video | Apache-2.0 y componentes incluidos | `LICENSE-3RD-PARTY.txt` |
 | numpy | 2.4.6 | Arreglos | BSD-3-Clause y componentes incluidos | `LICENSE.txt` |
 | pillow | 13.0.0 | Procesamiento de imágenes | MIT-CMU (HPND) | `LICENSE` |

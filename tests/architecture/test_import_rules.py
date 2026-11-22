@@ -6,6 +6,9 @@ import pytest
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SRC = PROJECT_ROOT / "src" / "vision_core"
 FEATURES = SRC / "features"
+CORE = SRC / "core"
+CORE_DTO_ROOT = CORE / "dto"
+CORE_DTO = "vision_core.core.dto"
 FORBIDDEN_DTO_IMPORTS = {"numpy", "cv2", "torch", "torchvision", "ultralytics"}
 ALLOWED_DTO_STDLIB_IMPORTS = {
     "__future__",
@@ -71,6 +74,54 @@ def test_shared_does_not_import_features_or_infrastructure():
     )
 
 
+def test_core_does_not_import_features_or_scripts():
+    _assert_no_imports(
+        _python_files(CORE),
+        lambda module: module.startswith("vision_core.features") or module.startswith("vision_core.scripts"),
+        "core import boundary violated",
+    )
+
+
+def test_scripts_are_not_imported_by_features_or_core():
+    paths = (*_python_files(FEATURES), *_python_files(CORE))
+    _assert_no_imports(
+        paths,
+        lambda module: module.startswith("vision_core.scripts"),
+        "scripts import boundary violated",
+    )
+
+
+def test_core_layout_is_present():
+    expected = [
+        "__init__.py",
+        "config/__init__.py",
+        "contracts/__init__.py",
+        "domain/__init__.py",
+        "dto/__init__.py",
+        "errors/__init__.py",
+        "inference/__init__.py",
+        "infrastructure/__init__.py",
+        "serialization/__init__.py",
+        "telemetry/__init__.py",
+        "validation/__init__.py",
+    ]
+    missing = [part for part in expected if not (CORE / part).is_file()]
+    assert not missing, f"core layout incomplete: {missing}"
+
+
+def test_core_rule_detects_forbidden_imports(tmp_path, monkeypatch):
+    core = tmp_path / "core"
+    core.mkdir(parents=True)
+    (core / "bad.py").write_text(
+        "from vision_core.features.door.application.use_cases import UpdateZone\n", encoding="utf-8"
+    )
+    monkeypatch.setitem(globals(), "SRC", tmp_path)
+    monkeypatch.setitem(globals(), "CORE", core)
+
+    with pytest.raises(AssertionError, match="core import boundary violated"):
+        test_core_does_not_import_features_or_scripts()
+
+
 def test_domain_does_not_import_application_or_infrastructure():
     if not FEATURES.exists():
         return
@@ -124,14 +175,16 @@ def test_dtos_do_not_import_domain_infrastructure_or_frameworks():
 
 def test_dtos_only_import_allowed_modules():
     violations = []
-    for feature in FEATURES.iterdir():
-        if not feature.is_dir():
-            continue
-        dto_root = feature / "application" / "dto"
+    dto_roots = [
+        (feature / "application" / "dto", f"vision_core.features.{feature.name}.application.dto")
+        for feature in FEATURES.iterdir()
+        if feature.is_dir()
+    ]
+    dto_roots.append((CORE_DTO_ROOT, CORE_DTO))
+    shared_dto = "vision_core.shared.application.dto"
+    for dto_root, own_dto in dto_roots:
         if not dto_root.exists():
             continue
-        own_dto = f"vision_core.features.{feature.name}.application.dto"
-        shared_dto = "vision_core.shared.application.dto"
         for path in _python_files(dto_root):
             for module, level in _import_records(path):
                 resolved = _resolve_relative_import(path, module, level)
@@ -142,10 +195,12 @@ def test_dtos_only_import_allowed_modules():
                     or resolved.startswith(f"{own_dto}.")
                     or resolved == shared_dto
                     or resolved.startswith(f"{shared_dto}.")
+                    or resolved == CORE_DTO
+                    or resolved.startswith(f"{CORE_DTO}.")
                 )
                 if not allowed:
                     violations.append((path.relative_to(SRC), resolved))
-    assert not violations, f"DTO imports must use stdlib, own DTO package or shared DTO base: {violations}"
+    assert not violations, f"DTO imports must use stdlib, own DTO package or shared/core DTO base: {violations}"
 
 
 def test_only_composition_roots_import_multiple_feature_factories():

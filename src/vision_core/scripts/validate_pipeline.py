@@ -19,9 +19,11 @@ from vision_core.infrastructure.reid.embedder import TorchvisionEmbeddingExtract
 from vision_core.infrastructure.reid.memory_reid import InMemoryReID
 from vision_core.infrastructure.video.file_video_source import FileVideoSource
 from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.model_registry.activation import resolve_active_models
 from vision_core.scripts.pipeline_tools.limited_source import LimitedSource
 from vision_core.scripts.pipeline_tools.measured_app import MeasuredApp
 from vision_core.scripts.pipeline_tools.recorded_detector import RecordedDetector
+from vision_core.settings import Settings
 from vision_core.shared.errors import VisionCoreError, codes
 
 
@@ -36,6 +38,7 @@ def main():
     if args.frames <= 0:
         parser.error("--frames debe ser positivo")
     zones = load_zones(args.zones)
+    active_models = resolve_active_models(Settings.from_env(validate_startup=False))
     source = LimitedSource(FileVideoSource(args.video) if args.video else RtspVideoSource.from_env(), args.frames)
     with Path(args.output).open("x") as output:
         start = time.perf_counter()
@@ -50,7 +53,7 @@ def main():
                 detector,
                 InMemoryReID.from_env(),
                 PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door),
-                TorchvisionEmbeddingExtractor.from_env(),
+                TorchvisionEmbeddingExtractor.from_env(active_models.embedding),
                 emit,
                 expected_frame_size=(zones.width, zones.height),
                 output=output,

@@ -44,7 +44,7 @@ de modo que los clientes existentes siguen capturando el tipo previo.
 
 | Código | `retryable` | HTTP | Cuándo ocurre |
 |---|---|---|---|
-| `CONFIGURATION_INVALID` | no | 500 | Falta `VISION_CORE_RTSP_URL` o `VISION_CORE_VIDEO_PATH`; valores numéricos de entorno no convertibles; `VISION_CORE_VIDEO_SOURCE` desconocido; `VISION_CORE_ZONE_CONFIRMATION_FRAMES` no entero; modelo o dispositivo de embeddings no válido. |
+| `CONFIGURATION_INVALID` | no | 500 | Falta `VISION_CORE_RTSP_URL` o `VISION_CORE_VIDEO_PATH`; valores numéricos de entorno no convertibles; `VISION_CORE_VIDEO_SOURCE` desconocido; `VISION_CORE_ZONE_CONFIRMATION_FRAMES` no entero; modelo o dispositivo de embeddings no válido; `model_id` desconocido, inactivo o con selector/configuración distinta a `config/models.yml`; discrepancia de checksum local. |
 | `VIDEO_SOURCE_UNAVAILABLE` | sí | 503 | RTSP no abre tras los reintentos, se agotan los reintentos de lectura, o no se puede abrir el video grabado. |
 | `VIDEO_SOURCE_MISSING` | no | 500 | El archivo configurado con `VISION_CORE_VIDEO_PATH` no existe. |
 | `VIDEO_SOURCE_STATE` | no | 500 | `read_frame()` antes de `open()`, o el backend OpenCV no puede garantizar salida BGR. |

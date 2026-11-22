@@ -1,0 +1,68 @@
+schema_version: "1.0"
+models:
+  - id: detection.person.yolov8n
+    name: yolov8n
+    task: detection
+    version: "1.0.0"
+    artifact_version: unpinned
+    selector: yolov8n.pt
+    source: Ultralytics YOLOv8n pretrained on COCO
+    source_url: https://docs.ultralytics.com/models/yolov8/
+    license: AGPL-3.0
+    license_url: https://www.gnu.org/licenses/agpl-3.0.html
+    license_notes: "Los modelos Ultralytics usan AGPL-3.0 o licencia Enterprise; verificar la obligación de código abierto antes de despliegue privado."
+    registered_at: "2026-11-21"
+    checksum:
+      algorithm: sha256
+      value: null
+    expected_config:
+      confidence: 0.5
+      classes: [0]
+      input: BGR uint8 HxWx3
+      output_classes: 80
+    model_card: docs/model-cards/detection-yolov8n.md
+    status: active
+
+  - id: embedding.person.mobilenet_v3_small
+    name: mobilenet_v3_small
+    task: embedding
+    version: "1.0.0"
+    artifact_version: IMAGENET1K_V1
+    selector: mobilenet_v3_small
+    source: torchvision.models.mobilenet_v3_small con MobileNet_V3_Small_Weights.DEFAULT
+    source_url: https://docs.pytorch.org/vision/stable/models/generated/torchvision.models.mobilenet_v3_small.html
+    license: BSD-3-Clause
+    license_url: null
+    license_notes: "El código de torchvision es BSD-3-Clause; los metadatos de los pesos no declaran licencia propia. Revisar con el ticket 42."
+    registered_at: "2026-11-21"
+    checksum:
+      algorithm: sha256
+      value: null
+    expected_config:
+      embedding_dim: 576
+      input: BGR uint8 recorte de persona
+      weights: DEFAULT
+    model_card: docs/model-cards/embedding-mobilenet-v3-small.md
+    status: active
+
+  - id: embedding.person.resnet50
+    name: resnet50
+    task: embedding
+    version: "1.0.0"
+    artifact_version: IMAGENET1K_V2
+    selector: resnet50
+    source: torchvision.models.resnet50 con ResNet50_Weights.DEFAULT
+    source_url: https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet50.html
+    license: BSD-3-Clause
+    license_url: null
+    license_notes: "El código de torchvision es BSD-3-Clause; los metadatos de los pesos no declaran licencia propia. Revisar con el ticket 42."
+    registered_at: "2026-11-21"
+    checksum:
+      algorithm: sha256
+      value: null
+    expected_config:
+      embedding_dim: 2048
+      input: BGR uint8 recorte de persona
+      weights: DEFAULT
+    model_card: docs/model-cards/embedding-resnet50.md
+    status: active

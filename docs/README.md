@@ -21,6 +21,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | Documento | Para qué sirve |
 |---|---|
 | [Índice de ADR](adr/README.md) | Todas las decisiones de arquitectura, su estado y sus enmiendas |
+| [ADR 0007: registro de modelos](adr/0007-registro-de-modelos-y-model-cards.md) | Identidad, checksum y trazabilidad de modelos |
 | [Plantilla de ADR](adr/_template.md) | Cómo registrar una decisión nueva |
 
 ## Operación
@@ -39,6 +40,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Catálogo de errores](errors.md) | Códigos estables y jerarquía |
 | [Contratos versionados](api-contracts.md) | API `v1` y esquema de eventos |
 | [Releases](releases.md) | Versionado, tags, publicación y rollback |
+| [Registro de modelos](model-registry.md) | Alta, adopción y rollback de modelos |
 | [Seguridad y supply chain](security.md) | Escaneos, dependencias y permisos |
 
 ## Calidad y evidencia
@@ -53,6 +55,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Replay determinista](replay.md) | Golden videos, fixtures y comparación de eventos |
 | [Presupuestos de rendimiento](performance.md) | Baselines, hotspots, smoke y benchmark nocturno |
 | [Plan G0](g0-baseline-plan.md) | Instrumentación del pipeline de una cámara |
+| [Model cards](model-cards/TEMPLATE.md) | Plantilla y fichas de procedencia, licencia y límites |
 | [Evaluación de la sala](../reports/room-evaluation.md) | Resultados y pendientes reales |
 | [Cámara Ethernet](../reports/ethernet-camera-evaluation.md) | Evidencia de la FD8134 |
 | [Webcam con Frigate](../reports/webcam-frigate.md) | Prueba de integración local |
@@ -76,3 +79,4 @@ hecha hasta que esa persona la confirme.
 |---|---|---|---|
 | ECM-84: ADR 0004-0006, diagramas, runbooks, onboarding y glosario | Autor del PR ECM-84 | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-85: proceso de PR, CODEOWNERS y DoD | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-99: registro de modelos y model cards | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |

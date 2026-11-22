@@ -13,6 +13,7 @@ alternativas y verificación. Para crear uno, copia la
 | [0004](0004-configuracion-tipada-y-validacion-de-entorno.md) | Configuración tipada y validación de entorno | Aceptada | 2026-11-20 |
 | [0005](0005-observabilidad-y-contratos-versionados.md) | Observabilidad, errores y contratos versionados | Aceptada | 2026-11-20 |
 | [0006](0006-versionado-y-releases.md) | Versionado semántico, releases y rollback | Aceptada | 2026-11-20 |
+| [0007](0007-registro-de-modelos-y-model-cards.md) | Registro de modelos y model cards | Aceptada | 2026-11-21 |
 
 El prerrequisito G0 se instrumenta sin autorizar multi-cámara; su plan operativo está
 en [docs/g0-baseline-plan.md](../g0-baseline-plan.md).

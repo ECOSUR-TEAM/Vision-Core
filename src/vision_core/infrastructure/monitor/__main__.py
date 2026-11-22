@@ -5,16 +5,19 @@ import signal
 from pathlib import Path
 
 from vision_core.features.monitor.infrastructure.http.server import make_server
+from vision_core.model_registry.activation import resolve_active_models
 from vision_core.settings import Settings
 from vision_core.shared.observability.structured_logging import configure_structured_logging
 
 
 def main(*, state=None, build_state=None, build_runtime=None, config=None):
     settings = Settings.from_env(validate_startup=state is None or build_runtime is None)
+    active_models = resolve_active_models(settings)
     configure_structured_logging(
         settings.logging.level,
         settings.logging.json_format,
         settings.logging.camera_id,
+        active_models.as_log_identity(),
     )
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default=settings.monitor.host)
@@ -52,7 +55,7 @@ def main(*, state=None, build_state=None, build_runtime=None, config=None):
     if state is None:
         if build_state is None:
             raise RuntimeError("build_state es obligatorio")
-        state = build_state(demo=args.demo_zones or args.uncalibrated, settings=settings)
+        state = build_state(demo=args.demo_zones or args.uncalibrated, settings=settings, models=active_models)
 
     server = None
     runtime = None
@@ -70,6 +73,7 @@ def main(*, state=None, build_state=None, build_runtime=None, config=None):
             settings=settings,
             render_enabled=False if args.no_render else None,
             config=config,
+            models=active_models,
         )
         server = make_server(args.host, args.port, state)
 

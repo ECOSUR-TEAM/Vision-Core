@@ -36,7 +36,7 @@ def test_monitor_e2e_with_video_file_and_real_zones(monkeypatch, synthetic_sampl
     monkeypatch.setattr(
         main,
         "build_reid",
-        lambda: SimpleNamespace(
+        lambda **kwargs: SimpleNamespace(
             memory=InMemoryReID(ttl_seconds=0),
             embedder=lambda crop: np.array([1.0, 0.0]),
         ),

@@ -43,6 +43,8 @@ scripts reales viven en `src/vision_core/scripts` y ya quedan cubiertos por
 OpenCV, Torch, Ultralytics u otra dependencia no publique stubs. No sustituye al
 tipado de esos límites: al añadir nuevas integraciones, prefiere adaptadores con
 protocolos propios en `domain/` y revisa que los tipos no se degraden a `Any`.
+PyYAML sí publica stubs; se instalan desde `requirements-dev.txt` y se usan al
+verificar `config/models.yml` y su loader.
 
 ## Interpretar errores
 

@@ -73,8 +73,8 @@ synthetic:
 	@test -f dev-data/sample.avi || $(PYTHON) -m vision_core.scripts.create_pipeline_sample --allow-existing dev-data
 
 docker-build:
-	@docker compose --profile synthetic config -q
-	@docker compose --profile synthetic build
+	@docker compose --profile camera config -q
+	@docker compose --profile camera build
 
 clean:
 	@rm -f dev-data/sample.avi

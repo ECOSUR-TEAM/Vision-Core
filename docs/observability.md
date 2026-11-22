@@ -7,7 +7,11 @@
 | `/health` | Liveness del proceso | `200` mientras el HTTP server puede atender |
 | `/ready` | Configuracion, modelo, fuente de video y disco | `200` cuando todo esta listo; `503` si falla un chequeo |
 | `/metrics` | Telemetria JSON equivalente a metricas | Contadores, gauges e histogramas |
-| `/api/state` | Estado operativo del monitor | Estado, FPS y eventos existentes |
+| `/api/v1/state` | Estado operativo del monitor | Estado, FPS, persistencia y eventos existentes |
+| `/api/v1/frame?after=N` | Frame JPEG para el visor | `200` JPEG nuevo · `204` sin imagen nueva · `400` `VALIDATION_FAILED` · `503` `VIDEO_FRAME_PENDING` |
+
+Las rutas `/api/state` y `/api/frame` siguen disponibles como alias deprecados;
+los clientes nuevos deben usar `/api/v1/*`. Ver [contratos](api-contracts.md).
 
 Ejemplo:
 

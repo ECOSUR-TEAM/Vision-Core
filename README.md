@@ -250,13 +250,13 @@ con `;`, `&`, `#` u otros caracteres especiales.
 3. Captura una imagen y calibra los polígonos:
 
 ```bash
-python -m vision_core.infrastructure.video.capture_reference referencia.png
+python -m vision_core.scripts.capture_reference referencia.png
 cp config/zones.example.json config/zones.json
 # Migración: los zones.json antiguos con "_note" y sin "version" deben
 # eliminar "_note" y añadir "version": "1.0" antes de usarlos.
 # Editar frame_size (enteros), door, exterior e interior con referencia.png.
 # No añadir otras claves ni duplicarlas: el loader las rechaza.
-python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png
+python -m vision_core.scripts.check_zones referencia.png config/zones.json zonas.png
 ```
 
 El ejemplo contiene coordenadas sintéticas. La [guía de calibración](docs/validation.md#calibrar-puerta-y-zonas-con-la-cámara)
@@ -391,9 +391,7 @@ actualización de dependencias y regeneración del lockfile están en
 |---|---|
 | `src/vision_core/features/` | Features de detección, puerta, monitor, pipeline, ReID y video |
 | `src/vision_core/features/pipeline/` | `RunPipeline`, DTOs, mappers y fábrica del pipeline |
-| `src/vision_core/application/` | Componentes de aplicación en migración |
-| `src/vision_core/domain/` | Modelos y puertos compartidos en migración |
-| `src/vision_core/infrastructure/` | Adaptadores concretos compartidos en migración |
+| `src/vision_core/core/` | Kernel compartido: configuración, contratos, dominio, DTOs, errores, inferencia, persistencia, serialización, telemetría y validación |
 | `src/vision_core/scripts/` | Demostración, diagnóstico, ejecución medida y evaluación |
 | `main.py` | Composition root único y entrypoint raíz de Docker y ejecución local |
 
@@ -413,7 +411,9 @@ La estructura Vertical Slice y Screaming Architecture está registrada en
 y retención en [ADR 0002](docs/adr/0002-persistence-and-retention.md); el modelo de
 ejecución multi-cámara y la decisión condicional de ReID compartido, en
 [ADR 0003](docs/adr/0003-modelo-ejecucion-multi-camara.md); el registro de modelos y
-model cards, en [ADR 0007](docs/adr/0007-registro-de-modelos-y-model-cards.md).
+model cards, en [ADR 0007](docs/adr/0007-registro-de-modelos-y-model-cards.md); y el
+contrato de capas `features/`, `core/` y `scripts/`, en
+[ADR 0008](docs/adr/0008-core-layer-and-dependency-rules.md).
 
 ## Convención: una clase por archivo
 
@@ -435,7 +435,7 @@ python -m pytest tests/test_one_class_per_file.py -q
 
 ## Seguridad de UI y output encoding
 
-El monitor servido por `src/vision_core/infrastructure/monitor/index.html` trata
+El monitor servido por `src/vision_core/features/monitor/infrastructure/http/index.html` trata
 **todo** dato que llega de `/api/v1/state` como texto no confiable, incluyendo
 `person_id`, `display_name`, zonas y `metadata`.
 
@@ -490,7 +490,7 @@ de PR publica cobertura y el nightly publica logs. Consulta:
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
 - [Diagramas C4 y flujo](docs/diagrams.md) y [runbooks](docs/runbooks/README.md).
 - [Type checking con mypy](docs/type-checking.md).
-- [Decisiones de arquitectura](docs/adr/README.md) ([0001](docs/adr/0001-screaming-architecture-vertical-slice.md), [0002](docs/adr/0002-persistence-and-retention.md), [0003](docs/adr/0003-modelo-ejecucion-multi-camara.md), [0004](docs/adr/0004-configuracion-tipada-y-validacion-de-entorno.md), [0005](docs/adr/0005-observabilidad-y-contratos-versionados.md), [0006](docs/adr/0006-versionado-y-releases.md) y [0007](docs/adr/0007-registro-de-modelos-y-model-cards.md)).
+- [Decisiones de arquitectura](docs/adr/README.md) ([0001](docs/adr/0001-screaming-architecture-vertical-slice.md), [0002](docs/adr/0002-persistence-and-retention.md), [0003](docs/adr/0003-modelo-ejecucion-multi-camara.md), [0004](docs/adr/0004-configuracion-tipada-y-validacion-de-entorno.md), [0005](docs/adr/0005-observabilidad-y-contratos-versionados.md), [0006](docs/adr/0006-versionado-y-releases.md), [0007](docs/adr/0007-registro-de-modelos-y-model-cards.md) y [0008](docs/adr/0008-core-layer-and-dependency-rules.md)).
 - [Registro de modelos, upgrade y rollback](docs/model-registry.md) y [model cards](docs/model-cards/TEMPLATE.md).
 - [Persistencia, retención y backup](docs/persistence.md).
 - [Orquestación y cierre](docs/operations.md).

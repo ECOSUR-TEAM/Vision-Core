@@ -33,8 +33,8 @@ monitor muestra recuadros. Si no, vuelve al
    recalibra:
 
    ```bash
-   python -m vision_core.infrastructure.video.capture_reference referencia.png
-   python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png
+   python -m vision_core.scripts.capture_reference referencia.png
+   python -m vision_core.scripts.check_zones referencia.png config/zones.json zonas.png
    ```
 
    El protocolo completo está en

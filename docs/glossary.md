@@ -35,7 +35,7 @@ significado distinto en el código, prevalece el código enlazado.
 | **`/ready`** | Readiness: configuración, modelo, fuente de video y disco. Devuelve `503` si falla un chequeo. |
 | **`/metrics`** | Telemetría JSON (contadores, gauges e histogramas) del estado del monitor. |
 | **DTO** | Objeto inmutable de transporte entre capas o features. No contiene lógica de negocio ni depende de `numpy`, `cv2` o `torch`. |
-| **Puerto / adaptador** | Contrato abstracto en `domain/` y su implementación concreta en `infrastructure/`. `main.py` inyecta el adaptador. |
+| **Puerto / adaptador** | Contrato abstracto en `core/contracts/` o en `features/<slice>/domain/ports/`, y su implementación concreta en `features/<slice>/infrastructure/adapters/` (o en `core/infrastructure/` si es compartido). `main.py` inyecta el adaptador. |
 | **Frigate / go2rtc** | Servicio externo que entrega video RTSP a Vision Core. Vision Core hace su propia detección; Frigate no produce los eventos de negocio. |
 | **RTSP** | Protocolo de stream. En el stack se usa TCP por defecto para reducir inestabilidad. Nunca pegues una URL con credenciales en logs o incidencias. |
 

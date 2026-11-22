@@ -75,11 +75,11 @@ flowchart TB
         Monitor["monitor<br/>estado, render y HTTP"]
     end
 
-    subgraph Shared["shared / adaptadores"]
-        Obs["observability<br/>health, logs, métricas"]
-        Errors["errors<br/>taxonomía y envelope"]
-        Persist["infrastructure/persistence<br/>SQLite y retención"]
-        Settings["settings<br/>Settings.from_env()"]
+    subgraph Shared["core / infraestructura compartida"]
+        Obs["core/telemetry<br/>health, logs, métricas"]
+        Errors["core/errors<br/>taxonomía y envelope"]
+        Persist["core/infrastructure/persistence<br/>SQLite y retención"]
+        Settings["core/config<br/>Settings.from_env()"]
     end
 
     Main --> Settings

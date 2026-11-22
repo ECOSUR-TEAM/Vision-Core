@@ -3,15 +3,15 @@ from typing import TYPE_CHECKING, cast
 import numpy as np
 import torch
 
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.errors import ModelError, ValidationError, codes
+from vision_core.core.inference.tensor_boxes import iter_prediction_boxes
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.detection.infrastructure.adapters.motion_tracker import (
     MotionTracker,
 )
 from vision_core.model_registry.model_descriptor import ModelDescriptor
-from vision_core.shared.domain.bbox import BBox
-from vision_core.shared.errors import ModelError, ValidationError, codes
-from vision_core.shared.inference.tensor_boxes import iter_prediction_boxes
 
 if TYPE_CHECKING:
     from ultralytics.engine.results import Results

@@ -1,6 +1,6 @@
 from typing import Any, Protocol
 
-from vision_core.shared.domain.event import Event
+from vision_core.core.domain.event import Event
 
 
 class EventConsumer(Protocol):

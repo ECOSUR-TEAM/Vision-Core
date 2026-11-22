@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from vision_core.shared.application.dto.frame_like import FrameLike
+from vision_core.core.dto.frame_like import FrameLike
 
 
 @dataclass(frozen=True, slots=True)

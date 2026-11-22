@@ -1,12 +1,11 @@
 """Mappers between pipeline domain entities and transport DTOs, plus event JSON serializers."""
 
-from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
-from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
-from vision_core.shared.application.dto.bbox_payload import BBoxPayload
-from vision_core.shared.application.dto.json_value import JSONValue
-from vision_core.shared.application.dto.resolved_track_payload import ResolvedTrackPayload
-from vision_core.shared.application.dto.serialization import dumps_json, to_json_value
-from vision_core.shared.application.validation import (
+from vision_core.core.domain.event import Event
+from vision_core.core.dto import JSONValue
+from vision_core.core.dto.bbox_payload import BBoxPayload
+from vision_core.core.dto.resolved_track_payload import ResolvedTrackPayload
+from vision_core.core.serialization import dumps_json, to_json_value
+from vision_core.core.validation import (
     bounded_int,
     finite_bbox,
     finite_float,
@@ -14,7 +13,8 @@ from vision_core.shared.application.validation import (
     json_metadata,
     required_str,
 )
-from vision_core.shared.domain.event import Event
+from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
+from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 
 __all__ = [
     "event_to_dto",

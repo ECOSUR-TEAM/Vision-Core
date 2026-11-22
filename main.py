@@ -4,13 +4,22 @@ import uuid
 from collections.abc import Callable
 from dataclasses import replace
 
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config import Settings
+from vision_core.core.config.persistence import PersistenceSettings
+from vision_core.core.config.pipeline_config import PipelineConfig
+from vision_core.core.infrastructure.persistence.persistence_service import PersistenceService
+from vision_core.core.infrastructure.persistence.persisting_reid_memory import PersistingReIDMemory
+from vision_core.core.infrastructure.persistence.retention_job import RetentionJob
+from vision_core.core.infrastructure.persistence.retention_worker import RetentionWorker
+from vision_core.core.telemetry.health import HealthStatus
+from vision_core.core.telemetry.metrics import get_observability_metrics
 from vision_core.features.detection.infrastructure.dependencies import build_detection
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics import UncalibratedAnalytics
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 from vision_core.features.door.infrastructure.dependencies import build_door
+from vision_core.features.monitor.infrastructure import __main__ as monitor_cli
 from vision_core.features.monitor.infrastructure.dependencies import build_monitor
 from vision_core.features.monitor.infrastructure.latest_frame_buffer import LatestFrameBuffer
 from vision_core.features.monitor.infrastructure.renderer import render_frame
@@ -20,16 +29,7 @@ from vision_core.features.pipeline.application.mappers.pipeline_mapper import ev
 from vision_core.features.pipeline.infrastructure.dependencies import build_pipeline
 from vision_core.features.reid.infrastructure.dependencies import build_reid
 from vision_core.features.video.infrastructure.dependencies import build_video
-from vision_core.infrastructure.monitor import __main__ as monitor_cli
-from vision_core.infrastructure.persistence.persistence_service import PersistenceService
-from vision_core.infrastructure.persistence.persisting_reid_memory import PersistingReIDMemory
-from vision_core.infrastructure.persistence.retention_job import RetentionJob
-from vision_core.infrastructure.persistence.retention_worker import RetentionWorker
 from vision_core.model_registry.activation import resolve_active_models
-from vision_core.settings import Settings
-from vision_core.settings.persistence import PersistenceSettings
-from vision_core.shared.observability.health import HealthStatus
-from vision_core.shared.observability.metrics import get_observability_metrics
 
 logger = logging.getLogger(__name__)
 

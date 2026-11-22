@@ -6,9 +6,14 @@ MODULES = {
     "pipeline": (("/features/pipeline/",), 90.0),
     "door": (("/features/door/",), 80.0),
     "monitor": (("/features/monitor/",), 85.0),
-    "application": (("/features/", "/application/"), 90.0),
-    "profiling": (("/application/frame_profiler.py",), 90.0),
-    "observability": (("/shared/observability/",), 85.0),
+    "features": (("/features/",), 85.0),
+    "core_domain": (("/core/domain/",), 90.0),
+    "core_errors": (("/core/errors/",), 90.0),
+    "core_config": (("/core/config/",), 85.0),
+    "core_serialization": (("/core/serialization/",), 80.0),
+    "core_persistence": (("/core/infrastructure/persistence/",), 80.0),
+    "observability": (("/core/telemetry/",), 85.0),
+    "profiling": (("/core/inference/frame_profiler.py",), 90.0),
     "global": ((), 80.0),
 }
 

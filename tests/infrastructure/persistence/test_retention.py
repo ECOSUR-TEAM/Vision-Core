@@ -1,11 +1,11 @@
 import threading
 import time
 
-from vision_core.domain.model.event import Event
-from vision_core.infrastructure.persistence.persistence_service import PersistenceService
-from vision_core.infrastructure.persistence.retention_job import RetentionJob
-from vision_core.infrastructure.persistence.retention_worker import RetentionWorker
-from vision_core.settings.persistence import PersistenceSettings
+from vision_core.core.config.persistence import PersistenceSettings
+from vision_core.core.domain.event import Event
+from vision_core.core.infrastructure.persistence.persistence_service import PersistenceService
+from vision_core.core.infrastructure.persistence.retention_job import RetentionJob
+from vision_core.core.infrastructure.persistence.retention_worker import RetentionWorker
 
 
 def _settings(tmp_path, **overrides):

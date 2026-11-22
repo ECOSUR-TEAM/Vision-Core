@@ -5,6 +5,7 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FEATURES = PROJECT_ROOT / "src" / "vision_core" / "features"
+CORE_DTO = PROJECT_ROOT / "src" / "vision_core" / "core" / "dto"
 
 
 def _dto_files() -> list[Path]:
@@ -18,10 +19,16 @@ def _dto_files() -> list[Path]:
     return files
 
 
+def _core_dto_files() -> list[Path]:
+    return [path for path in sorted(CORE_DTO.glob("*.py")) if path.name != "__init__.py"]
+
+
 def _all_dto_files() -> list[Path]:
-    shared_dto = PROJECT_ROOT / "src" / "vision_core" / "shared" / "application" / "dto"
-    shared = [path for path in sorted(shared_dto.glob("*.py")) if path.name != "__init__.py"]
-    return _dto_files() + shared
+    return _dto_files() + _core_dto_files()
+
+
+def _contract_dto_files() -> list[Path]:
+    return [path for path in _all_dto_files() if path.name != "frame_like.py"]
 
 
 def _expected_class_name(path: Path) -> str:
@@ -56,7 +63,7 @@ def test_dto_file_name_matches_class_name(path):
     assert _class_definition(path).name == _expected_class_name(path)
 
 
-@pytest.mark.parametrize("path", _dto_files(), ids=lambda path: path.relative_to(PROJECT_ROOT).as_posix())
+@pytest.mark.parametrize("path", _contract_dto_files(), ids=lambda path: path.relative_to(PROJECT_ROOT).as_posix())
 def test_dtos_are_frozen_and_slotted(path):
     keywords = _dataclass_keywords(_class_definition(path))
 
@@ -64,7 +71,7 @@ def test_dtos_are_frozen_and_slotted(path):
     assert _is_true(keywords.get("slots")), f"{path}: missing slots=True"
 
 
-@pytest.mark.parametrize("path", _dto_files(), ids=lambda path: path.relative_to(PROJECT_ROOT).as_posix())
+@pytest.mark.parametrize("path", _contract_dto_files(), ids=lambda path: path.relative_to(PROJECT_ROOT).as_posix())
 def test_dtos_have_no_business_logic(path):
     node = _class_definition(path)
 

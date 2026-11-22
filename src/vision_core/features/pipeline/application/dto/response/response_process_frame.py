@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
+from vision_core.core.dto.resolved_track_payload import ResolvedTrackPayload
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
-from vision_core.shared.application.dto.resolved_track_payload import ResolvedTrackPayload
 
 
 @dataclass(frozen=True, slots=True)

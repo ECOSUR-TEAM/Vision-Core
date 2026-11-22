@@ -12,7 +12,8 @@ from typing import Any
 
 import numpy as np
 
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config.pipeline_config import PipelineConfig
+from vision_core.core.telemetry.metrics import ObservabilityMetrics
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.door.infrastructure.config.zone_config import ZoneConfig
@@ -27,7 +28,6 @@ from vision_core.features.video.infrastructure.adapters.rtsp_video_source import
 from vision_core.scripts.benchmark_metadata import environment_metadata
 from vision_core.scripts.fake_reconnect_capture import FakeReconnectCapture
 from vision_core.scripts.synthetic_detector import SyntheticDetector
-from vision_core.shared.observability.metrics import ObservabilityMetrics
 
 BUDGET_RULES = {
     "fps": ("fps_min", "min"),

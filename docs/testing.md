@@ -57,12 +57,17 @@ módulo crítico baja de su umbral:
 
 | Módulo | Patrón | Umbral |
 |---|---|---|
-| `pipeline` | `features/pipeline/` | 90% |
-| `door` | `features/door/` | 80% |
-| `monitor` | `features/monitor/` | 85% |
-| `application` | `features/*/application/` | 90% |
-| `profiling` | `application/frame_profiler.py` | 90% |
-| `observability` | `shared/observability/` | 85% |
+| `pipeline` | `/features/pipeline/` | 90% |
+| `door` | `/features/door/` | 80% |
+| `monitor` | `/features/monitor/` | 85% |
+| `features` | `/features/` | 85% |
+| `core_domain` | `/core/domain/` | 90% |
+| `core_errors` | `/core/errors/` | 90% |
+| `core_config` | `/core/config/` | 85% |
+| `core_serialization` | `/core/serialization/` | 80% |
+| `core_persistence` | `/core/infrastructure/persistence/` | 80% |
+| `observability` | `/core/telemetry/` | 85% |
+| `profiling` | `/core/inference/frame_profiler.py` | 90% |
 | `global` | `vision_core` sin scripts | 80% |
 
 `python -m vision_core.scripts.check_coverage coverage.json` imprime el valor de

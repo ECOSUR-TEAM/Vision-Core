@@ -2,7 +2,7 @@ from typing import Any
 
 import yaml
 
-from vision_core.shared.errors import ConfigurationError
+from vision_core.core.errors import ConfigurationError
 
 
 class UniqueKeySafeLoader(yaml.SafeLoader):

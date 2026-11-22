@@ -1,8 +1,8 @@
 import numpy as np
 
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.domain.event import Event
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
-from vision_core.shared.domain.bbox import BBox
-from vision_core.shared.domain.event import Event
 
 
 class FakeRuntimeApp:

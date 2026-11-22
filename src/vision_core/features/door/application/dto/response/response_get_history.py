@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from vision_core.shared.application.dto.observation_payload import ObservationPayload
+from vision_core.core.dto.observation_payload import ObservationPayload
 
 
 @dataclass(frozen=True, slots=True)

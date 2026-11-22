@@ -4,11 +4,11 @@ import math
 import pytest
 
 from tests.fakes.geometry_generators import SEED, GeometryGenerators
+from vision_core.core.domain.polygon import Polygon
+from vision_core.core.errors import ZoneConfigurationError
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 from vision_core.features.door.infrastructure.polygon_validation import validate_polygon
-from vision_core.shared.domain.polygon import Polygon
-from vision_core.shared.errors import ZoneConfigurationError
 
 SAMPLE_COUNT = 200
 GENERATORS = GeometryGenerators(seed=SEED)

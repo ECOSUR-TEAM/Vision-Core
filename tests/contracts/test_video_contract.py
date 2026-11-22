@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.core.errors import ConfigurationError, VideoSourceError, codes
 from vision_core.features.video.domain.ports.video_source import VideoSource
 from vision_core.features.video.infrastructure.adapters.latest_frame_source import LatestFrameSource
 from vision_core.features.video.infrastructure.adapters.rtsp_video_source import RtspVideoSource
-from vision_core.shared.errors import ConfigurationError, VideoSourceError, codes
 
 FRAME = np.zeros((2, 3, 3), dtype=np.uint8)
 

@@ -5,8 +5,8 @@ from typing import Any
 import cv2
 import numpy as np
 
-from vision_core.shared.application.validation import validate_frame
-from vision_core.shared.errors import ValidationError, codes
+from vision_core.core.errors import ValidationError, codes
+from vision_core.core.validation import validate_frame
 
 from ..dto.response.response_read_frame import ResponseReadFrame
 

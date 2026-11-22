@@ -5,7 +5,7 @@ from dataclasses import asdict
 import cv2
 import numpy as np
 
-from vision_core.shared.errors import ValidationError, codes
+from vision_core.core.errors import ValidationError, codes
 
 
 def render_frame(frame, tracks, zones, analytics, label_for, demo=False, zone_by_person=None):

@@ -9,15 +9,15 @@ from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.domain.event import Event
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.features.door.infrastructure.config.zone_loader import load_zones
+from vision_core.features.monitor.infrastructure.renderer import render_frame
+from vision_core.features.monitor.infrastructure.state import MonitorState
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
-from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from vision_core.infrastructure.door.zone_loader import load_zones
-from vision_core.infrastructure.monitor.renderer import render_frame
-from vision_core.infrastructure.monitor.server import MonitorState
-from vision_core.infrastructure.video.latest_frame_source import LatestFrameSource
-from vision_core.shared.domain.bbox import BBox
-from vision_core.shared.domain.event import Event
+from vision_core.features.video.infrastructure.adapters.latest_frame_source import LatestFrameSource
 
 
 def test_observer_receives_current_resolved_detections_and_empty_frames():
@@ -159,7 +159,7 @@ def test_person_label_survives_a_change_of_track():
 
 
 def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
-    from vision_core.infrastructure.door.uncalibrated_analytics import (
+    from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics import (
         UncalibratedAnalytics,
     )
 
@@ -177,7 +177,7 @@ def test_uncalibrated_camera_accepts_other_resolution_without_fake_events():
 
 def test_compose_mode_exits_on_pipeline_error_for_docker_restart(monkeypatch, tmp_path):
     import main as composition_root
-    from vision_core.infrastructure.monitor import __main__ as monitor
+    from vision_core.features.monitor.infrastructure import __main__ as monitor
 
     stopped = threading.Event()
     closed = []

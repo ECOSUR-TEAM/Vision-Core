@@ -3,21 +3,33 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 DTO_ROOTS = [
-    ROOT / "src" / "vision_core" / "shared" / "application" / "dto",
+    ROOT / "src" / "vision_core" / "core" / "dto",
     *[
         ROOT / "src" / "vision_core" / "features" / slice_name / "application" / "dto"
         for slice_name in ("detection", "door", "monitor", "reid", "video", "pipeline")
     ],
 ]
 FORBIDDEN_ROOTS = {"numpy", "cv2", "torch", "torchvision", "ultralytics"}
+ALLOWED_CORE_IMPORTS = ("vision_core.core.dto", "vision_core.core.serialization")
+FORBIDDEN_IMPORT_PREFIXES = (
+    "vision_core.application",
+    "vision_core.core.domain",
+    "vision_core.core.infrastructure",
+    "vision_core.domain",
+    "vision_core.infrastructure",
+    "vision_core.settings",
+    "vision_core.shared",
+)
 
 
 def _is_forbidden(module):
     if module.split(".", 1)[0] in FORBIDDEN_ROOTS:
         return True
-    if module.startswith("vision_core.domain") or module.startswith("vision_core.infrastructure"):
+    if module.startswith(FORBIDDEN_IMPORT_PREFIXES) or ".domain" in module or ".infrastructure" in module:
         return True
-    return ".domain" in module or ".infrastructure" in module
+    if module.startswith("vision_core.core."):
+        return not any(module == root or module.startswith(f"{root}.") for root in ALLOWED_CORE_IMPORTS)
+    return False
 
 
 def _import_modules(node):

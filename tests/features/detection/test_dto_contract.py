@@ -5,6 +5,10 @@ from typing import get_type_hints
 import numpy as np
 import pytest
 
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.dto import BBoxPayload, DetectionPayload, FrameLike
+from vision_core.core.serialization import dumps_json
+from vision_core.core.validation import finite_bbox
 from vision_core.features.detection.application.dto.request.request_detector import RequestDetector
 from vision_core.features.detection.application.dto.response.response_detector import ResponseDetector
 from vision_core.features.detection.application.mappers.detection_mapper import (
@@ -13,10 +17,6 @@ from vision_core.features.detection.application.mappers.detection_mapper import 
     response_to_detections,
 )
 from vision_core.features.detection.domain.entities.detection import Detection
-from vision_core.shared.application.dto import BBoxPayload, DetectionPayload, FrameLike
-from vision_core.shared.application.dto.serialization import dumps_json
-from vision_core.shared.application.validation import finite_bbox
-from vision_core.shared.domain.bbox import BBox
 
 
 def test_request_fields_and_types():

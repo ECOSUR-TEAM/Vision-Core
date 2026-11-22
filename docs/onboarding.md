@@ -62,8 +62,10 @@ Vision Core es una **vertical slice** organizada por Screaming Architecture:
   [contexto](diagrams.md#c4--contexto), [contenedores](diagrams.md#c4--contenedores),
   [componentes](diagrams.md#c4--componentes) y
   [flujo de datos](diagrams.md#flujo-de-datos).
-- Componentes que aún viven en `src/vision_core/{application,domain,infrastructure}`
-  están en migración; no son un segundo dominio global.
+- El kernel compartido vive en `src/vision_core/core/` (`config/`, `contracts/`,
+  `domain/`, `inference/` e `infrastructure/`). ECM-111 eliminó los antiguos
+  paquetes `application/`, `domain/`, `infrastructure/` y `settings/`;
+  `model_registry/` sigue como excepción transitoria hasta el ticket 67.
 
 ## 4. Comandos que usarás
 

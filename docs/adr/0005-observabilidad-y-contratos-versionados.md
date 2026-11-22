@@ -30,7 +30,7 @@ necesitan señales estables y comparables entre reinicios.
   `level`, `service`, `camera_id`, `event_id`, `person_id`, `duration_ms`,
   `error_code` y `message`. Las URLs con credenciales se redactan; no se
   registran frames, crops, embeddings ni rutas sensibles.
-- Usar la jerarquía `VisionCoreError` en `src/vision_core/shared/errors/`.
+- Usar la jerarquía `VisionCoreError` en `src/vision_core/core/errors/`.
   Cada error expone `code` estable, `message` seguro, `retryable` y `context`
   filtrado. El borde HTTP publica solo `{"error":{"code","message","request_id"}}`.
 - El envelope y el esquema de eventos están versionados (`v1`,

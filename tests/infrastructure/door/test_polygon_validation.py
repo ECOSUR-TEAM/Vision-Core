@@ -1,7 +1,7 @@
 import pytest
 
-from vision_core.domain.model.polygon import Polygon
-from vision_core.infrastructure.door.polygon_validation import (
+from vision_core.core.domain.polygon import Polygon
+from vision_core.features.door.infrastructure.polygon_validation import (
     validate_polygon,
     validate_vertices_in_frame,
 )

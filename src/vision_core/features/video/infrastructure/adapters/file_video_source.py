@@ -2,7 +2,7 @@ from pathlib import Path
 
 import cv2
 
-from vision_core.shared.errors import VideoSourceError, VideoSourceMissingError, VideoSourceStateError
+from vision_core.core.errors import VideoSourceError, VideoSourceMissingError, VideoSourceStateError
 
 from ...domain.ports.video_source import VideoSource
 from ..frame_validation import validate_frame

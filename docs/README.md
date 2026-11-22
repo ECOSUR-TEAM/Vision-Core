@@ -22,6 +22,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 |---|---|
 | [Índice de ADR](adr/README.md) | Todas las decisiones de arquitectura, su estado y sus enmiendas |
 | [ADR 0007: registro de modelos](adr/0007-registro-de-modelos-y-model-cards.md) | Identidad, checksum y trazabilidad de modelos |
+| [ADR 0008: capa core](adr/0008-core-layer-and-dependency-rules.md) | Contrato de dependencias entre `features/`, `core/` y `scripts/` |
 | [Plantilla de ADR](adr/_template.md) | Cómo registrar una decisión nueva |
 
 ## Operación
@@ -35,6 +36,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Observabilidad](observability.md) | `/health`, `/ready`, `/metrics`, logs y métricas |
 | [Persistencia y retención](persistence.md) | SQLite, TTLs, backup y degradación |
 | [Monitor](monitor.md) | Interfaz web, API y render |
+| [Exposición del monitor y binding](monitor-exposure.md) | Binding seguro, advertencias y verificación de puertos |
 | [Cámara Ethernet](ethernet-camera.md) | Evidencia y diagnóstico de la cámara FD8134 |
 | [Frigate](frigate.md) | Integración local con webcam y go2rtc |
 | [Catálogo de errores](errors.md) | Códigos estables y jerarquía |
@@ -80,3 +82,7 @@ hecha hasta que esa persona la confirme.
 | ECM-84: ADR 0004-0006, diagramas, runbooks, onboarding y glosario | Autor del PR ECM-84 | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-85: proceso de PR, CODEOWNERS y DoD | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-99: registro de modelos y model cards | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-105: ADR 0008 y contrato de capas | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-106: migración de `shared/` a `core/` | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-111: eliminación de los paquetes legacy y documentación viva | @bchanona | @Carlosss2 | [x] Revisado por otra persona |
+| ECM-95: binding seguro y exposición del monitor | @bchanona | @Ameth-Toledo, @Carlosss2 | [x] Revisado por otra persona |

@@ -3,13 +3,13 @@ import time
 from collections import deque
 from typing import Optional
 
+from vision_core.core.domain.event import Event
+from vision_core.core.domain.polygon import Polygon
+from vision_core.core.errors import ValidationError, ZoneConfigurationError, codes
 from vision_core.features.door.domain.entities.zone_observation import ZoneObservation
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.door.infrastructure.geometry import on_segment
 from vision_core.features.door.infrastructure.polygon_validation import validate_polygon
-from vision_core.shared.domain.event import Event
-from vision_core.shared.domain.polygon import Polygon
-from vision_core.shared.errors import ValidationError, ZoneConfigurationError, codes
 
 
 class PolygonDoorAnalytics(DoorAnalytics):

@@ -86,19 +86,19 @@ Los owners se solicitan automáticamente según
 
 | Área | Rutas principales | Owners |
 |---|---|---|
-| Video | `features/video/`, `infrastructure/video/`, `tests/features/video/` | @bchanona, @Ameth-Toledo |
-| Detection | `features/detection/`, `infrastructure/detection/`, `tests/features/detection/` | @Carlosss2, @Ameth-Toledo |
-| ReID | `features/reid/`, `infrastructure/reid/`, `tests/features/reid/` | @bchanona |
-| Door / zonas | `features/door/`, `infrastructure/door/`, `config/zones*` | @MelissaZarate08 |
-| Monitor / HTTP / UI | `features/monitor/`, `infrastructure/monitor/`, `tests/e2e/test_monitor_e2e.py` | @bchanona; UI/index.html también @Carlosss2 |
+| Video | `features/video/`, `features/video/infrastructure/adapters/`, `tests/features/video/` | @bchanona, @Ameth-Toledo |
+| Detection | `features/detection/`, `features/detection/infrastructure/adapters/`, `tests/features/detection/` | @Carlosss2, @Ameth-Toledo |
+| ReID | `features/reid/`, `features/reid/infrastructure/adapters/`, `tests/features/reid/` | @bchanona |
+| Door / zonas | `features/door/`, `features/door/infrastructure/adapters/`, `config/zones*` | @MelissaZarate08 |
+| Monitor / HTTP / UI | `features/monitor/`, `features/monitor/infrastructure/`, `tests/e2e/test_monitor_e2e.py` | @bchanona; UI/index.html también @Carlosss2 |
 | Pipeline / orquestación | `features/pipeline/`, `main.py`, `tests/integration/` | @FabricioPRZ; composition root también @Ameth-Toledo |
 | Infra / CI / seguridad | `.github/`, `Dockerfile`, `docker-compose*.yml`, `Makefile`, `pyproject.toml`, `scripts/`, `SECURITY.md` | @bchanona, @Carlosss2 |
-| Persistencia | `infrastructure/persistence/`, `tests/infrastructure/persistence/`, `tests/test_persistence_integration.py` | @bchanona, @MelissaZarate08 |
-| Transversal | `shared/`, `domain/`, `settings/`, `application/`, `docs/`, regla `*` | @Ameth-Toledo, @bchanona, @Carlosss2 |
+| Persistencia | `core/infrastructure/persistence/`, `tests/infrastructure/persistence/`, `tests/test_persistence_integration.py` | @bchanona, @MelissaZarate08 |
+| Transversal | `core/`, `core/config/`, `core/contracts/`, `core/inference/`, `docs/`, regla `*` | @Ameth-Toledo, @bchanona, @Carlosss2 |
 
 Se considera **transversal** cualquier cambio que toque dos o más features,
-contratos DTO compartidos, `shared/`, `domain/`, `settings/`, `application/`,
-`main.py`, CI o esquemas de configuración. En ese caso se requieren:
+contratos DTO compartidos, `core/`, `core/config/`, `core/contracts/`,
+`core/inference/`, `main.py`, CI o esquemas de configuración. En ese caso se requieren:
 
 - aprobación de un owner transversal; y
 - aprobación del owner de cada feature afectada.

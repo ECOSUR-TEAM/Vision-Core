@@ -1,6 +1,6 @@
 from typing import Any, Protocol
 
-from vision_core.shared.domain.bbox import BBox
+from vision_core.core.domain.bbox import BBox
 
 
 class ReIDMemory(Protocol):

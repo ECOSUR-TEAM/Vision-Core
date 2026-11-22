@@ -20,8 +20,13 @@ VISION_CORE_MONITOR_HOST=0.0.0.0 python main.py --demo-zones
 # o: python main.py --demo-zones --host 0.0.0.0
 ```
 
-Al detectar `--host 0.0.0.0`, el monitor imprime una advertencia en stdout:
-expone el servicio sin autenticación y requiere los controles del ticket 42.
+Los valores `0` y cadena vacía en `--host` se normalizan a `0.0.0.0`; `::`
+también enlaza todas las interfaces. Todos ellos se validan y se tratan como
+exposición. Un host inválido se rechaza con `Host inválido`.
+
+Cuando detecta cualquiera de esas direcciones, incluida la variable de entorno,
+el monitor imprime una advertencia en stdout: expone el servicio sin
+autenticación y requiere los controles del ticket 42.
 
 Dentro de Docker el contenedor necesita escuchar en `0.0.0.0` para que el
 puerto publicado funcione; por eso el `Dockerfile` y los archivos Compose lo

@@ -8,9 +8,9 @@ from urllib.request import urlopen
 
 import pytest
 
+from vision_core.core.errors import codes
 from vision_core.features.monitor.infrastructure.http.server import make_server
-from vision_core.infrastructure.monitor.state import MonitorState
-from vision_core.shared.errors import codes
+from vision_core.features.monitor.infrastructure.state import MonitorState
 
 
 @pytest.fixture

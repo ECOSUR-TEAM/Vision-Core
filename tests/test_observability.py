@@ -7,14 +7,14 @@ from urllib.request import urlopen
 
 import pytest
 
+from vision_core.core.telemetry.health import HealthStatus
+from vision_core.core.telemetry.metrics import ObservabilityMetrics
+from vision_core.core.telemetry.redacted_text_formatter import RedactedTextFormatter
+from vision_core.core.telemetry.structured_logging import StructuredJsonFormatter, configure_structured_logging
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.features.monitor.infrastructure.runtime import MonitorRuntime
 from vision_core.features.monitor.infrastructure.state import MonitorState
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
-from vision_core.shared.observability.health import HealthStatus
-from vision_core.shared.observability.metrics import ObservabilityMetrics
-from vision_core.shared.observability.redacted_text_formatter import RedactedTextFormatter
-from vision_core.shared.observability.structured_logging import StructuredJsonFormatter, configure_structured_logging
 
 
 def test_json_log_schema_and_secret_redaction():

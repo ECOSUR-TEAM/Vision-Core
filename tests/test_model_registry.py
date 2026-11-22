@@ -6,13 +6,13 @@ from pathlib import Path
 import pytest
 import yaml
 
+from vision_core.core.config import Settings, SettingsError
+from vision_core.core.errors import ConfigurationError
+from vision_core.core.telemetry.health import HealthStatus
+from vision_core.core.telemetry.structured_logging import StructuredJsonFormatter
 from vision_core.features.reid.infrastructure.dependencies import build_reid
 from vision_core.model_registry.activation import resolve_active_models
 from vision_core.model_registry.registry_loader import load_model_registry
-from vision_core.settings import Settings, SettingsError
-from vision_core.shared.errors import ConfigurationError
-from vision_core.shared.observability.health import HealthStatus
-from vision_core.shared.observability.structured_logging import StructuredJsonFormatter
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REGISTRY = PROJECT_ROOT / "config" / "models.yml"

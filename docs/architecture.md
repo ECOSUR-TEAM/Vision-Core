@@ -68,6 +68,8 @@ La convención normativa está en
   `object`/`Any` en anotaciones de campo.
 - Solo `main.py` puede importar más de un `*.infrastructure.dependencies`
   (composition root); el resto de raíces no puede concentrar factories.
+  Instrumentar G0 no crea nuevos composition roots ni workers: `main.py` sigue
+  siendo el único punto de ensamblado mientras ADR-0003 no se levante.
 
 `tests/architecture/test_dto_convention.py` verifica naming, decoradores,
 ausencia de lógica y tipos concretos en los campos de todos los DTOs.

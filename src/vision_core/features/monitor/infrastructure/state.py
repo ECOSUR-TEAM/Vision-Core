@@ -4,6 +4,7 @@ import logging
 import threading
 import time
 from collections import Counter, deque
+from collections.abc import Callable
 
 from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict as event_to_dict
 from vision_core.shared.observability.health import HealthStatus
@@ -23,6 +24,7 @@ class MonitorState:
         event_serializer=None,
         metrics=None,
         health=None,
+        camera_id: str = "default",
     ):
         self._event_serializer = event_serializer or _event_to_dict
         self.lock = threading.Lock()
@@ -43,10 +45,10 @@ class MonitorState:
         self.fps = 0.0
         self.dropped = 0
         self.persistence = None
-        self._persistence_provider = None
+        self._persistence_provider: Callable[[], object] | None = None
         self.metrics = metrics or ObservabilityMetrics()
         self.health = health or HealthStatus()
-        self.camera_id = "default"
+        self.camera_id = camera_id or "default"
         self.event_sequence = 0
         self._last_dropped = 0
 
@@ -79,16 +81,17 @@ class MonitorState:
                 "error_code": None,
             },
         )
-        self.metrics.increment("vision_core_events_emitted_total")
-        self.metrics.increment(f"vision_core_event_{event.event.lower()}_total")
+        self.metrics.increment("vision_core_events_emitted_total", camera_id=self.camera_id)
+        self.metrics.increment(f"vision_core_event_{event.event.lower()}_total", camera_id=self.camera_id)
 
     def person_label(self, person_id):
         with self.lock:
             number = self._person_numbers.setdefault(person_id, len(self._person_numbers) + 1)
             return f"Persona {number}"
 
-    def publish(self, jpeg, people, processing_ms, dropped=0, queue_size=0):
+    def publish(self, jpeg, people, processing_ms, dropped=0, queue_size=0, camera_id: str | None = None):
         now = time.monotonic()
+        resolved_camera_id = camera_id or self.camera_id
         with self.lock:
             if self.previous is not None:
                 current = 1 / max(now - self.previous, 0.000001)
@@ -106,12 +109,12 @@ class MonitorState:
             self._last_dropped = dropped
             self.changed.notify_all()
         self.health.set_ready(source_connected=True, model_loaded=True)
-        self.metrics.increment("vision_core_frames_processed_total")
-        self.metrics.increment("vision_core_frames_discarded_total", dropped_delta)
-        self.metrics.set_gauge("vision_core_fps", self.fps)
-        self.metrics.set_gauge("vision_core_active_people", len(people))
-        self.metrics.set_gauge("vision_core_queue_size", queue_size)
-        self.metrics.observe("vision_core_frame_processing_duration_ms", processing_ms)
+        self.metrics.increment("vision_core_frames_processed_total", camera_id=resolved_camera_id)
+        self.metrics.increment("vision_core_frames_discarded_total", dropped_delta, camera_id=resolved_camera_id)
+        self.metrics.set_gauge("vision_core_fps", self.fps, camera_id=resolved_camera_id)
+        self.metrics.set_gauge("vision_core_active_people", len(people), camera_id=resolved_camera_id)
+        self.metrics.set_gauge("vision_core_queue_size", queue_size, camera_id=resolved_camera_id)
+        self.metrics.observe("vision_core_frame_processing_duration_ms", processing_ms, camera_id=resolved_camera_id)
 
     def next_frame(self, after):
         with self.changed:

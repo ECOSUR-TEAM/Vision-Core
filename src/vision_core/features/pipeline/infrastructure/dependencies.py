@@ -19,6 +19,7 @@ def build_pipeline(
     expected_frame_size: tuple[int, int] | None = None,
     on_frame=None,
     config: PipelineConfig | None = None,
+    camera_id: str = "default",
 ) -> RunPipeline:
     return RunPipeline(
         video=video,
@@ -30,4 +31,5 @@ def build_pipeline(
         expected_frame_size=expected_frame_size,
         on_frame=on_frame,
         config=config,
+        camera_id=camera_id,
     )

@@ -2,12 +2,14 @@
 
 La suite está dividida en niveles. Todos son deterministas: usan video sintético,
 fakes y zonas generadas en `tmp_path`; no necesitan RTSP, GPU ni internet.
+G0 instrumenta el pipeline actual (un proceso / una cámara / ReID local) sin
+activar ejecución multi-cámara; ver [g0-baseline-plan.md](g0-baseline-plan.md).
 
 | Nivel | Selección | Qué cubre | Dónde corre |
 |---|---|---|---|
 | Unidad | `python -m pytest -q -m "not slow"` | DTOs, mappers, casos de uso, puertos y reglas de arquitectura | Cada PR (`ci.yml`) |
-| Integración | incluida en el comando anterior | Pipeline completo con `create_pipeline_sample`, detector/ReID fakes, zonas y eventos reales | Cada PR (`ci.yml`) |
-| E2E | `python -m pytest -q -m slow` | Monitor HTTP real: estado, eventos, personas, métricas y frames sobre archivo de video | Nightly o manual (`e2e.yml`) |
+| Integración | incluida en el comando anterior | Pipeline completo con `create_pipeline_sample`, detector/ReID fakes, zonas, eventos reales y baseline `camera_id`/p50/p95 | Cada PR (`ci.yml`) |
+| E2E | `python -m pytest -q -m slow` | Monitor HTTP real: estado, eventos, personas, métricas etiquetadas y frames sobre archivo; baseline de 30 s | Nightly o manual (`e2e.yml`) |
 
 No existe una carpeta `scripts/` versionada en la raíz: el generador vive en
 `vision_core.scripts.create_pipeline_sample` y produce `sample.avi` y `zones.json`
@@ -31,7 +33,7 @@ python -m pytest -q -m "not slow" \
 python -m vision_core.scripts.check_coverage coverage.json
 
 # E2E pesado (igual que el job nightly)
-python -m pytest -q -m slow
+G0_PROFILING_ARTIFACT=profiling_results.json python -m pytest -q -m slow
 
 # Suite completa, incluyendo e2e
 python -m pytest -q
@@ -49,6 +51,8 @@ módulo crítico baja de su umbral:
 | `door` | `features/door/` | 80% |
 | `monitor` | `features/monitor/` | 85% |
 | `application` | `features/*/application/` | 90% |
+| `profiling` | `application/frame_profiler.py` | 90% |
+| `observability` | `shared/observability/` | 85% |
 | `global` | `vision_core` sin scripts | 80% |
 
 `python -m vision_core.scripts.check_coverage coverage.json` imprime el valor de
@@ -67,6 +71,11 @@ cruzando exterior → interior → exterior → fuera. Verifica:
 - historial de zonas y personas por frame;
 - cierre limpio de la fuente de video al terminar.
 
+`tests/integration/test_g0_baseline.py` usa la misma muestra con profiling
+activado y `camera_id="camera-g0"`. Comprueba que el JSON contenga esa etiqueta,
+35 frames, las seis etapas de `FrameProfiler.STAGES` y p50/p95 por etapa, además
+de la secuencia de eventos y el cierre limpio.
+
 No se comprueban timestamps exactos: los eventos solo deben ser finitos.
 
 ## E2E
@@ -76,19 +85,23 @@ el composition root (`main.build_monitor_pipeline`) y levanta un
 `ThreadingHTTPServer` en `127.0.0.1:0`. Valida `/`, `/api/state`, `/api/frame` y
 `/api/frame?after=35`: estado `running`, 35 frames, eventos y contadores,
 persona con zona y etiqueta, JPEG con cabecera de secuencia y métricas
-(`fps`, `processing_ms`, `dropped_frames`, `age_seconds`) coherentes. El detector,
-ReID y extractor son fakes; el video es archivo local.
+(`fps`, `processing_ms`, `dropped_frames`, `age_seconds`) coherentes y las claves
+`/metrics` agregadas y etiquetadas con `camera_id=camera-e2e`. El detector, ReID y
+extractor son fakes; el video es archivo local.
 
-`develop` aún no incluye los endpoints `/api/health` y `/api/metrics` de ECM-75;
-cuando se integren, este e2e debe ampliarse para consultarlos.
+`tests/e2e/test_g0_profiling_30s.py` repite la muestra local durante al menos
+30 s con profiling activado para producir el baseline exigido por la puerta G0.
+No usa RTSP, GPU ni internet y, si se define `G0_PROFILING_ARTIFACT`, escribe el
+JSON en esa ruta para publicarlo como artefacto.
 
 ## CI y artefactos
 
 - `ci.yml`: instala dependencias, ejecuta unit + integración con cobertura,
   verifica umbrales globales y por módulo, y sube `coverage-pr` (XML, JSON y HTML)
   siempre. En fallo sube `pytest-pr-logs`.
-- `e2e.yml`: `schedule` diario y `workflow_dispatch` manual. Ejecuta solo `-m slow`
-  y sube `pytest-e2e-logs` siempre.
+- `e2e.yml`: `schedule` diario y `workflow_dispatch` manual. Ejecuta solo `-m slow`,
+  publica `g0-profiling` con `profiling_results.json` y sube `pytest-e2e-logs`
+  siempre.
 - El job `build` solo compila; `lint.yml` mantiene Ruff y formato.
 
 Las pruebas reales optativas con cámara, modelos pesados o CUDA siguen fuera de

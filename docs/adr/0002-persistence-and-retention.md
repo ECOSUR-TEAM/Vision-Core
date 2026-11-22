@@ -78,13 +78,13 @@ marcas de auditoría como ISO-8601 con sufijo `Z`.
 
 ### Contratos y capas
 
-Los repository ports viven en `vision_core.domain.repositories` porque los
-datos persistidos cruzan varios slices (puerta, ReID, monitor) y el composition
-root activo usa el dominio global. Cada puerto es una `ABC` sin SQL, sin
+Los repository ports viven en `vision_core.core.contracts` porque los
+datos persistidos cruzan varios slices (puerta, ReID, monitor) y son parte del
+kernel compartido. Cada puerto es una `ABC` sin SQL, sin
 `sqlite3` y sin tipos de infraestructura.
 
 Las implementaciones `Sqlite*` viven en
-`vision_core.infrastructure.persistence`. El dominio y `application/` no importan
+`vision_core.core.infrastructure.persistence`. El dominio y los features no importan
 este paquete: la inyección se hace en `main.py`. Se respeta una clase por
 archivo.
 
@@ -155,9 +155,8 @@ frecuencia de eventos o el tamaño del embedding.
    consultas, índices y retención selectiva; se mantiene como exportación.
 3. **Persistir frames/video.** Descartada: coste desproporcionado y política de
    retención ajena a este ticket.
-4. **Repositorios en cada feature.** Descartada por ahora: los datos son
-   transversales y el composition root activo usa el dominio global; se
-   reevaluará al migrar completamente a vertical slices.
+4. **Repositorios en cada feature.** Descartada: los datos son transversales y
+   pertenecen al kernel compartido.
 
 ## Verificación
 

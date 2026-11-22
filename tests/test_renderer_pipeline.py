@@ -8,8 +8,8 @@ from time import perf_counter
 import numpy as np
 import pytest
 
-from vision_core.application.frame_profiler import STAGES, FrameProfiler
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config.pipeline_config import PipelineConfig
+from vision_core.core.inference.frame_profiler import STAGES, FrameProfiler
 from vision_core.features.monitor.infrastructure.latest_frame_buffer import LatestFrameBuffer
 from vision_core.features.monitor.infrastructure.renderer_thread import RendererThread
 

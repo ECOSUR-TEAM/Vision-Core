@@ -22,15 +22,15 @@ diferencias entre entornos.
 
 ## Decisión
 
-Centralizar la configuración en `vision_core.settings`:
+Centralizar la configuración en `vision_core.core.config`:
 
 - `Settings` es un `dataclass(frozen=True, slots=True)` con ocho secciones:
   `video`, `detection`, `reid`, `zones`, `monitor`, `logging`, `performance` y
-  `camera` (`src/vision_core/settings/settings_config.py`).
+  `camera` (`src/vision_core/core/config/settings_config.py`).
 - `Settings.from_env()` convierte y valida todos los valores antes de construir
   adaptadores. Acumula los errores y termina con `SettingsError` indicando la
   variable exacta y una acción correctiva, en lugar de fallar más adelante.
-- Los booleanos se normalizan en `settings_helpers.py` (`1/0`, `true/false`,
+- Los booleanos se normalizan en `core/config/settings_helpers.py` (`1/0`, `true/false`,
   `yes/no`, `on/off`); las URL RTSP exigen esquema, host y puerto válido;
   `redact_sensitive()` oculta credenciales antes de registrar o informar URLs.
 - La configuración de persistencia es `PersistenceSettings` y la del pipeline

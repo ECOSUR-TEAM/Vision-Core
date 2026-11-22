@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config.pipeline_config import PipelineConfig
 from vision_core.core.telemetry.metrics import ObservabilityMetrics
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics

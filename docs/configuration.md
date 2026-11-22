@@ -1,6 +1,6 @@
 # Configuracion tipada
 
-La configuracion se normaliza y valida con `vision_core.settings.Settings.from_env()`.
+La configuracion se normaliza y valida con `vision_core.core.config.Settings.from_env()`.
 El composition root carga `Settings` al arranque y pasa esos valores a los adaptadores;
 los puntos de entrada heredados pueden reconstruir su seccion con `validate_startup=False`
 para no exigir archivos o URLs presentes solo en despliegues completos.

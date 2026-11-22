@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 
+from vision_core.core.config import Settings
 from vision_core.features.detection.application.use_cases.detect_persons import DetectPersons
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import (
     YoloDetectorManager,
 )
 from vision_core.model_registry.model_descriptor import ModelDescriptor
-from vision_core.settings import Settings
 
 
 @dataclass(frozen=True)

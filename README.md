@@ -250,13 +250,13 @@ con `;`, `&`, `#` u otros caracteres especiales.
 3. Captura una imagen y calibra los polígonos:
 
 ```bash
-python -m vision_core.infrastructure.video.capture_reference referencia.png
+python -m vision_core.scripts.capture_reference referencia.png
 cp config/zones.example.json config/zones.json
 # Migración: los zones.json antiguos con "_note" y sin "version" deben
 # eliminar "_note" y añadir "version": "1.0" antes de usarlos.
 # Editar frame_size (enteros), door, exterior e interior con referencia.png.
 # No añadir otras claves ni duplicarlas: el loader las rechaza.
-python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png
+python -m vision_core.scripts.check_zones referencia.png config/zones.json zonas.png
 ```
 
 El ejemplo contiene coordenadas sintéticas. La [guía de calibración](docs/validation.md#calibrar-puerta-y-zonas-con-la-cámara)
@@ -391,9 +391,7 @@ actualización de dependencias y regeneración del lockfile están en
 |---|---|
 | `src/vision_core/features/` | Features de detección, puerta, monitor, pipeline, ReID y video |
 | `src/vision_core/features/pipeline/` | `RunPipeline`, DTOs, mappers y fábrica del pipeline |
-| `src/vision_core/application/` | Componentes de aplicación en migración |
-| `src/vision_core/domain/` | Modelos y puertos compartidos en migración |
-| `src/vision_core/infrastructure/` | Adaptadores concretos compartidos en migración |
+| `src/vision_core/core/` | Kernel compartido: configuración, contratos, dominio, DTOs, errores, inferencia, persistencia, serialización, telemetría y validación |
 | `src/vision_core/scripts/` | Demostración, diagnóstico, ejecución medida y evaluación |
 | `main.py` | Composition root único y entrypoint raíz de Docker y ejecución local |
 
@@ -437,7 +435,7 @@ python -m pytest tests/test_one_class_per_file.py -q
 
 ## Seguridad de UI y output encoding
 
-El monitor servido por `src/vision_core/infrastructure/monitor/index.html` trata
+El monitor servido por `src/vision_core/features/monitor/infrastructure/http/index.html` trata
 **todo** dato que llega de `/api/v1/state` como texto no confiable, incluyendo
 `person_id`, `display_name`, zonas y `metadata`.
 

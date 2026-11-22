@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from vision_core.core.config import Settings
 from vision_core.core.errors import ConfigurationError
-from vision_core.settings import Settings
 
 from ..application.dto.request.request_close_video import RequestCloseVideo
 from ..application.dto.request.request_open_video import RequestOpenVideo

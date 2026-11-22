@@ -82,7 +82,7 @@ No hay una imagen real de la sala incluida. `config/zones.example.json` contiene
 coordenadas sintéticas y no constituye una calibración válida de la cámara.
 
 1. Con `VISION_CORE_RTSP_URL` configurada, captura sin navegador:
-   `python -m vision_core.infrastructure.video.capture_reference referencia.png`.
+   `python -m vision_core.scripts.capture_reference referencia.png`.
 2. Abre el PNG a resolución original en un editor que muestre coordenadas del
    cursor. Copia `config/zones.example.json` a `config/zones.json`. Conserva
    `"version": "1.0"` (el loader rechaza otras versiones y claves adicionales) y
@@ -95,7 +95,7 @@ coordenadas sintéticas y no constituye una calibración válida de la cámara.
    superior izquierda; x crece a la derecha e y hacia abajo. Los puntos deben
    quedar dentro de la imagen y los contornos no deben cruzarse consigo mismos.
 4. Revisa la superposición:
-   `python -m vision_core.infrastructure.door.check_zones referencia.png config/zones.json zonas.png`.
+   `python -m vision_core.scripts.check_zones referencia.png config/zones.json zonas.png`.
    Exterior: azul; interior: verde; puerta: rojo. Los vértices están numerados.
 5. Configura `VISION_CORE_ZONES_FILE=config/zones.json` en el entorno o `.env`.
    `main.py` exige esta configuración y verifica la resolución durante la lectura;

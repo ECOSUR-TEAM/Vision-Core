@@ -4,9 +4,9 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from vision_core.application.frame_profiler import FrameProfiler
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config.pipeline_config import PipelineConfig
 from vision_core.core.errors import PipelineError, ValidationError, codes
+from vision_core.core.inference.frame_profiler import FrameProfiler
 from vision_core.core.validation import validate_frame
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics

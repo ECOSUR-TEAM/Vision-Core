@@ -8,7 +8,7 @@ import numpy as np
 from tests.fakes.fake_reid import FakeReID
 from tests.fakes.fake_video_source import FakeVideoSource
 from tests.regression.scripted_detector import ScriptedDetector
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config.pipeline_config import PipelineConfig
 from vision_core.core.domain.bbox import BBox
 from vision_core.core.serialization.serialization import to_json_value
 from vision_core.features.detection.domain.entities.detection import Detection

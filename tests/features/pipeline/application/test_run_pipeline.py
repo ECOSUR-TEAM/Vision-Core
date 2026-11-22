@@ -9,8 +9,8 @@ from vision_core.core.domain.bbox import BBox
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
-from vision_core.infrastructure.reid import memory_reid
-from vision_core.infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.features.reid.infrastructure.adapters import memory_reid
+from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
 
 
 def test_run_emits_event_per_frame():

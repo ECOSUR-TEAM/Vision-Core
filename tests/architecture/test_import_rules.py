@@ -122,6 +122,12 @@ def test_shared_package_is_absent():
     assert not (SRC / "shared").exists()
 
 
+def test_legacy_top_level_packages_are_absent():
+    for name in ("application", "domain", "infrastructure", "settings"):
+        assert not (SRC / name).exists(), name
+    assert (SRC / "model_registry").is_dir()
+
+
 def test_no_shared_imports_remain():
     roots = (SRC, PROJECT_ROOT / "tests", PROJECT_ROOT / "main.py")
     violations = []
@@ -235,9 +241,6 @@ def test_only_composition_roots_import_multiple_feature_factories():
     factory_importers = []
     roots = [
         SRC,
-        PROJECT_ROOT / "application",
-        PROJECT_ROOT / "domain",
-        PROJECT_ROOT / "infrastructure",
         PROJECT_ROOT / "scripts",
         PROJECT_ROOT / "tests",
         PROJECT_ROOT / "main.py",

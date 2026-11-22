@@ -3,8 +3,8 @@ import logging
 from collections.abc import Mapping
 from datetime import datetime, timezone
 
+from vision_core.core.config import redact_sensitive
 from vision_core.core.telemetry.redacted_text_formatter import RedactedTextFormatter
-from vision_core.settings import redact_sensitive
 
 
 class StructuredJsonFormatter(logging.Formatter):

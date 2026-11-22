@@ -9,9 +9,9 @@ from vision_core.core.domain.bbox import BBox
 from vision_core.core.domain.event import Event
 from vision_core.core.domain.polygon import Polygon
 from vision_core.features.detection.domain.entities.detection import Detection
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
-from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from vision_core.infrastructure.reid.memory_reid import InMemoryReID
+from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
 
 FRAME = np.zeros((40, 40, 3), dtype=np.uint8)
 

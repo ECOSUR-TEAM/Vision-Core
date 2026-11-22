@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from vision_core.settings import (
+from vision_core.core.config import (
     Settings,
     SettingsError,
     environment_with_relay_camera,
     redact_sensitive,
 )
-from vision_core.settings.settings_helpers import valid_rtsp_url
+from vision_core.core.config.settings_helpers import valid_rtsp_url
 
 MODEL = str(Path("yolov8n.pt").resolve())
 

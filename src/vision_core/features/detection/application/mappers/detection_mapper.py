@@ -2,17 +2,17 @@
 
 from collections.abc import Mapping
 
-from vision_core.features.detection.application.dto.response.response_detector import ResponseDetector
-from vision_core.features.detection.domain.entities.detection import Detection
-from vision_core.shared.application.dto.bbox_payload import BBoxPayload
-from vision_core.shared.application.dto.detection_payload import DetectionPayload
-from vision_core.shared.application.validation import (
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.dto.bbox_payload import BBoxPayload
+from vision_core.core.dto.detection_payload import DetectionPayload
+from vision_core.core.validation import (
     bounded_int,
     finite_bbox,
     finite_unit_float,
     required_track_id,
 )
-from vision_core.shared.domain.bbox import BBox
+from vision_core.features.detection.application.dto.response.response_detector import ResponseDetector
+from vision_core.features.detection.domain.entities.detection import Detection
 
 
 def detection_to_dto(detection: Detection) -> DetectionPayload:

@@ -6,11 +6,14 @@ from typing import Any, get_args, get_origin, get_type_hints
 
 ROOT = Path(__file__).resolve().parents[2]
 DTO_ROOT = ROOT / "src" / "vision_core" / "features"
+CORE_DTO_ROOT = ROOT / "src" / "vision_core" / "core" / "dto"
 FORBIDDEN_ROOTS = {"numpy", "cv2", "torch", "torchvision", "ultralytics"}
 
 
 def _dto_paths():
-    return sorted(path for path in DTO_ROOT.glob("*/application/dto/*/*.py") if not path.name.startswith("__"))
+    feature_dtos = sorted(path for path in DTO_ROOT.glob("*/application/dto/*/*.py") if not path.name.startswith("__"))
+    core_dtos = sorted(path for path in CORE_DTO_ROOT.glob("*.py") if not path.name.startswith("__"))
+    return feature_dtos + core_dtos
 
 
 def _load_module(path):

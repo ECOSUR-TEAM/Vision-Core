@@ -2,14 +2,14 @@
 
 from pathlib import Path
 
+from vision_core.core.domain.polygon import Polygon
+from vision_core.core.errors import ZoneConfigurationError
 from vision_core.features.door.infrastructure.config.zone_config import ZoneConfig
 from vision_core.features.door.infrastructure.config.zone_schema import ZONE_NAMES, load_validated_zone_document
 from vision_core.features.door.infrastructure.polygon_validation import (
     validate_polygon,
     validate_vertices_in_frame,
 )
-from vision_core.shared.domain.polygon import Polygon
-from vision_core.shared.errors import ZoneConfigurationError
 
 
 def load_zones(path: str | Path) -> ZoneConfig:

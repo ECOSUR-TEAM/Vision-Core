@@ -19,9 +19,10 @@ def test_monitor_e2e_with_video_file_and_real_zones(monkeypatch, synthetic_sampl
     video_path = synthetic_sample / "sample.avi"
     zones_path = synthetic_sample / "zones.json"
     video_source = FileVideoSource(video_path)
+    monkeypatch.setenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "2")
+    monkeypatch.setenv("VISION_CORE_CAMERA_ID", "camera-e2e")
     state = main.build_monitor_state()
 
-    monkeypatch.setenv("VISION_CORE_ZONE_CONFIRMATION_FRAMES", "2")
     monkeypatch.setattr(
         main,
         "build_detection",
@@ -35,7 +36,7 @@ def test_monitor_e2e_with_video_file_and_real_zones(monkeypatch, synthetic_sampl
     monkeypatch.setattr(
         main,
         "build_reid",
-        lambda: SimpleNamespace(
+        lambda **kwargs: SimpleNamespace(
             memory=InMemoryReID(ttl_seconds=0),
             embedder=lambda crop: np.array([1.0, 0.0]),
         ),
@@ -74,6 +75,16 @@ def test_monitor_e2e_with_video_file_and_real_zones(monkeypatch, synthetic_sampl
         assert len(snapshot["people"]) == 1
         assert snapshot["people"][0]["zone"] == "exterior"
         assert snapshot["people"][0]["display_name"] == "Persona 1"
+
+        with urlopen(f"{base_url}/health") as response:
+            assert json.load(response) == {"status": "alive", "live": True}
+
+        with urlopen(f"{base_url}/metrics") as response:
+            metrics = json.load(response)
+        assert metrics["counters"]["vision_core_frames_processed_total"] == 35
+        assert metrics["counters"]["vision_core_frames_processed_total{camera_id=camera-e2e}"] == 35
+        assert "vision_core_queue_size{camera_id=camera-e2e}" in metrics["gauges"]
+        assert metrics["histograms"]["vision_core_frame_processing_duration_ms"]["count"] == 35
 
         with urlopen(f"{base_url}/api/frame") as response:
             assert response.status == 200

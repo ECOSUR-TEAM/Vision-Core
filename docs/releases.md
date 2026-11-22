@@ -1,5 +1,15 @@
 # Release process
 
+The decision and its rationale are recorded in
+[ADR 0006](adr/0006-versionado-y-releases.md). For an incident, follow the
+[rollback runbook](runbooks/07-rollback-de-version.md).
+
+Before creating a tag, check which releases already exist:
+
+```bash
+git ls-remote --tags --refs origin
+```
+
 ## Branch and tag strategy
 
 Develop work is integrated in `develop`. Releases are created from an immutable

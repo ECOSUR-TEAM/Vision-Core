@@ -4,8 +4,10 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from vision_core.application.frame_profiler import FrameProfiler
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config.pipeline_config import PipelineConfig
+from vision_core.core.errors import PipelineError, ValidationError, codes
+from vision_core.core.inference.frame_profiler import FrameProfiler
+from vision_core.core.validation import validate_frame
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
@@ -19,8 +21,6 @@ from vision_core.features.pipeline.domain.ports.event_consumer import EventConsu
 from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
 from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 from vision_core.features.video.domain.ports.video_source import VideoSource
-from vision_core.shared.application.validation import validate_frame
-from vision_core.shared.errors import PipelineError, ValidationError, codes
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,7 @@ class RunPipeline:
         expected_frame_size: tuple[int, int] | None = None,
         on_frame: Callable[[Any, tuple[ResolvedTrack, ...], float], None] | None = None,
         config: PipelineConfig | None = None,
+        camera_id: str = "default",
     ) -> None:
         self._expected_frame_size = expected_frame_size
         self._on_frame = on_frame
@@ -50,14 +51,17 @@ class RunPipeline:
         self._person_by_track: dict[int, str] = {}
         self._last_embedding_by_track: dict[int, Any] = {}
         self._config = config or PipelineConfig(profiling_enabled=False)
-        self.profiler = FrameProfiler(enabled=self._config.profiling_enabled)
+        self._camera_id = camera_id or "default"
+        self.profiler = FrameProfiler(enabled=self._config.profiling_enabled, camera_id=self._camera_id)
         self._profiling_output = self._config.profiling_output
         self.embedding_batch_size = self._config.embedding_batch_size
         self.embedding_frame_stride = self._config.embedding_frame_stride
         self._metrics = None
+        self._metrics_camera_id: str | None = None
 
-    def set_observability(self, metrics) -> None:
+    def set_observability(self, metrics, *, camera_id: str | None = None) -> None:
         self._metrics = metrics
+        self._metrics_camera_id = camera_id or self._camera_id
 
     def run(
         self,
@@ -80,7 +84,7 @@ class RunPipeline:
         except Exception:  # noqa: BLE001 - preserve pipeline failure
             failed = True
             if self._metrics is not None:
-                self._metrics.increment("vision_core_errors_total")
+                self._metrics.increment("vision_core_errors_total", camera_id=self._metrics_camera_id)
             raise
         finally:
             try:
@@ -122,13 +126,16 @@ class RunPipeline:
             self._metrics.observe(
                 "vision_core_inference_latency_ms",
                 (time.perf_counter() - inference_started) * 1000,
+                camera_id=self._metrics_camera_id,
             )
         visible_tracks = {det.track_id for det in detections}
         new_tracks = sum(track_id not in self._person_by_track for track_id in visible_tracks)
         absent_tracks = set(self._person_by_track) - visible_tracks
         expired_tracks = set(self._detector.pop_lost_track_ids())
         if self._metrics is not None:
-            self._metrics.increment("vision_core_tracks_lost_total", len(expired_tracks))
+            self._metrics.increment(
+                "vision_core_tracks_lost_total", len(expired_tracks), camera_id=self._metrics_camera_id
+            )
         with self.profiler.measure("reid_tracking"):
             for track_id in (absent_tracks | expired_tracks) - visible_tracks:
                 person_id = self._person_by_track.pop(track_id, None)
@@ -159,6 +166,7 @@ class RunPipeline:
                 self._metrics.observe(
                     "vision_core_reid_latency_ms",
                     (time.perf_counter() - reid_started) * 1000,
+                    camera_id=self._metrics_camera_id,
                 )
             self._person_by_track[det.track_id] = person_id
             self._last_embedding_by_track[det.track_id] = embedding.copy()
@@ -170,8 +178,10 @@ class RunPipeline:
                 events.append(event_to_dto(event))
                 self._on_event(event)
         if self._metrics is not None:
-            self._metrics.increment("vision_core_tracks_created_total", new_tracks)
-            self._metrics.set_gauge("vision_core_active_people", len(self._person_by_track))
+            self._metrics.increment("vision_core_tracks_created_total", new_tracks, camera_id=self._metrics_camera_id)
+            self._metrics.set_gauge(
+                "vision_core_active_people", len(self._person_by_track), camera_id=self._metrics_camera_id
+            )
         processing_ms = (time.perf_counter() - started) * 1000
         self.profiler.record("frame_total", processing_ms / 1000)
         self.profiler.record_frame()

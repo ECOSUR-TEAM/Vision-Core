@@ -10,8 +10,10 @@ Python 3.11). Se eligió mypy por ser una herramienta Python pura, sin runtime d
 Node, y por integrarse con `pyproject.toml` y variables de entorno.
 
 Los chequeos son **graduales**: mypy analiza `src/` y `main.py`, incluidos los
-scripts de `src/vision_core/scripts/`; no se activa `strict` ni se exige anotar
-todas las funciones.
+scripts de `src/vision_core/scripts/` y el kernel de `src/vision_core/core/`;
+no se activa `strict` ni se exige anotar todas las funciones. Los contratos
+compartidos de `core/dto/` y `core/serialization/` se comprueban con el mismo
+perfil que el resto de `src/`.
 
 ## Ejecutar localmente
 
@@ -42,7 +44,9 @@ scripts reales viven en `src/vision_core/scripts` y ya quedan cubiertos por
 `ignore_missing_imports = true` permite analizar el código propio aunque
 OpenCV, Torch, Ultralytics u otra dependencia no publique stubs. No sustituye al
 tipado de esos límites: al añadir nuevas integraciones, prefiere adaptadores con
-protocolos propios en `domain/` y revisa que los tipos no se degraden a `Any`.
+protocolos propios en `core/contracts/` y revisa que los tipos no se degraden a `Any`.
+PyYAML sí publica stubs; se instalan desde `requirements-dev.txt` y se usan al
+verificar `config/models.yml` y su loader.
 
 ## Interpretar errores
 
@@ -87,7 +91,7 @@ No hay `# type: ignore` en `src/` ni en `main.py` a la fecha de este documento.
 
 Para comprobar la configuración, introduce temporalmente un error evidente en
 código cubierto (por ejemplo, un retorno incompatible en un adaptador de
-`infrastructure/`) y ejecuta mypy:
+`features/<slice>/infrastructure/`) y ejecuta mypy:
 
 ```python
 # Error temporal, no commitear

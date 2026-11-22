@@ -10,7 +10,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from vision_core.shared.errors import ZoneConfigurationError
+from vision_core.core.errors import ZoneConfigurationError
 
 SUPPORTED_SCHEMA_VERSION = "1.0"
 MAX_CONFIG_FILE_BYTES = 100 * 1024
@@ -29,7 +29,7 @@ def load_validated_zone_document(path: str | Path) -> dict[str, Any]:
 
     if size > MAX_CONFIG_FILE_BYTES:
         raise ZoneConfigurationError(
-            f"el archivo de zonas '{source}' supera el límite de {MAX_CONFIG_FILE_BYTES} bytes " f"(tiene {size} bytes)"
+            f"el archivo de zonas '{source}' supera el límite de {MAX_CONFIG_FILE_BYTES} bytes (tiene {size} bytes)"
         )
 
     try:

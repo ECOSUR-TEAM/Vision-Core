@@ -26,12 +26,14 @@ def build_monitor(
     event_serializer=None,
     metrics=None,
     health=None,
+    camera_id: str = "default",
 ) -> MonitorDependencies:
     state = state or MonitorState(
         demo=demo,
         event_serializer=event_serializer,
         metrics=metrics,
         health=health,
+        camera_id=camera_id,
     )
     return MonitorDependencies(
         state=state,

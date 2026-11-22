@@ -11,15 +11,12 @@ from urllib.request import urlopen
 
 import pytest
 
+from vision_core.core.domain.event import Event
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.features.monitor.infrastructure.state import MonitorState
-from vision_core.shared.domain.event import Event
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-FRONTEND_ROOTS = (
-    PROJECT_ROOT / "src" / "vision_core" / "infrastructure" / "monitor",
-    PROJECT_ROOT / "src" / "vision_core" / "features" / "monitor",
-)
+FRONTEND_ROOTS = (PROJECT_ROOT / "src" / "vision_core" / "features" / "monitor" / "infrastructure" / "http",)
 INDEX = FRONTEND_ROOTS[0] / "index.html"
 
 FORBIDDEN_SINKS = (
@@ -163,9 +160,9 @@ def _run_monitor_js(state, driver):
     parser.feed(INDEX.read_text(encoding="utf-8"))
     script = "".join(parser.parts)
     program = DOM_HARNESS + f"\nglobalThis.__STATE__ = {json.dumps(state)};\n" + script + "\n" + driver
-    result = subprocess.run(["node", "-e", program], capture_output=True, text=True, timeout=15, check=False)
-    assert result.returncode == 0, f"El renderizado JS falló: {result.stderr}"
-    return result.stdout.strip()
+    result = subprocess.run(["node", "-e", program], capture_output=True, timeout=15, check=False)
+    assert result.returncode == 0, f"El renderizado JS falló: {result.stderr.decode('utf-8', errors='replace')}"
+    return result.stdout.decode("utf-8").strip()
 
 
 def _render_with_node(state):

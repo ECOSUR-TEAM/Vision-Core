@@ -16,12 +16,12 @@ from http.server import BaseHTTPRequestHandler
 from typing import TYPE_CHECKING, cast
 from urllib.parse import SplitResult, parse_qs, urlsplit
 
+from vision_core.core.errors import ValidationError, VisionCoreError, codes
+from vision_core.core.serialization import dumps_json
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
 from vision_core.features.monitor.infrastructure.http.api import API_PREFIX, LEGACY_PREFIX
 from vision_core.features.monitor.infrastructure.http.error_response import describe_error, error_envelope
-from vision_core.shared.application.dto.serialization import dumps_json
-from vision_core.shared.errors import ValidationError, VisionCoreError, codes
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,8 +54,7 @@ _SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
     "Permissions-Policy": (
-        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
-        "magnetometer=(), microphone=(), payment=(), usb=()"
+        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
     ),
     "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
 }
@@ -80,7 +79,7 @@ _FRAME_PARAMETERS = frozenset({"after"})
 
 def csp_for(nonce: str) -> str:
     """Build a CSP with the given nonce for both inline style and script."""
-    return f"{_CSP_BASE} script-src 'self' 'nonce-{nonce}'; " f"style-src 'self' 'nonce-{nonce}';"
+    return f"{_CSP_BASE} script-src 'self' 'nonce-{nonce}'; style-src 'self' 'nonce-{nonce}';"
 
 
 def security_headers(nonce: str) -> dict[str, str]:

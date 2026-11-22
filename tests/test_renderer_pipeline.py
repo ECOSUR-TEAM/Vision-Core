@@ -8,8 +8,8 @@ from time import perf_counter
 import numpy as np
 import pytest
 
-from vision_core.application.frame_profiler import FrameProfiler
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config.pipeline_config import PipelineConfig
+from vision_core.core.inference.frame_profiler import STAGES, FrameProfiler
 from vision_core.features.monitor.infrastructure.latest_frame_buffer import LatestFrameBuffer
 from vision_core.features.monitor.infrastructure.renderer_thread import RendererThread
 
@@ -25,6 +25,12 @@ def test_latest_frame_buffer_discards_older_frames():
     assert buffer.take() is None
     stats = buffer.stats()
     assert stats == {"published": 3, "dropped": 2, "queued": 0}
+
+
+@pytest.mark.parametrize("maxsize", [0, 2, 3])
+def test_latest_frame_buffer_only_allows_size_one(maxsize):
+    with pytest.raises(ValueError, match="maxsize"):
+        LatestFrameBuffer(maxsize=maxsize)
 
 
 def test_slow_renderer_never_blocks_the_inference_producer():
@@ -171,6 +177,7 @@ def test_frame_profiler_writes_percentiles_and_fps(tmp_path):
     profiler.record_frame()
 
     summary = profiler.summary()
+    assert summary["camera_id"] == "default"
     assert summary["frames"] == 1
     assert summary["fps"] > 0
     assert summary["stages"]["detection"]["p50_ms"] == pytest.approx(20.0)
@@ -178,5 +185,16 @@ def test_frame_profiler_writes_percentiles_and_fps(tmp_path):
 
     path = profiler.save(tmp_path / "profiling_results.json")
     saved = json.loads(path.read_text(encoding="utf-8"))
+    assert saved["camera_id"] == "default"
     assert saved["frames"] == 1
     assert saved["stages"] == summary["stages"]
+
+
+def test_frame_profiler_labels_results_with_camera_id(tmp_path):
+    profiler = FrameProfiler(camera_id="camera-g0")
+    profiler.record("detection", 0.01)
+    profiler.record_frame()
+
+    saved = json.loads(profiler.save(tmp_path / "profiling_results.json").read_text(encoding="utf-8"))
+    assert saved["camera_id"] == "camera-g0"
+    assert set(saved["stages"]) == set(STAGES)

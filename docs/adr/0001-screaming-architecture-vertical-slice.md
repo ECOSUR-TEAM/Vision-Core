@@ -65,16 +65,15 @@ negocio: `video`, `detection`, `reid`, `door`, `monitor`, `pipeline`.
 main.py                         # composition root / entrypoint (raíz, obligatorio)
 src/
   vision_core/
-    settings.py                 # env/config
-    shared/
+    core/
+      config/                   # env/config tipada
       domain/
         bbox.py
         polygon.py
         event.py
         event_type.py
-      application/
-        dto/
-          base.py               # base/protocolos opcionales
+      dto/                      # payloads de transporte compartidos
+      serialization/            # serialización JSON compartida
     features/
       detection/
         application/
@@ -173,9 +172,9 @@ duplicar infraestructura. Reglas de ubicación:
 
 | Tipo de dato | Ubicación |
 |---|---|
-| Persistencia (DB, archivos, caché) | `features/<feature>/infrastructure/persistence/` |
+| Persistencia (DB, archivos, caché) | `core/infrastructure/persistence/` |
 | Clientes externos (cámara, modelo, APIs) | `features/<feature>/infrastructure/adapters/` o `external/` |
-| Contratos de persistencia | `features/<feature>/domain/repositories/` **solo si existe persistencia real** |
+| Contratos de persistencia | `core/contracts/` **solo si existe persistencia real** |
 | Contratos de servicios externos (cámara, detector, ReID, analítica) | `features/<feature>/domain/ports/` |
 | Datos estáticos, fixtures o muestras | `data/` o `tests/fixtures/` en la raíz, **nunca** dentro de un feature |
 
@@ -218,15 +217,15 @@ son código del feature y permanecen fuera de `src/vision_core/`.
   devolviendo payloads tipados. Un mapper no importa adaptadores concretos y
   valida finitud/rango antes de convertir.
 - La lista blanca de imports es: stdlib/`typing`, re-exports del propio paquete
-  `application/dto` y `shared/application/dto`. Todo lo demás (dominio,
-  infraestructura, frameworks de visión u otros features) queda fuera del DTO.
-- La serialización JSON usa `shared/application/dto/serialization.py`
+  `application/dto` y `core/dto`. Todo lo demás (dominio, infraestructura,
+  frameworks de visión u otros features) queda fuera del DTO.
+- La serialización JSON usa `core/serialization/serialization.py`
   (`to_json_value`/`dumps_json`, con `allow_nan=False`). Los payloads binarios
   viajan como `bytes`, se sirven como `image/jpeg` y `to_json_value` los
   sustituye por `null` en JSON; su contenido binario nunca viaja en ese JSON.
 - No existe un `dto/` global de operaciones. Los payloads compartidos por
   varios slices (bbox, event, observation, track, monitor person) viven en
-  `shared/application/dto/` para no duplicar el contrato en cada feature.
+  `core/dto/` para no duplicar el contrato en cada feature.
 
 La guía practica y los ejemplos de esta convención están en
 [`docs/architecture.md`](../architecture.md#convención-dto).
@@ -237,7 +236,7 @@ dominio no cruzan ese borde.
 
 ### Reglas de dependencia
 
-1. `shared/` no importa `features/`.
+1. `core/` no importa `features/` ni `scripts/`.
 2. `features/<X>/domain` no importa `application` ni `infrastructure`.
 3. `features/<X>/application` no importa `infrastructure`.
 4. `features/<X>` no importa `features/<Y>/infrastructure`; solo puede usar
@@ -246,7 +245,7 @@ dominio no cruzan ese borde.
    cada feature y cablea todo.
 6. No se permiten ciclos de imports.
 
-Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
+Si un tipo se usa en un solo feature, no va a `core/`. `core/` contiene
 únicamente kernel compartido por varios slices.
 
 ### Inyección de dependencias
@@ -258,7 +257,7 @@ Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
   ejemplo, el `DetectorManager` de detection se inyecta en el pipeline.
 - Los features no auto-instancian adaptadores globales ni leen `os.environ`
   directamente: reciben la configuración desde el composition root, que la
-  obtiene de `src/vision_core/settings.py`.
+  obtiene de `src/vision_core/core/config/`.
 - Los adaptadores costosos (modelos, cámaras) se importan de forma diferida en
   los builders, como hoy en `composition.py`, para que importar la aplicación
   no cargue pesos ni abra conexiones.
@@ -266,10 +265,8 @@ Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
 ### Estrategia de migración
 
 - Patrón **strangler**: introducir `src/vision_core/`, luego migrar feature por
-  feature. El orden acordado es shared → detection → door → monitor → video →
+  feature. El orden acordado es core → detection → door → monitor → video →
   reid → pipeline.
-- Se permiten shims temporales para no romper imports; se eliminan en el ticket
-  24 de la secuencia de migración (limpieza de shims).
 - Cada slice migrado actualiza sus tests y deja la suite verde antes de migrar
   el siguiente. Los tests viejos se reubican junto al slice, no se duplican.
 - Estado de los slices (la implementación efectiva se registra en los tickets
@@ -277,7 +274,7 @@ Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
 
 | Slice | Ticket de migración | Estado |
 |---|---|---|
-| `shared/` | ECM-60 | Definido; ver mapa de migración |
+| `core/` | ECM-105 / ECM-106 | Migrado; ver ADR 0008 |
 | `features/detection/` | ECM-61 | Definido; ver mapa de migración |
 | `features/door/` | ECM-64 | Definido; ver mapa de migración |
 | `features/monitor/` | ECM-65 | Definido; ver mapa de migración |
@@ -307,7 +304,6 @@ Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
   para el mismo caso de uso.
 - Cierta duplicación de tipos entre dominio y DTO es deliberada; los mappers
   pagan ese coste una vez por operación.
-- La migración temporal tiene shims y rutas antiguas y nuevas conviviendo.
 - Hay que reforzar las pruebas estructurales para las reglas nuevas; hoy solo
   se verifican las reglas globales antiguas.
 
@@ -319,7 +315,7 @@ Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
 | DTOs con `numpy`, `cv2`, `torch` o imports de dominio | Convención de esta sección, lista blanca en `test_import_rules.py`, check global en `test_dto_convention.py` y test de contrato por slice. |
 | Importaciones cruzadas entre features | Regla 4; los features solo comparten ports, DTOs o casos de uso. |
 | Carpetas vacías o `data/` dentro de un feature | Regla "solo contenido real" y decisión sobre `data/`. |
-| Features leyendo variables de entorno | `settings.py` + configuración inyectada desde `main.py`. |
+| Features leyendo variables de entorno | `core/config/` + configuración inyectada desde `main.py`. |
 | Ciclos de imports | Un único sentido de dependencia: infrastructure → application → domain. |
 
 ## Alternativas consideradas
@@ -345,26 +341,24 @@ Si un tipo se usa en un solo feature, no va a `shared/`. `shared/` contiene
 - Los contratos por slice viven en `tests/features/<feature>/.../test_*dto_contract.py`
   y comprueban campos, tipos, inmutabilidad, serialización y mapeo.
 - Cada ticket de migración debe añadir pruebas de las reglas 1–6 y del contrato
-  DTO de su slice, y eliminar los shims que deje de necesitar.
+  DTO de su slice.
 - El formato y el lint se configuran con Ruff en `pyproject.toml` y se ejecutan
   en CI; no se introduce `mypy`, `black` ni `flake8` como parte de este ADR.
 
 ## Mapa de migración: archivo viejo → archivo nuevo
 
-Las rutas marcadas **(ECM-xx)** ya están materializadas en la rama de ese ticket;
-las marcadas **propuesto** son destino de este ADR y se crean con contenido real
-en su ticket correspondiente. Las rutas antiguas se conservan como shims hasta
-la limpieza final.
+Las rutas de destino reflejan el árbol vigente
+`src/vision_core/{core,features,scripts}`.
 
 ### Kernel compartido
 
 | Archivo viejo | Archivo nuevo | Ticket |
 |---|---|---|
-| `domain/model/bbox.py` | `src/vision_core/shared/domain/bbox.py` | ECM-60 |
-| `domain/model/event.py` | `src/vision_core/shared/domain/event.py` | ECM-60 |
-| `domain/model/event_type.py` | `src/vision_core/shared/domain/event_type.py` | ECM-60 |
-| `domain/model/polygon.py` | `src/vision_core/shared/domain/polygon.py` | ECM-60 |
-| `domain/types.py` | shim temporal; `Frame`/`Embedding` se ubican en el slice que los use o en `shared/domain/types.py` solo si varios slices los usan | propuesto |
+| `domain/model/bbox.py` | `src/vision_core/core/domain/bbox.py` | ECM-60 / ECM-106 |
+| `domain/model/event.py` | `src/vision_core/core/domain/event.py` | ECM-60 / ECM-106 |
+| `domain/model/event_type.py` | `src/vision_core/core/domain/event_type.py` | ECM-60 / ECM-106 |
+| `domain/model/polygon.py` | `src/vision_core/core/domain/polygon.py` | ECM-60 / ECM-106 |
+| `domain/types.py` | `Frame`/`Embedding` se ubican en el slice que los use o en `src/vision_core/core/domain/types.py` solo si varios slices los usan | propuesto |
 | `domain/attendance.py` | `src/vision_core/features/reid/domain/entities/session_attendance.py` | propuesto |
 | `domain/model/__init__.py`, `domain/ports/__init__.py` | `__init__.py` de los paquetes nuevos | ECM-60 |
 
@@ -372,13 +366,13 @@ la limpieza final.
 
 | Archivo viejo | Archivo nuevo | Ticket |
 |---|---|---|
-| `domain/ports/video_source.py` | `src/vision_core/features/video/domain/ports/video_source.py` | propuesto |
-| `infrastructure/video/rtsp_video_source.py` | `src/vision_core/features/video/infrastructure/adapters/rtsp_video_source.py` | propuesto |
-| `infrastructure/video/file_video_source.py` | `src/vision_core/features/video/infrastructure/adapters/file_video_source.py` | propuesto |
-| `infrastructure/video/latest_frame_source.py` | `src/vision_core/features/video/infrastructure/adapters/latest_frame_source.py` | propuesto |
-| `infrastructure/video/frame_validation.py` | `src/vision_core/features/video/infrastructure/adapters/frame_validation.py` | propuesto |
-| `infrastructure/video/capture_reference.py` | `scripts/capture_reference.py` (herramienta de calibración, no feature) | propuesto |
-| — | `src/vision_core/features/video/infrastructure/dependencies.py` (`build_video`) | propuesto |
+| `domain/ports/video_source.py` | `src/vision_core/features/video/domain/ports/video_source.py` | ECM-106 |
+| `infrastructure/video/rtsp_video_source.py` | `src/vision_core/features/video/infrastructure/adapters/rtsp_video_source.py` | ECM-106 |
+| `infrastructure/video/file_video_source.py` | `src/vision_core/features/video/infrastructure/adapters/file_video_source.py` | ECM-106 |
+| `infrastructure/video/latest_frame_source.py` | `src/vision_core/features/video/infrastructure/adapters/latest_frame_source.py` | ECM-106 |
+| `infrastructure/video/frame_validation.py` | `src/vision_core/features/video/infrastructure/frame_validation.py` | ECM-106 |
+| `infrastructure/video/capture_reference.py` | `src/vision_core/scripts/capture_reference.py` (herramienta de calibración, no feature) | ECM-111 |
+| — | `src/vision_core/features/video/infrastructure/dependencies.py` (`build_video`) | ECM-106 |
 
 ### Detección
 
@@ -401,12 +395,11 @@ la limpieza final.
 
 | Archivo viejo | Archivo nuevo | Ticket |
 |---|---|---|
-| `domain/ports/reid_memory.py` | `src/vision_core/features/reid/domain/ports/reid_memory.py` | propuesto |
-| `infrastructure/reid/memory_reid.py` | `src/vision_core/features/reid/infrastructure/adapters/memory_reid.py` | propuesto |
-| `infrastructure/reid/embedder.py` | `src/vision_core/features/reid/infrastructure/adapters/embedder.py` | propuesto |
-| `infrastructure/reid/embedding_extractor.py` | se elimina: shim deprecado ya cubierto por ECM-53 | propuesto |
+| `domain/ports/reid_memory.py` | `src/vision_core/features/reid/domain/ports/reid_memory.py` | ECM-106 |
+| `infrastructure/reid/memory_reid.py` | `src/vision_core/features/reid/infrastructure/adapters/memory_reid.py` | ECM-106 |
+| `infrastructure/reid/embedder.py` | `src/vision_core/features/reid/infrastructure/adapters/embedder.py` | ECM-106 |
 | `infrastructure/reid/README.md` | `src/vision_core/features/reid/README.md` | propuesto |
-| — | `src/vision_core/features/reid/infrastructure/dependencies.py` (`build_reid`) | propuesto |
+| — | `src/vision_core/features/reid/infrastructure/dependencies.py` (`build_reid`) | ECM-106 |
 
 ### Puerta y zonas
 
@@ -420,7 +413,7 @@ la limpieza final.
 | `infrastructure/door/zone_loader.py` | `src/vision_core/features/door/infrastructure/config/zone_loader.py` | ECM-64 |
 | `infrastructure/door/geometry.py` | `src/vision_core/features/door/infrastructure/geometry.py` | ECM-64 |
 | `infrastructure/door/polygon_validation.py` | `src/vision_core/features/door/infrastructure/polygon_validation.py` | ECM-64 |
-| `infrastructure/door/check_zones.py` | `scripts/check_zones.py` (herramienta de calibración) | ECM-64 |
+| `infrastructure/door/check_zones.py` | `src/vision_core/scripts/check_zones.py` (herramienta de calibración) | ECM-111 |
 | — | `application/dto/request/request_get_history.py`, `request_update.py` | ECM-64 |
 | — | `application/dto/response/response_get_history.py`, `response_update.py` | ECM-64 |
 | — | `application/use_cases/get_history.py`, `update_zone.py` | ECM-64 |
@@ -434,9 +427,9 @@ la limpieza final.
 | `infrastructure/monitor/state.py` | `src/vision_core/features/monitor/infrastructure/state.py` | ECM-65 |
 | `infrastructure/monitor/renderer.py` | `src/vision_core/features/monitor/infrastructure/renderer.py` | ECM-65 |
 | `infrastructure/monitor/http_server.py` | `src/vision_core/features/monitor/infrastructure/http/handler.py` y `http/server.py` | ECM-65 |
-| `infrastructure/monitor/server.py` | `src/vision_core/features/monitor/infrastructure/http/server.py` (shim temporal durante ECM-65) | ECM-65 |
-| `infrastructure/monitor/__main__.py` | `main.py` (entrypoint raíz; banderas CLI en el composition root) | propuesto |
-| `infrastructure/monitor/index.html` | `src/vision_core/features/monitor/infrastructure/http/index.html` (recurso estático) | propuesto |
+| `infrastructure/monitor/server.py` | se integra en `src/vision_core/features/monitor/infrastructure/http/server.py` | ECM-106 |
+| `infrastructure/monitor/__main__.py` | `src/vision_core/features/monitor/infrastructure/__main__.py` | ECM-106 |
+| `infrastructure/monitor/index.html` | `src/vision_core/features/monitor/infrastructure/http/index.html` (recurso estático) | ECM-111 |
 | — | `application/dto/request/request_frame.py`, `request_snapshot.py` | ECM-65 |
 | — | `application/dto/response/response_frame.py`, `response_snapshot.py` | ECM-65 |
 | — | `application/use_cases/get_frame.py`, `get_snapshot.py`, `publish_monitor_state.py` | ECM-65 |
@@ -447,11 +440,11 @@ la limpieza final.
 
 | Archivo viejo | Archivo nuevo | Ticket |
 |---|---|---|
-| `application/vision_core_app.py` | `src/vision_core/features/pipeline/application/use_cases/run_pipeline.py` (`RunPipeline`) | propuesto |
-| `application/event_serializer.py` | `src/vision_core/features/pipeline/application/mappers/pipeline_mapper.py` (`event_to_json_dict`, `event_to_json`) | ECM-67 |
+| `application/vision_core_app.py` | `src/vision_core/features/pipeline/application/use_cases/run_pipeline.py` (`RunPipeline`) | ECM-106 |
+| `application/event_serializer.py` | `src/vision_core/core/serialization/event_serializer.py` (`event_to_json_dict`, `event_to_json`) | ECM-106 |
 | `application/README.md` | `src/vision_core/features/pipeline/README.md` | propuesto |
-| `domain/model/resolved_track.py` | `src/vision_core/features/pipeline/domain/entities/resolved_track.py` | propuesto |
-| `composition.py` | se disuelve en `main.py` y los `dependencies.py` de cada feature; shim temporal | propuesto |
+| `domain/model/resolved_track.py` | `src/vision_core/features/pipeline/domain/entities/resolved_track.py` | ECM-106 |
+| `composition.py` | se disuelve en `main.py` y los `dependencies.py` de cada feature | ECM-106 |
 | `main.py` | `main.py` (permanece en la raíz como composition root) | ECM-58 |
 | `scripts/pipeline_tools/` | se mantiene en `scripts/` como decoradores de validación/benchmark | sin cambio |
 
@@ -459,11 +452,11 @@ la limpieza final.
 
 | Archivo viejo | Archivo nuevo | Ticket |
 |---|---|---|
-| Variables de `.env.example` repartidas en adaptadores | `src/vision_core/settings.py`; cada adaptador recibe su configuración por parámetro | propuesto |
+| Variables de `.env.example` repartidas en adaptadores | `src/vision_core/core/config/`; cada adaptador recibe su configuración por parámetro | ECM-106 |
 | `config/zones.example.json`, `config/frigate.*.yml` | permanecen en `config/` (datos estáticos de ejemplo, nunca dentro de un feature) | sin cambio |
-| `tests/application/test_vision_core_app.py` | `tests/features/pipeline/test_run_pipeline.py` | propuesto |
+| `tests/application/test_vision_core_app.py` | `tests/features/pipeline/application/test_run_pipeline.py` | ECM-106 |
 | `tests/application/test_event_serializer.py` | `tests/features/pipeline/application/test_pipeline_mapper.py` | ECM-67 |
-| `tests/domain/test_event.py`, `tests/test_event.py` | `tests/shared/domain/test_event.py` (se consolida duplicado) | ECM-60 |
+| `tests/domain/test_event.py`, `tests/test_event.py` | `tests/core/domain/test_event.py` (se consolida duplicado) | ECM-60 / ECM-106 |
 | `tests/domain/test_attendance.py` | `tests/features/reid/test_session_attendance.py` | propuesto |
 | `tests/infrastructure/detection/*` | `tests/features/detection/*` | ECM-61 |
 | `tests/infrastructure/door/*` | `tests/features/door/*` | ECM-64 |

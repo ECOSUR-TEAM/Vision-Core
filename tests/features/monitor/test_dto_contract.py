@@ -5,14 +5,13 @@ from typing import cast, get_type_hints
 
 import pytest
 
+from vision_core.core.dto import BBoxPayload, EventPayload, JSONValue, MonitorPersonPayload
+from vision_core.core.serialization import dumps_json
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
 from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
 from vision_core.features.monitor.application.dto.response.response_snapshot import ResponseSnapshot
 from vision_core.features.monitor.application.mappers.monitor_mapper import snapshot_to_response
-from vision_core.shared.application.dto import BBoxPayload, EventPayload, MonitorPersonPayload
-from vision_core.shared.application.dto.json_value import JSONValue
-from vision_core.shared.application.dto.serialization import dumps_json
 
 DTO_CLASSES = (RequestFrame, RequestSnapshot, ResponseFrame, ResponseSnapshot)
 

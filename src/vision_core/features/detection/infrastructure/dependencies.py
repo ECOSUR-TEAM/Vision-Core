@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 
+from vision_core.core.config import Settings
 from vision_core.features.detection.application.use_cases.detect_persons import DetectPersons
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import (
     YoloDetectorManager,
 )
-from vision_core.settings import Settings
+from vision_core.model_registry.model_descriptor import ModelDescriptor
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,7 @@ def build_detection(
     classes: tuple[int, ...] | None = None,
     tracking_enabled: bool | None = None,
     max_missed_frames: int | None = None,
+    model_descriptor: ModelDescriptor | None = None,
 ) -> DetectionDependencies:
     """Build the detection use case with an injectable adapter."""
 
@@ -35,5 +37,6 @@ def build_detection(
             classes=classes if classes is not None else settings.classes,
             tracking_enabled=tracking_enabled if tracking_enabled is not None else settings.tracking_enabled,
             max_missed_frames=max_missed_frames if max_missed_frames is not None else settings.max_missed_frames,
+            model_descriptor=model_descriptor,
         )
     return DetectionDependencies(detector=detector, detect_persons=DetectPersons(detector))

@@ -4,10 +4,10 @@ import cv2
 import numpy as np
 import pytest
 
+from vision_core.core.telemetry.metrics import ObservabilityMetrics
 from vision_core.features.video.infrastructure.adapters.rtsp_video_source import (
     RtspVideoSource,
 )
-from vision_core.shared.observability.metrics import ObservabilityMetrics
 
 URL = "rtsp://user:secret@frigate:8554/entrada"
 

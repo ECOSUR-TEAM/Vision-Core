@@ -9,20 +9,22 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict
-from vision_core.infrastructure.detection.yolo_detector_manager import (
+from vision_core.core.config import Settings
+from vision_core.core.errors import VisionCoreError, codes
+from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import (
     YoloDetectorManager,
 )
-from vision_core.infrastructure.door.polygon_door_analytics import PolygonDoorAnalytics
-from vision_core.infrastructure.door.zone_loader import load_zones
-from vision_core.infrastructure.reid.embedder import TorchvisionEmbeddingExtractor
-from vision_core.infrastructure.reid.memory_reid import InMemoryReID
-from vision_core.infrastructure.video.file_video_source import FileVideoSource
-from vision_core.infrastructure.video.rtsp_video_source import RtspVideoSource
+from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
+from vision_core.features.door.infrastructure.config.zone_loader import load_zones
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict
+from vision_core.features.reid.infrastructure.adapters.embedder import TorchvisionEmbeddingExtractor
+from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
+from vision_core.features.video.infrastructure.adapters.file_video_source import FileVideoSource
+from vision_core.features.video.infrastructure.adapters.rtsp_video_source import RtspVideoSource
+from vision_core.model_registry.activation import resolve_active_models
 from vision_core.scripts.pipeline_tools.limited_source import LimitedSource
 from vision_core.scripts.pipeline_tools.measured_app import MeasuredApp
 from vision_core.scripts.pipeline_tools.recorded_detector import RecordedDetector
-from vision_core.shared.errors import VisionCoreError, codes
 
 
 def main():
@@ -36,11 +38,14 @@ def main():
     if args.frames <= 0:
         parser.error("--frames debe ser positivo")
     zones = load_zones(args.zones)
+    active_models = resolve_active_models(Settings.from_env(validate_startup=False))
     source = LimitedSource(FileVideoSource(args.video) if args.video else RtspVideoSource.from_env(), args.frames)
     with Path(args.output).open("x") as output:
         start = time.perf_counter()
         try:
-            detector = RecordedDetector(YoloDetectorManager(args.model), output)
+            detector = RecordedDetector(
+                YoloDetectorManager(args.model, model_descriptor=active_models.detection), output
+            )
 
             def emit(event):
                 output.write(json.dumps({"kind": "event", "frame": source.frames, **event_to_json_dict(event)}) + "\n")
@@ -50,7 +55,7 @@ def main():
                 detector,
                 InMemoryReID.from_env(),
                 PolygonDoorAnalytics(zones.exterior, zones.interior, zones.door),
-                TorchvisionEmbeddingExtractor.from_env(),
+                TorchvisionEmbeddingExtractor.from_env(active_models.embedding),
                 emit,
                 expected_frame_size=(zones.width, zones.height),
                 output=output,

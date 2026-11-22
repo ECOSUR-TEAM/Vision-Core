@@ -1,11 +1,11 @@
 import pytest
 
 from tests.fakes.fake_door import FakeDoor
+from vision_core.core.domain.event import Event
+from vision_core.core.domain.polygon import Polygon
+from vision_core.core.errors import ZoneConfigurationError, codes
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
-from vision_core.shared.domain.event import Event
-from vision_core.shared.domain.polygon import Polygon
-from vision_core.shared.errors import ZoneConfigurationError, codes
 
 EXTERIOR = Polygon("ext", ((0, 0), (10, 0), (10, 10), (0, 10)))
 INTERIOR = Polygon("int", ((10, 0), (20, 0), (20, 10), (10, 10)))

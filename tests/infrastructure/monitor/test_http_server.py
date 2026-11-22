@@ -6,18 +6,18 @@ from urllib.request import urlopen
 
 import pytest
 
-from vision_core.features.monitor.infrastructure.http import handler as handler_module
-from vision_core.infrastructure.monitor.http_server import make_server
-from vision_core.infrastructure.monitor.state import MonitorState
-from vision_core.shared.application.dto.schema_version import EVENT_SCHEMA_VERSION
-from vision_core.shared.domain.event import Event
-from vision_core.shared.errors import (
+from vision_core.core.domain.event import Event
+from vision_core.core.dto import EVENT_SCHEMA_VERSION
+from vision_core.core.errors import (
     ConfigurationError,
     PipelineError,
     ReIDModelUnavailableError,
     VideoSourceError,
     codes,
 )
+from vision_core.features.monitor.infrastructure.http import handler as handler_module
+from vision_core.features.monitor.infrastructure.http.server import make_server
+from vision_core.features.monitor.infrastructure.state import MonitorState
 
 
 @pytest.fixture

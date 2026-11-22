@@ -1,8 +1,8 @@
 import numpy as np
 
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.domain.event import Event
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
-from vision_core.shared.domain.bbox import BBox
-from vision_core.shared.domain.event import Event
 
 
 class FakeRuntimeApp:
@@ -10,8 +10,9 @@ class FakeRuntimeApp:
         self.kwargs = kwargs
         self._reid = kwargs.get("reid")
 
-    def set_observability(self, metrics):
+    def set_observability(self, metrics, *, camera_id=None):
         self.metrics = metrics
+        self.camera_id = camera_id
 
     def run(self, _stop_requested):
         self.kwargs["on_event"](Event("PERSON_ENTERED", "p1", 10.0, event_id="evt-1"))

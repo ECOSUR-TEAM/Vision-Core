@@ -5,9 +5,13 @@
 | Endpoint | Uso | Respuesta |
 |---|---|---|
 | `/health` | Liveness del proceso | `200` mientras el HTTP server puede atender |
-| `/ready` | Configuracion, modelo, fuente de video y disco | `200` cuando todo esta listo; `503` si falla un chequeo |
+| `/ready` | Configuracion, modelo, fuente de video, disco e identidad de modelos | `200` cuando todo esta listo; `503` si falla un chequeo |
 | `/metrics` | Telemetria JSON equivalente a metricas | Contadores, gauges e histogramas |
-| `/api/state` | Estado operativo del monitor | Estado, FPS y eventos existentes |
+| `/api/v1/state` | Estado operativo del monitor | Estado, FPS, persistencia y eventos existentes |
+| `/api/v1/frame?after=N` | Frame JPEG para el visor | `200` JPEG nuevo · `204` sin imagen nueva · `400` `VALIDATION_FAILED` · `503` `VIDEO_FRAME_PENDING` |
+
+Las rutas `/api/state` y `/api/frame` siguen disponibles como alias deprecados;
+los clientes nuevos deben usar `/api/v1/*`. Ver [contratos](api-contracts.md).
 
 Ejemplo:
 
@@ -17,12 +21,20 @@ curl http://127.0.0.1:8080/ready
 curl http://127.0.0.1:8080/metrics
 ```
 
+`/ready` conserva `ready`, `checks`, `disk_free_mb` y `minimum_free_disk_mb`, y añade
+`model_id`, `model_version`, `model_hash` y `models` con la identidad de deteccion y embedding.
+`/health` sigue siendo solo liveness, sin metadata de modelos. `model_hash=unverified` indica
+que el checksum no está declarado, está desactivado o no se pudo verificar; solo se muestra
+`sha256:<hex>` después de una verificación real contra el archivo local.
+
 ## Logs
 
 Cuando `VISION_CORE_LOG_JSON=1`, los logs son JSON con estos campos:
 
 - `timestamp`, `level`, `service`, `camera_id`
 - `event_id`, `person_id`, `duration_ms`, `error_code`
+- `model_id`, `model_version`, `model_hash`
+- `embedding_model_id`, `embedding_model_version`, `embedding_model_hash`
 - `message`
 
 `VISION_CORE_LOG_LEVEL` controla el nivel y `VISION_CORE_CAMERA_ID` identifica la camara.
@@ -52,6 +64,13 @@ mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan
 `person_id`, rutas o URLs como labels. `vision_core_frames_discarded_total` suma el
 delta del acumulado de la captura, no el total en cada frame.
 
+Cuando `VISION_CORE_CAMERA_ID` no es `default`, cada metrica se publica dos veces:
+con su nombre historico (agregado) y con el sufijo `{camera_id=<id>}`. Por ejemplo,
+`vision_core_frames_discarded_total{camera_id=camera-1}` complementa a
+`vision_core_frames_discarded_total` sin romper consumidores anteriores. Los
+caracteres no válidos en `camera_id` se normalizan a `_` en la clave de métrica;
+el valor original se conserva en `profiling_results.json` y en logs JSON.
+
 ## Diagnostico
 
 ### FPS bajo
@@ -72,10 +91,19 @@ delta del acumulado de la captura, no el total en cada frame.
 2. Busca el log con `level=ERROR` y `error_code`.
 3. Verifica `VISION_CORE_MODEL_PATH`, formato del archivo y peso disponible localmente.
 
+## Benchmark
+
+El benchmark nocturno guarda un snapshot de estos contadores e histogramas como
+telemetría de apoyo y usa `FrameProfiler` para el gate de presupuestos. El e2e
+con `ObservabilityMetrics` fresco comprueba `vision_core_events_emitted_total` y
+`vision_core_inference_latency_ms` a través de `/metrics`. Consulta
+[performance.md](performance.md) para las cifras y los hotspots.
+
 ## Variables
 
 - `VISION_CORE_LOG_LEVEL`: `CRITICAL`, `ERROR`, `WARNING`, `INFO` o `DEBUG`
 - `VISION_CORE_LOG_JSON`: `1` para JSON; `0` para texto
-- `VISION_CORE_CAMERA_ID`: identificador estable de la camara
+- `VISION_CORE_CAMERA_ID`: identificador estable de la camara en logs, estado,
+  metricas y profiling (baseline G0)
 - `VISION_CORE_MINIMUM_FREE_DISK_MB`: espacio libre minimo para readiness
 - `VISION_CORE_DISK_CHECK_PATH`: ruta comprobada por readiness (`.` por defecto; `/model-cache` en Compose)

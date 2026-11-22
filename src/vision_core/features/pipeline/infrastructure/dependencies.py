@@ -1,4 +1,4 @@
-from vision_core.application.pipeline_config import PipelineConfig
+from vision_core.core.config.pipeline_config import PipelineConfig
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
@@ -19,6 +19,7 @@ def build_pipeline(
     expected_frame_size: tuple[int, int] | None = None,
     on_frame=None,
     config: PipelineConfig | None = None,
+    camera_id: str = "default",
 ) -> RunPipeline:
     return RunPipeline(
         video=video,
@@ -30,4 +31,5 @@ def build_pipeline(
         expected_frame_size=expected_frame_size,
         on_frame=on_frame,
         config=config,
+        camera_id=camera_id,
     )

@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 
 from tests.fakes.fake_reid import FakeReID
-from vision_core.infrastructure.reid.memory_reid import InMemoryReID
-from vision_core.shared.domain.bbox import BBox
-from vision_core.shared.errors import ReIDError, codes
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.errors import ReIDError, codes
+from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
 
 EMBEDDING = np.array([1.0, 0.0], dtype=np.float32)
 

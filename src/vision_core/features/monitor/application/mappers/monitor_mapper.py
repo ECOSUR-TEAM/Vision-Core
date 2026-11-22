@@ -4,19 +4,19 @@ from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Any
 
-from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
-from vision_core.features.monitor.application.dto.response.response_snapshot import ResponseSnapshot
-from vision_core.shared.application.dto.bbox_payload import BBoxPayload
-from vision_core.shared.application.dto.event_payload import EventPayload
-from vision_core.shared.application.dto.monitor_person_payload import MonitorPersonPayload
-from vision_core.shared.application.dto.schema_version import EVENT_SCHEMA_VERSION
-from vision_core.shared.application.validation import (
+from vision_core.core.dto import EVENT_SCHEMA_VERSION
+from vision_core.core.dto.bbox_payload import BBoxPayload
+from vision_core.core.dto.event_payload import EventPayload
+from vision_core.core.dto.monitor_person_payload import MonitorPersonPayload
+from vision_core.core.validation import (
     bounded_int,
     finite_bbox,
     finite_float,
     json_metadata,
     required_str,
 )
+from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
+from vision_core.features.monitor.application.dto.response.response_snapshot import ResponseSnapshot
 
 
 def _person_payload(value: Any) -> MonitorPersonPayload:

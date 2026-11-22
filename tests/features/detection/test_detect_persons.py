@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 
+from vision_core.core.domain.bbox import BBox
+from vision_core.core.dto import BBoxPayload, DetectionPayload
 from vision_core.features.detection.application.dto.request.request_detector import RequestDetector
 from vision_core.features.detection.application.use_cases.detect_persons import DetectPersons
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
-from vision_core.shared.application.dto import BBoxPayload, DetectionPayload
-from vision_core.shared.domain.bbox import BBox
 
 
 class FakeDetectorManager(DetectorManager):

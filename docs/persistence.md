@@ -49,7 +49,7 @@ En Compose:
 docker compose exec vision-core python -c "import sqlite3; c=sqlite3.connect('/app/data/vision-core.sqlite3'); print(c.execute('select version from schema_migrations').fetchall())"
 ```
 
-La respuesta HTTP `/api/state` incluye `persistence` con `enabled`, `path`,
+La respuesta HTTP `/api/v1/state` incluye `persistence` con `enabled`, `path`,
 `migrations`, `failures` y `last_error`. SQLite es local y no usa usuario,
 contraseña ni URL de conexión.
 
@@ -81,7 +81,7 @@ aplican solas en el próximo arranque.
 `health()` informa del fallo. Con `fail_open=0` un fallo de DB detiene el
 pipeline, útil cuando la auditoría es obligatoria.
 
-Si aparece `failures > 0` en `/api/state`, revisar permisos del directorio,
+Si aparece `failures > 0` en `/api/v1/state`, revisar permisos del directorio,
 espacio en disco, corrupción del archivo y bloqueos externos; no reiniciar el
 proceso sin antes copiar el archivo para diagnóstico.
 

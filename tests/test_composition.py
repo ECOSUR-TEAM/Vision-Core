@@ -136,4 +136,4 @@ def test_monitor_main_no_render_forces_override(monkeypatch):
     monitor.main(state=object(), build_runtime=build_runtime)
 
     assert calls["kwargs"]["render_enabled"] is False
-    assert calls["kwargs"]["zones_file"].endswith("config/zones.example.json")
+    assert Path(calls["kwargs"]["zones_file"]).as_posix().endswith("config/zones.example.json")

@@ -1,0 +1,19 @@
+[
+  {
+    "event": "FALSE_ALARM",
+    "metadata": {
+      "confirmation_frames": 2,
+      "from_zone": "exterior",
+      "people_inside": 0,
+      "position": [
+        -5.0,
+        240.0
+      ],
+      "returning_person": false,
+      "to_zone": "fuera",
+      "unique_people_entered": 0
+    },
+    "person_id": "person-1",
+    "timestamp": 0.3
+  }
+]

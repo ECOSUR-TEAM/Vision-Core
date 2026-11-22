@@ -18,6 +18,18 @@ EXPECTED_EVENTS = (
 )
 
 
+def pytest_collection_modifyitems(items):
+    for item in items:
+        path = str(item.fspath).replace("\\", "/")
+        if "/tests/e2e/" in path:
+            item.add_marker(pytest.mark.e2e)
+            item.add_marker(pytest.mark.slow)
+        elif "/tests/integration/" in path:
+            item.add_marker(pytest.mark.integration)
+        elif "/tests/performance/" in path:
+            item.add_marker(pytest.mark.performance)
+
+
 def _detection(x, track_id=1):
     return Detection(
         bbox=BBox(x - 10, 100, x + 10, 140),
@@ -25,6 +37,20 @@ def _detection(x, track_id=1):
         confidence=0.9,
         track_id=track_id,
     )
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--regen-golden",
+        action="store_true",
+        default=False,
+        help="Regenerate deterministic replay golden files (requires explicit approval).",
+    )
+
+
+@pytest.fixture
+def regen_golden(request):
+    return request.config.getoption("--regen-golden")
 
 
 @pytest.fixture(scope="session")

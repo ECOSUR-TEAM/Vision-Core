@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "kind": "baseline",
+  "scenario": "synthetic-cpu-640x480",
+  "captured_at": "2026-11-21T04:23:50.388568+00:00",
+  "environment": {
+    "generator_version": "1.0.0",
+    "device": "cpu",
+    "detector": "SyntheticDetector",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.14.3",
+    "numpy": "2.4.4",
+    "opencv": "5.0.0.93",
+    "ultralytics": "8.4.212",
+    "runner": "local"
+  },
+  "metrics": {
+    "scenario": "synthetic-cpu-640x480",
+    "device": "cpu",
+    "context": "nightly",
+    "frames": 450,
+    "elapsed_seconds": 3.154071,
+    "fps": 142.67,
+    "frame_p50_ms": 2.4335,
+    "frame_p95_ms": 3.9574,
+    "inference_p50_ms": 1.3037,
+    "inference_p95_ms": 2.1683,
+    "serialization_p95_ms": 0.664,
+    "startup_ms": 32.3757,
+    "reconnect_ms": 0.1029,
+    "memory_peak_mb": 1.992,
+    "memory_peak_tracemalloc_mb": 1.992,
+    "memory_growth_mb_per_hour": 28.2,
+    "memory": {
+      "initial": {
+        "tracemalloc_current_mb": 0.0,
+        "tracemalloc_peak_mb": 0.0,
+        "rss_current_mb": null,
+        "rss_peak_mb": null,
+        "source": "tracemalloc"
+      },
+      "final": {
+        "tracemalloc_current_mb": 0.235,
+        "tracemalloc_peak_mb": 1.992,
+        "rss_current_mb": null,
+        "rss_peak_mb": null,
+        "source": "tracemalloc"
+      }
+    },
+    "event_counts": {
+      "PERSON_ENTERED": 89,
+      "PERSON_EXITED": 89
+    },
+    "events": 178,
+    "video": {
+      "path": "benchmark-data\\synthetic-cpu-640x480\\benchmark.avi",
+      "width": 640,
+      "height": 480
+    },
+    "environment": {
+      "generator_version": "1.0.0",
+      "device": "cpu",
+      "detector": "SyntheticDetector",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "python": "3.14.3",
+      "numpy": "2.4.4",
+      "opencv": "5.0.0.93",
+      "ultralytics": "8.4.212",
+      "runner": "local"
+    },
+    "profiler": {
+      "frames": 450,
+      "elapsed_seconds": 3.154071,
+      "fps": 142.67,
+      "stages": {
+        "decode": {
+          "samples": 451,
+          "p50_ms": 3.9905,
+          "p95_ms": 5.4313,
+          "mean_ms": 4.1995,
+          "max_ms": 16.8694
+        },
+        "detection": {
+          "samples": 450,
+          "p50_ms": 1.3037,
+          "p95_ms": 2.1683,
+          "mean_ms": 1.3956,
+          "max_ms": 3.4174
+        },
+        "embedding": {
+          "samples": 450,
+          "p50_ms": 0.0191,
+          "p95_ms": 0.0404,
+          "mean_ms": 0.0233,
+          "max_ms": 0.3718
+        },
+        "reid_tracking": {
+          "samples": 900,
+          "p50_ms": 0.143,
+          "p95_ms": 0.3071,
+          "mean_ms": 0.1281,
+          "max_ms": 1.0439
+        },
+        "analytics": {
+          "samples": 450,
+          "p50_ms": 0.1615,
+          "p95_ms": 0.2806,
+          "mean_ms": 0.1738,
+          "max_ms": 0.6898
+        },
+        "serialization": {
+          "samples": 178,
+          "p50_ms": 0.3784,
+          "p95_ms": 0.664,
+          "mean_ms": 0.4371,
+          "max_ms": 1.0292
+        },
+        "frame_total": {
+          "samples": 450,
+          "p50_ms": 2.4335,
+          "p95_ms": 3.9574,
+          "mean_ms": 2.484,
+          "max_ms": 6.7971
+        }
+      }
+    },
+    "telemetry": {
+      "counters": {
+        "vision_core_tracks_lost_total": 44.0,
+        "vision_core_tracks_created_total": 45.0
+      },
+      "histograms": {
+        "vision_core_inference_latency_ms": {
+          "count": 450,
+          "sum": 649.7437003999949,
+          "min": 0.2733999863266945,
+          "max": 3.5238999407738447,
+          "avg": 1.4438748897777662
+        },
+        "vision_core_reid_latency_ms": {
+          "count": 450,
+          "sum": 124.98880084604025,
+          "min": 0.16569998115301132,
+          "max": 1.128499978221953,
+          "avg": 0.27775289076897836
+        }
+      }
+    }
+  }
+}

@@ -14,6 +14,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Diagramas (Mermaid)](diagrams.md) | Contexto C4, contenedores, componentes y flujo de datos |
 | [Arquitectura](architecture.md) | Vertical slices, capas, reglas de imports y DTOs |
 | [Desarrollo local](development.md) | Comandos `make`, Dev Container y troubleshooting |
+| [Proceso de contribución](../CONTRIBUTING.md) | Ramas, commits, PR, CODEOWNERS, SLA y DoD |
 
 ## Decisiones
 
@@ -73,4 +74,5 @@ hecha hasta que esa persona la confirme.
 
 | Entrega | Autor | Revisor | Estado |
 |---|---|---|---|
-| ECM-84: ADR 0004-0006, diagramas, runbooks, onboarding y glosario | Autor del PR ECM-84 | Pendiente de asignar | [ ] Revisado por otra persona |
+| ECM-84: ADR 0004-0006, diagramas, runbooks, onboarding y glosario | Autor del PR ECM-84 | @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-85: proceso de PR, CODEOWNERS y DoD | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |

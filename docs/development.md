@@ -1,5 +1,8 @@
 # Desarrollo local
 
+Antes de crear una rama o abrir un PR, lee
+[CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## Requisitos
 
 - Python 3.11
@@ -118,6 +121,8 @@ lsof -nP -iTCP:8080 -iTCP:15000 -iTCP:28554 -sTCP:LISTEN
 
 ## Definition of Done
 
+Esta es la checklist documental; la checklist técnica está en
+[CONTRIBUTING.md#7-definition-of-done](../CONTRIBUTING.md#7-definition-of-done).
 Ninguna entrega se considera terminada hasta que el código y su documentación
 están alineados. Antes de abrir el PR, verifica:
 

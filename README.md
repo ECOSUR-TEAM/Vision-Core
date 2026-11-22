@@ -52,7 +52,9 @@ make run
 ```
 
 La guía completa, Dev Container, perfiles de Compose y troubleshooting están en
-[docs/development.md](docs/development.md).
+[docs/development.md](docs/development.md). Las reglas de ramas, commits, PR,
+owners, SLA de revisión y Definition of Done están en
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Documentación viva
 

@@ -185,6 +185,8 @@ class Settings:
         editor_audit_file = Path(editor_audit_raw).expanduser() if editor_audit_raw else None
         if editor_enabled and editor_token is None:
             errors.append("VISION_CORE_ZONE_EDITOR_TOKEN: obligatorio al habilitar el editor de zonas")
+        if editor_enabled and editor_audit_file is None:
+            errors.append("VISION_CORE_ZONE_EDITOR_AUDIT_FILE: obligatorio al habilitar el editor de zonas")
         zones_missing = (
             zones_file is not None
             and validate_startup

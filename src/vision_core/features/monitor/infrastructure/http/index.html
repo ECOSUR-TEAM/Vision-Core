@@ -646,8 +646,8 @@
                     }
                     zonesOriginal = cloneZones(payload.zones);
                     zonesDraft = cloneZones(payload.zones);
-                    showZoneIssue('Zonas guardadas correctamente.');
                     refreshZones();
+                    showZoneIssue('Zonas guardadas. Reinicia el monitor para aplicarlas.');
                 } catch {
                     showZoneIssue('No se pudo conectar con el servidor.');
                 }

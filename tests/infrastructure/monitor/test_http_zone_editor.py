@@ -79,6 +79,20 @@ def test_put_saves_a_valid_edited_vertex(editor_server):
     assert payload["audit"]["user"] == "operador"
 
 
+def test_put_accepts_lowercase_headers(editor_server):
+    _, path, address = editor_server
+    edited = json.loads(json.dumps(ZONES))
+    edited["door"][0] = [280, 120]
+    headers = {"authorization": f"Bearer {TOKEN}", "x-vision-user": "operador"}
+
+    status, _, payload = _request(address, "PUT", "/api/v1/zones", edited, headers)
+
+    assert status == 200
+    assert json.loads(path.read_text(encoding="utf-8")) == edited
+    assert payload["audit"]["user"] == "operador"
+    assert payload["restart_required"] is True
+
+
 def test_put_rejects_invalid_polygon_without_saving(editor_server):
     _, path, address = editor_server
     invalid = json.loads(json.dumps(ZONES))

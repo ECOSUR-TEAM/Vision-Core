@@ -10,10 +10,17 @@ _USER_PATTERN = re.compile(r"[^A-Za-z0-9._@-]+")
 _MAX_USER_LENGTH = 64
 
 
+def _header(headers: Mapping[str, str], name: str, default: str = "") -> str:
+    value = headers.get(name)
+    if value is None:
+        value = headers.get(name.lower(), default)
+    return default if value is None else str(value)
+
+
 def editor_user(headers: Mapping[str, str]) -> str:
     """Etiqueta de auditoría acotada; nunca se usa para decidir permisos."""
-    raw = headers.get("X-Vision-User", "unknown")
-    cleaned = _USER_PATTERN.sub("_", str(raw)).strip("_")[:_MAX_USER_LENGTH]
+    raw = _header(headers, "X-Vision-User", "unknown")
+    cleaned = _USER_PATTERN.sub("_", raw).strip("_")[:_MAX_USER_LENGTH]
     return cleaned or "unknown"
 
 
@@ -25,8 +32,8 @@ def can_save_zones(config: ZoneEditorConfig, headers: Mapping[str, str]) -> bool
     """
     if not config.available or not config.editor_token:
         return False
-    authorization = headers.get("Authorization", "")
+    authorization = _header(headers, "Authorization")
     scheme, _, supplied = authorization.partition(" ")
     if scheme.lower() != "bearer":
         return False
-    return hmac.compare_digest(supplied.strip(), config.editor_token)
+    return hmac.compare_digest(supplied.strip().encode("utf-8"), config.editor_token.encode("utf-8"))

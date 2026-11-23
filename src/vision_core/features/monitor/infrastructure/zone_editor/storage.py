@@ -1,20 +1,27 @@
 """Escritura atómica del JSON de zonas con restauración ante fallos."""
 
 import os
+import stat
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
 from vision_core.core.errors import ZoneConfigurationError
+from vision_core.core.validation.zone_payload import MAX_ZONE_PAYLOAD_BYTES
 
 ReplaceFunction = Callable[[Path, Path], None]
 
 
-def read_zone_bytes(path: Path) -> bytes:
+def read_zone_bytes(path: Path, *, max_bytes: int = MAX_ZONE_PAYLOAD_BYTES) -> bytes:
     try:
-        return path.read_bytes()
+        if path.is_file() and path.stat().st_size > max_bytes:
+            raise ZoneConfigurationError(f"el archivo de zonas supera {max_bytes} bytes: {path}")
+        data = path.read_bytes()
     except OSError as error:
         raise ZoneConfigurationError(f"no se puede leer el archivo de zonas '{path}': {error}") from None
+    if len(data) > max_bytes:
+        raise ZoneConfigurationError(f"el archivo de zonas supera {max_bytes} bytes: {path}")
+    return data
 
 
 def restore_zone_bytes(path: Path, original: bytes | None, *, replace: ReplaceFunction = os.replace) -> None:
@@ -33,26 +40,32 @@ def write_zone_bytes(path: Path, payload: bytes, *, replace: ReplaceFunction = o
     """
     parent = path.parent
     original = path.read_bytes() if path.is_file() else None
+    mode = stat.S_IMODE(path.stat().st_mode) if path.is_file() else None
     backup_path: Path | None = None
+    backup_ready = False
     temporary_path: Path | None = None
     try:
-        with tempfile.NamedTemporaryFile(dir=parent, prefix=".zones-backup-", delete=False) as backup:
-            backup_path = Path(backup.name)
-            if original is not None:
+        if original is not None:
+            with tempfile.NamedTemporaryFile(dir=parent, prefix=".zones-backup-", delete=False) as backup:
+                backup_path = Path(backup.name)
                 backup.write(original)
                 backup.flush()
                 os.fsync(backup.fileno())
+            backup_ready = True
 
         with tempfile.NamedTemporaryFile(dir=parent, prefix=".zones-new-", delete=False) as temporary:
             temporary_path = Path(temporary.name)
             temporary.write(payload)
             temporary.flush()
             os.fsync(temporary.fileno())
+            if mode is not None:
+                os.chmod(temporary_path, mode)
 
         replace(temporary_path, path)
+        temporary_path = None
     except BaseException:
         try:
-            if original is not None and backup_path is not None:
+            if original is not None and backup_ready and backup_path is not None:
                 replace(backup_path, path)
             elif original is None:
                 path.unlink(missing_ok=True)

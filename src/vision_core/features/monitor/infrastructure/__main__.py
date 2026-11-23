@@ -103,8 +103,13 @@ def main(*, state=None, build_state=None, build_runtime=None, config=None):
             editor_token=settings.zones.editor_token,
             audit_file=settings.zones.editor_audit_file,
         )
-        if args.zone_editor and (editor_config.zones_file is None or editor_config.editor_token is None):
-            parser.error("El editor de zonas requiere --zones y VISION_CORE_ZONE_EDITOR_TOKEN")
+        if args.zone_editor and (
+            editor_config.zones_file is None or editor_config.editor_token is None or editor_config.audit_file is None
+        ):
+            parser.error(
+                "El editor de zonas requiere --zones, VISION_CORE_ZONE_EDITOR_TOKEN "
+                "y VISION_CORE_ZONE_EDITOR_AUDIT_FILE"
+            )
         if args.zone_editor:
             server = make_server(
                 args.host,

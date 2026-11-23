@@ -20,9 +20,9 @@ class ZoneAudit:
             "previous_sha256": previous_hash,
             "new_sha256": new_hash,
         }
-        _LOGGER.info("zone_editor_audit user=%s previous_sha256=%s new_sha256=%s", user, previous_hash, new_hash)
         if self._file is not None:
             self._file.parent.mkdir(parents=True, exist_ok=True)
             with self._file.open("a", encoding="utf-8") as stream:
                 stream.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        _LOGGER.info("zone_editor_audit user=%s previous_sha256=%s new_sha256=%s", user, previous_hash, new_hash)
         return entry

@@ -19,10 +19,11 @@ export VISION_CORE_ZONE_EDITOR_AUDIT_FILE=/app/data/zone-editor-audit.jsonl
 python main.py --zones config/zones.json --zone-editor --port 8080
 ```
 
-`VISION_CORE_ZONE_EDITOR_ENABLED=1` exige `VISION_CORE_ZONE_EDITOR_TOKEN`.
-También puede activarse sólo con `--zone-editor`; en ese caso el token y la ruta
-de auditoría se leen del entorno. El token se introduce en el panel en cada
-sesión: no se guarda en el navegador ni en el archivo de zonas.
+El editor se activa con `VISION_CORE_ZONE_EDITOR_ENABLED=1` o con `--zone-editor`
+(no hace falta ambos). En cualquier caso exigen `VISION_CORE_ZONE_EDITOR_TOKEN`
+y `VISION_CORE_ZONE_EDITOR_AUDIT_FILE`, y necesitan un archivo real de zonas. El
+token se introduce en el panel en cada sesión: no se guarda en el navegador ni
+en el archivo de zonas.
 
 ## Uso en el panel
 
@@ -46,14 +47,15 @@ obsoletos y devuelven `Deprecation: true`.
 | Método | Ruta | Cuerpo | Respuesta |
 |---|---|---|---|
 | `GET` | `/api/v1/zones` | — | `200 {"zones": {...}, "editor": {...}}` |
-| `PUT` | `/api/v1/zones` | documento de zonas | `200 {"zones": {...}, "audit": {...}}` |
+| `PUT` | `/api/v1/zones` | documento de zonas | `200 {"zones": {...}, "audit": {...}, "restart_required": true}` |
 | `POST` | `/api/v1/zones/validate` | documento de zonas | `200 {"zones": {...}}` (no escribe) |
 
 Cabeceras para `PUT`:
 
 - `Content-Type: application/json` (obligatoria).
-- `Authorization: Bearer <VISION_CORE_ZONE_EDITOR_TOKEN>`.
-- `X-Vision-User: <usuario>`: sólo se usa para la auditoría; no concede permisos.
+- `Authorization: Bearer <VISION_CORE_ZONE_EDITOR_TOKEN>` (insensible a mayúsculas).
+- `X-Vision-User: <usuario>` (insensible a mayúsculas): sólo se usa para la
+  auditoría; no concede permisos.
 
 Errores principales: `403 ZONE_EDITOR_FORBIDDEN` (token ausente o incorrecto),
 `404 REQUEST_NOT_FOUND` (editor desactivado), `413 VALIDATION_FAILED` (payload
@@ -77,7 +79,13 @@ El guardado es atómico: se escribe un temporal en el mismo directorio, se
 sustituye el archivo y se conserva una copia de seguridad hasta confirmar. Si
 falla la escritura o la auditoría, se restaura el contenido anterior. Cada
 cambio correcto añade una línea JSON con `user`, `timestamp` (UTC),
-`previous_sha256` y `new_sha256` a `VISION_CORE_ZONE_EDITOR_AUDIT_FILE`.
+`previous_sha256` y `new_sha256` a `VISION_CORE_ZONE_EDITOR_AUDIT_FILE`, que es
+obligatorio al habilitar el editor. Los intentos denegados se registran como
+`zone_editor_access_denied` sin incluir el token.
+
+El guardado no recarga la analítica ni el render ya construidos: la respuesta
+incluye `restart_required: true` y el panel indica que hay que reiniciar el
+monitor para que los nuevos polígonos afecten a la detección de puerta.
 
 ## Limitaciones de seguridad
 

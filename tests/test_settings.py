@@ -21,6 +21,17 @@ def complete_env(**overrides):
     return env
 
 
+def test_zone_editor_requires_audit_file():
+    with pytest.raises(SettingsError, match="VISION_CORE_ZONE_EDITOR_AUDIT_FILE"):
+        Settings.from_env(
+            complete_env(
+                VISION_CORE_ZONE_EDITOR_ENABLED="1",
+                VISION_CORE_ZONE_EDITOR_TOKEN="token",
+            ),
+            validate_startup=False,
+        )
+
+
 def test_settings_defaults(monkeypatch):
     settings = Settings.from_env(
         complete_env(),

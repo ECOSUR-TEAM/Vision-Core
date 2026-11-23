@@ -77,12 +77,14 @@ en el panel; corrige la configuración y reinicia el monitor.
 
 ## Editor de zonas (opcional)
 
-Con `--zone-editor`, `VISION_CORE_ZONE_EDITOR_ENABLED=1` y un token configurado,
-el panel muestra un canvas para arrastrar vértices, validar y guardar el JSON de
-zonas. Los cambios se auditan y se escriben de forma atómica en el archivo
-indicado por `--zones`. Sin esos valores, las rutas del editor devuelven `404` y
-la UI permanece oculta. Consulta la [guía del editor](zone-editor.md) antes de
-habilitarlo: no sustituye la autenticación pendiente del ticket 42.
+Con `--zone-editor` o `VISION_CORE_ZONE_EDITOR_ENABLED=1`, más un token y una
+ruta de auditoría configurados, el panel muestra un canvas para arrastrar
+vértices, validar y guardar el JSON de zonas. Los cambios se auditan y se
+escriben de forma atómica en el archivo indicado por `--zones`, pero no se
+recargan en el proceso en ejecución: reinicia el monitor para aplicarlos. Sin
+esos valores, las rutas del editor devuelven `404` y la UI permanece oculta.
+Consulta la [guía del editor](zone-editor.md) antes de habilitarlo: no sustituye
+la autenticación pendiente del ticket 42.
 
 ## Docker
 

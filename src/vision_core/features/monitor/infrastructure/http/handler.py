@@ -322,7 +322,7 @@ class Handler(BaseHTTPRequestHandler):
             self.close_connection = True
             document = self._read_json_body()
             editor = cast("MonitorHTTPServer", self.server).zone_editor
-            headers = dict(self.headers.items())
+            headers = {name.lower(): value for name, value in self.headers.items()}
             if method == "PUT":
                 response = editor.save(document, headers)
             else:
@@ -366,7 +366,12 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValidationError("Query parameters are not allowed")
             editor = server.zone_editor
             return (
-                dumps_json({"zones": editor.load(), "editor": editor.describe(dict(self.headers.items()))}).encode(),
+                dumps_json(
+                    {
+                        "zones": editor.load(),
+                        "editor": editor.describe({name.lower(): value for name, value in self.headers.items()}),
+                    }
+                ).encode(),
                 "application/json",
                 200,
                 None,

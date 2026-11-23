@@ -97,7 +97,7 @@ incluye `schema_version`:
 serializables. Los productores son los mappers de door y pipeline y el
 serializador por defecto de `MonitorState`; todos construyen un DTO de evento
 que declara `schema_version` y validan los campos en la frontera. El
-serializador de `MonitorState` reutiliza el mapper de pipeline.
+serializador de `MonitorState` reutiliza `core/serialization/events.py`.
 
 ## Política de versionado y deprecación
 

@@ -7,6 +7,7 @@ from typing import Any
 from vision_core.core.config.pipeline_config import PipelineConfig
 from vision_core.core.contracts import ReIDMemory
 from vision_core.core.errors import PipelineError, ValidationError, codes
+from vision_core.core.serialization.events import event_to_dto
 from vision_core.core.telemetry import FrameProfiler
 from vision_core.core.validation import validate_frame
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
@@ -15,7 +16,7 @@ from vision_core.features.pipeline.application.dto.request.request_process_frame
 from vision_core.features.pipeline.application.dto.request.request_run_pipeline import RequestRunPipeline
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
 from vision_core.features.pipeline.application.dto.response.response_process_frame import ResponseProcessFrame
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dto, resolved_track_to_dto
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import resolved_track_to_dto
 from vision_core.features.pipeline.domain.attendance import SessionAttendance
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 from vision_core.features.pipeline.domain.ports.event_consumer import EventConsumer
@@ -175,7 +176,15 @@ class RunPipeline:
                 event = self._door.update(person_id, det.bbox.center)
             if event is not None:
                 event.metadata.update(self._attendance.apply(event))
-                events.append(event_to_dto(event))
+                payload = event_to_dto(event)
+                events.append(
+                    ResponsePipelineEvent(
+                        event=payload.event,
+                        person_id=payload.person_id,
+                        timestamp=payload.timestamp,
+                        metadata=payload.metadata,
+                    )
+                )
                 self._on_event(event)
         if self._metrics is not None:
             self._metrics.increment("vision_core_tracks_created_total", new_tracks, camera_id=self._metrics_camera_id)

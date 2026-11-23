@@ -441,7 +441,7 @@ Las rutas de destino reflejan el árbol vigente
 | Archivo viejo | Archivo nuevo | Ticket |
 |---|---|---|
 | `application/vision_core_app.py` | `src/vision_core/features/pipeline/application/use_cases/run_pipeline.py` (`RunPipeline`) | ECM-106 |
-| `application/event_serializer.py` | `src/vision_core/core/serialization/event_serializer.py` (`event_to_json_dict`, `event_to_json`) | ECM-106 |
+| `application/event_serializer.py` | `src/vision_core/core/serialization/events.py` (`event_to_dto`, `event_to_json_dict`, `event_to_json`) | ECM-109 |
 | `application/README.md` | `src/vision_core/features/pipeline/README.md` | propuesto |
 | `domain/model/resolved_track.py` | `src/vision_core/features/pipeline/domain/entities/resolved_track.py` | ECM-106 |
 | `composition.py` | se disuelve en `main.py` y los `dependencies.py` de cada feature | ECM-106 |
@@ -455,7 +455,7 @@ Las rutas de destino reflejan el árbol vigente
 | Variables de `.env.example` repartidas en adaptadores | `src/vision_core/core/config/`; cada adaptador recibe su configuración por parámetro | ECM-106 |
 | `config/zones.example.json`, `config/frigate.*.yml` | permanecen en `config/` (datos estáticos de ejemplo, nunca dentro de un feature) | sin cambio |
 | `tests/application/test_vision_core_app.py` | `tests/features/pipeline/application/test_run_pipeline.py` | ECM-106 |
-| `tests/application/test_event_serializer.py` | `tests/features/pipeline/application/test_pipeline_mapper.py` | ECM-67 |
+| `tests/application/test_event_serializer.py` | `tests/test_core_event_serialization.py` | ECM-109 |
 | `tests/domain/test_event.py`, `tests/test_event.py` | `tests/core/domain/test_event.py` (se consolida duplicado) | ECM-60 / ECM-106 |
 | `tests/domain/test_attendance.py` | `tests/features/reid/test_session_attendance.py` | propuesto |
 | `tests/infrastructure/detection/*` | `tests/features/detection/*` | ECM-61 |

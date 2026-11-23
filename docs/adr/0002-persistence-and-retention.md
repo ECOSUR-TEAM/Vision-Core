@@ -86,7 +86,9 @@ kernel compartido. Cada puerto es una `ABC` sin SQL, sin
 Las implementaciones `Sqlite*` viven en
 `vision_core.core.infrastructure.persistence`. El dominio y los features no importan
 este paquete: la inyección se hace en `main.py`. Se respeta una clase por
-archivo.
+archivo. La serialización canónica de eventos vive en
+`vision_core.core.serialization.events`; persistencia y monitor consumen esa misma
+función para calcular `event_id` y escribir JSONL con idéntico contenido.
 
 ### Esquema y migraciones
 
@@ -161,11 +163,14 @@ frecuencia de eventos o el tamaño del embedding.
 ## Verificación
 
 ```bash
-python -m pytest tests/infrastructure/persistence -q
+python -m pytest tests/infrastructure/persistence tests/features/pipeline tests/test_persistence_integration.py -q
 python -m pytest tests/architecture -q
-python -m pytest -q
+python -m pytest -q -m "not slow"
 ruff check . && ruff format --check .
+python -m mypy
 python -m compileall -q src tests main.py
+! grep -R "vision_core.features" src/vision_core/core/infrastructure
+grep -R "event_to_json" src tests
 ```
 
 Los tests cubren migración desde cero y upgrade, idempotencia de `event_id`,

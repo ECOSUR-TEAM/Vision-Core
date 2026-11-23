@@ -116,7 +116,11 @@ desde DTOs.
   `to_json_value`/`dumps_json`. Los payloads `bytes` son de transporte (JPEG/
   PNG), se sirven como `image/jpeg` y `to_json_value` los sustituye por `null`
   en JSON (nunca viaja su contenido binario); los floats no finitos se
-  rechazan con contexto.
+   rechazan con contexto.
+- Serialización de eventos: `core/serialization/events.py` es la única fuente de
+  `event_to_dto`, `event_to_json_dict` y `event_to_json`. Devuelve el payload
+  versionado de `core/dto` y es consumido por persistencia, monitor, scripts y
+  el composition root; `pipeline_mapper` solo convierte tracks resueltos.
 
 La convención normativa está en
 [ADR-0001, § Convención DTO](adr/0001-screaming-architecture-vertical-slice.md#convención-dto).

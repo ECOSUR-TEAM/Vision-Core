@@ -2,7 +2,10 @@
 
 Vision Core puede conservar eventos, historial de zonas, tracks, identidades,
 sesiones y métricas en una base SQLite local. La decisión y sus límites están en
-el [ADR-0002](adr/0002-persistence-and-retention.md).
+el [ADR-0002](adr/0002-persistence-and-retention.md). El código vive en
+`src/vision_core/core/infrastructure/persistence/`; la serialización canónica de
+eventos que usan `event_id_for` y el repositorio SQLite vive en
+`src/vision_core/core/serialization/events.py`.
 
 ## Habilitación
 
@@ -90,6 +93,7 @@ proceso sin antes copiar el archivo para diagnóstico.
 ```bash
 VISION_CORE_DB_PATH=/tmp/vision-core-check.sqlite3 VISION_CORE_DB_ENABLED=1 \
   python -c "from main import build_persistence; print(build_persistence().health())"
-python -m pytest tests/infrastructure/persistence -q
-python -m pytest -q
+python -m pytest tests/infrastructure/persistence tests/features/pipeline tests/test_persistence_integration.py -q
+python -m pytest -q -m "not slow"
+ruff check . && ruff format --check . && python -m mypy
 ```

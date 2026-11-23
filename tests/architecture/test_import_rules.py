@@ -111,6 +111,7 @@ def test_core_layout_is_present():
         "vision_core.core.errors",
         "vision_core.core.errors.codes",
         "vision_core.core.serialization",
+        "vision_core.core.serialization.events",
         "vision_core.core.telemetry",
         "vision_core.core.validation",
     ],

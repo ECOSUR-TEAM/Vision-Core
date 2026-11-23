@@ -9,7 +9,7 @@ BENCHMARK_HEIGHT ?= 240
 EDGE_CONFIG ?= benchmarks/edge-config.json
 EDGE_OUTPUT ?= benchmarks/edge-matrix.json
 
-.PHONY: setup test lint format format-check run docker-build synthetic clean coverage smoke integration e2e benchmark benchmark-edge
+.PHONY: setup test lint format format-check slo-check incident-drills slo-dashboard run docker-build synthetic clean coverage smoke integration e2e benchmark benchmark-edge
 
 setup:
 	@python3 -m venv .venv
@@ -66,6 +66,15 @@ format:
 
 format-check:
 	@$(PYTHON) -m ruff format --check .
+
+slo-check:
+	@$(PYTHON) -m vision_core.scripts.check_slo_config
+
+incident-drills:
+	@$(PYTHON) -m vision_core.scripts.run_incident_drills
+
+slo-dashboard: incident-drills
+	@$(PYTHON) -m vision_core.scripts.generate_slo_dashboard
 
 run: synthetic
 	@VISION_CORE_VIDEO_SOURCE=file \

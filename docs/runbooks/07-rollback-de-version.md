@@ -84,3 +84,12 @@ digests y su procedimiento están en [releases.md](../releases.md#rollback).
    [ADR 0006](../adr/0006-versionado-y-releases.md).
 4. Si el rollback toca esquema o retención, escala al responsable de datos
    antes de reanudar la ingesta continua.
+
+## Evidencia ECM-104
+
+Los resultados de simulacros y el tablero de SLO se adjuntan al artefacto de
+release vigente, según [releases.md](../releases.md), antes de publicar. Si una alerta `critical` persiste tras
+seguir este runbook, registra el `error_code`, la versión restaurada y el
+resultado de los simulacros en el incidente. Evidencia:
+[resultados de simulacros](../../reports/incident-drills.md) y
+[tablero de SLO](../../reports/slo-dashboard.md).

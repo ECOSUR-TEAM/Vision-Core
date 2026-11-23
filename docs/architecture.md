@@ -60,7 +60,7 @@ from vision_core.features.door.application.use_cases.update_zone import UpdateZo
 Ejemplos prohibidos:
 
 ```python
-from vision_core.features.door.domain.entities.polygon import Polygon  # en core/
+from vision_core.features.door.domain.entities.zone_observation import ZoneObservation  # en core/
 from vision_core.scripts.check_zones import main  # en features/ o core/
 from vision_core.features.monitor.infrastructure.state import MonitorState  # en otro slice
 ```

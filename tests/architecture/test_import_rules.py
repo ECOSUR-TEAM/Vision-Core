@@ -105,6 +105,7 @@ def test_core_layout_is_present():
 @pytest.mark.parametrize(
     "module",
     [
+        "vision_core.core.contracts",
         "vision_core.core.domain",
         "vision_core.core.dto",
         "vision_core.core.errors",

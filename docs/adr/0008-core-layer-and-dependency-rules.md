@@ -126,9 +126,9 @@ from vision_core.scripts.check_zones import main  # no
 
 No se crean facades ni shims de compatibilidad. Cada ticket de la serie mueve el
 código y actualiza imports, tests y documentación en el mismo cambio, dejando la
-suite en verde. Tras ECM-111, los paths antiguos (`vision_core.application`,
-`vision_core.domain`, `vision_core.infrastructure` y `vision_core.settings`) ya
-no existen: sus contenidos están en `core/config/`, `core/contracts/`,
+suite en verde. Tras ECM-111, los paths antiguos (`vision_core.application`, el
+paquete global de dominio, `vision_core.infrastructure` y `vision_core.settings`)
+ya no existen: sus contenidos están en `core/config/`, `core/contracts/`,
 `core/inference/`, `core/infrastructure/persistence/` y en los adaptadores de
 `features/<slice>/infrastructure/`. `vision_core.model_registry` sigue existiendo
 como excepción transitoria (ADR 0007); el ticket 67 activará la regla que prohíbe

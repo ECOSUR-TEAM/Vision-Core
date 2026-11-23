@@ -3,6 +3,7 @@
 import json
 import socket
 import threading
+from http import HTTPStatus
 from http.client import HTTPConnection
 from urllib.error import HTTPError
 from urllib.request import urlopen
@@ -11,7 +12,7 @@ import pytest
 
 from vision_core.core.errors import codes
 from vision_core.features.monitor.infrastructure.http.handler import MAX_HEADER_COUNT, MAX_REQUEST_LINE
-from vision_core.features.monitor.infrastructure.http.server import make_server
+from vision_core.features.monitor.infrastructure.http.server import _MAX_DRAIN_BYTES, MonitorHTTPServer, make_server
 from vision_core.features.monitor.infrastructure.state import MonitorState
 
 
@@ -146,3 +147,35 @@ def test_rejection_counters_do_not_replace_observability_metrics(monitor_server)
 
     assert server.metrics is state.metrics
     assert set(server.limits_metrics.snapshot()) == {"concurrency", "long_poll_concurrency", "timeout", "oversized"}
+
+
+def test_rejected_socket_drain_is_bounded():
+    class Request:
+        def __init__(self):
+            self.recv_calls = 0
+            self.timeouts = []
+            self.closed = False
+
+        def settimeout(self, timeout):
+            self.timeouts.append(timeout)
+
+        def sendall(self, _body):
+            return None
+
+        def recv(self, size):
+            self.recv_calls += 1
+            return b"x" * size
+
+        def shutdown(self, _how):
+            return None
+
+        def close(self):
+            self.closed = True
+
+    request = Request()
+
+    MonitorHTTPServer._reject_immediately(request, HTTPStatus.SERVICE_UNAVAILABLE)
+
+    assert request.recv_calls <= _MAX_DRAIN_BYTES // 4096
+    assert 0.05 in request.timeouts
+    assert request.closed

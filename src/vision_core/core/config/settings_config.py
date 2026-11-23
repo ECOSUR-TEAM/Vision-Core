@@ -219,9 +219,11 @@ class Settings:
             errors.append(f"{quality_name('FROZEN_DIFFERENCE')}: debe ser finito y no negativo")
         if not isfinite(quality_min_blur) or quality_min_blur < 0:
             errors.append(f"{quality_name('MIN_BLUR_VARIANCE')}: debe ser finito y no negativo")
-        if not isfinite(quality_min_brightness) or not isfinite(quality_max_brightness):
+        if not isfinite(quality_min_brightness):
             errors.append(f"{quality_name('MIN_BRIGHTNESS')}: debe ser finito")
-        elif not 0 <= quality_min_brightness < quality_max_brightness <= 255:
+        if not isfinite(quality_max_brightness):
+            errors.append(f"{quality_name('MAX_BRIGHTNESS')}: debe ser finito")
+        elif isfinite(quality_min_brightness) and not 0 <= quality_min_brightness < quality_max_brightness <= 255:
             errors.append(
                 f"{quality_name('MIN_BRIGHTNESS')} / {quality_name('MAX_BRIGHTNESS')}: requiere 0 <= min < max <= 255"
             )

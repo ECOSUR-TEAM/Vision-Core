@@ -39,11 +39,10 @@ class CameraQualityMonitor:
         self._previous: np.ndarray | None = None
         self._frozen_streak = 0
 
-    def observe(self, frame: np.ndarray) -> QualityObservation | None:
-        self._frames += 1
-        if not self._settings.enabled:
+    def observe(self, frame: np.ndarray, *, sampled: bool = False) -> QualityObservation | None:
+        if not sampled and not self._should_sample():
             return None
-        if self._frames % self._settings.sample_every_n_frames:
+        if not self._settings.enabled:
             return None
         try:
             return self._analyze(frame)
@@ -52,6 +51,10 @@ class CameraQualityMonitor:
             if self._on_error is not None:
                 self._on_error(error)
             return None
+
+    def _should_sample(self) -> bool:
+        self._frames += 1
+        return not self._frames % self._settings.sample_every_n_frames
 
     def _analyze(self, frame: np.ndarray) -> QualityObservation:
         if not isinstance(frame, np.ndarray) or frame.ndim != 3 or frame.shape[2] < 3:

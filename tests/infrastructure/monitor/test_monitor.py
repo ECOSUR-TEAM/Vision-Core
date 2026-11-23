@@ -45,6 +45,16 @@ def test_camera_quality_degraded_is_published_without_changing_readiness():
     assert state.metrics.snapshot()["gauges"]["vision_core_camera_quality_degraded{camera_id=camera-1}"] == 0.0
 
 
+def test_camera_quality_snapshot_copies_nested_signals():
+    state = MonitorState()
+    state.set_camera_quality("degraded", "BLURRY_FRAME", {"BLURRY_FRAME": True})
+
+    snapshot = state.snapshot()
+    snapshot["camera_quality"]["signals"]["BLURRY_FRAME"] = False
+
+    assert state.camera_quality["signals"]["BLURRY_FRAME"] is True
+
+
 def test_observer_receives_current_resolved_detections_and_empty_frames():
     snapshots = []
     detector = FakeDetector(lost_ids_per_call=[[], []])

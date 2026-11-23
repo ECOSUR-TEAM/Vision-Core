@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | Propuesta |
+| Estado | Aceptada |
 | Fecha | 2026-11-22 |
 | Tipo | Arquitectura |
 | Prioridad | Media |

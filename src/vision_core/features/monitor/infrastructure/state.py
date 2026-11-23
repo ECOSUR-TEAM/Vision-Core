@@ -17,6 +17,14 @@ def _event_to_dict(event):
     return event_to_dict(event)
 
 
+def _copy_camera_quality(value: dict[str, object]) -> dict[str, object]:
+    copied = dict(value)
+    signals = copied.get("signals")
+    if isinstance(signals, dict):
+        copied["signals"] = dict(signals)
+    return copied
+
+
 class MonitorState:
     def __init__(
         self,
@@ -176,5 +184,5 @@ class MonitorState:
                 "fps": self.fps,
                 "dropped_frames": self.dropped,
                 "persistence": persistence,
-                "camera_quality": dict(self.camera_quality),
+                "camera_quality": _copy_camera_quality(self.camera_quality),
             }

@@ -159,7 +159,11 @@ def build_monitor_pipeline(
             source = build_video(latest=True, metrics=state.metrics)
             buffer: LatestFrameBuffer | None = LatestFrameBuffer() if config.render_enabled else None
             if buffer is None and settings.camera_quality.enabled:
-                quality_thread = QualityThread(quality_monitor.observe, on_error=on_quality_error)
+                quality_thread = QualityThread(
+                    lambda frame: quality_monitor.observe(frame, sampled=True),
+                    sample_every_n_frames=settings.camera_quality.sample_every_n_frames,
+                    on_error=on_quality_error,
+                )
                 quality_thread.start()
             if buffer is not None:
 

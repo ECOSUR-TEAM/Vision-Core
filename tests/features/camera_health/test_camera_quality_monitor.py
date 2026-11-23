@@ -117,3 +117,9 @@ def test_invalid_frame_does_not_raise_and_reports_error():
 
     assert detector.observe(np.zeros((8, 8), dtype=np.uint8)) is None
     assert len(errors) == 1
+
+
+def test_monitor_accepts_externally_sampled_frames():
+    detector = CameraQualityMonitor(CameraQualitySettings(sample_every_n_frames=3))
+
+    assert detector.observe(fixture("good"), sampled=True) is not None

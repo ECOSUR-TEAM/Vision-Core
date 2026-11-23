@@ -15,15 +15,20 @@ class QualityThread(threading.Thread):
         analyze,
         *,
         poll_interval: float = 0.01,
+        sample_every_n_frames: int = 1,
         on_error=None,
         name: str = "vision-core-camera-quality",
     ) -> None:
         if poll_interval <= 0:
             raise ValueError("poll_interval debe ser positivo")
+        if sample_every_n_frames < 1:
+            raise ValueError("sample_every_n_frames debe ser mayor que 0")
         super().__init__(name=name, daemon=True)
         self._analyze = analyze
         self._on_error = on_error
         self._poll_interval = poll_interval
+        self._sample_every_n_frames = sample_every_n_frames
+        self._frames = 0
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
         self._pending: deque[np.ndarray] = deque(maxlen=1)
@@ -32,6 +37,9 @@ class QualityThread(threading.Thread):
 
     def submit(self, frame: np.ndarray) -> None:
         if self._stop_event.is_set() or not isinstance(frame, np.ndarray):
+            return
+        self._frames += 1
+        if self._frames % self._sample_every_n_frames:
             return
         with self._lock:
             self._pending.append(frame.copy())

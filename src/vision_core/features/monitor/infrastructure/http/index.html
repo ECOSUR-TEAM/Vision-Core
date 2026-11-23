@@ -404,6 +404,8 @@
             el('qualityNotice').hidden = !degraded;
             if (degraded) {
                 el('qualityNotice').textContent = 'Aviso de cámara: ' + (Object.hasOwn(qualityMessages, quality.reason) ? qualityMessages[quality.reason] : 'La calidad de la imagen no es habitual. Revisa la cámara.');
+            } else {
+                el('qualityNotice').textContent = '';
             }
             el('visible').textContent = live ? state.people.length : '—';
             el('people').replaceChildren();

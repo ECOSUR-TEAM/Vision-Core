@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from vision_core.core.config.pipeline_config import PipelineConfig
-from vision_core.core.inference.frame_profiler import STAGES, FrameProfiler
+from vision_core.core.telemetry.frame_profiler import STAGES, FrameProfiler
 from vision_core.features.monitor.infrastructure.latest_frame_buffer import LatestFrameBuffer
 from vision_core.features.monitor.infrastructure.renderer_thread import RendererThread
 
@@ -168,6 +168,14 @@ def test_pipeline_config_rejects_invalid_environment_values(monkeypatch, name):
     monkeypatch.setenv(name, "quizas")
     with pytest.raises(ValueError, match=name):
         PipelineConfig.from_env()
+
+
+def test_telemetry_exports_frame_profiler():
+    from vision_core.core.telemetry import STAGES as PUBLIC_STAGES
+    from vision_core.core.telemetry import FrameProfiler as PublicFrameProfiler
+
+    assert PublicFrameProfiler is FrameProfiler
+    assert PUBLIC_STAGES == STAGES
 
 
 def test_frame_profiler_writes_percentiles_and_fps(tmp_path):

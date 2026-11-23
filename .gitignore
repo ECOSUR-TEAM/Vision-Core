@@ -34,3 +34,6 @@ benchmark-*.md
 benchmark-*.log
 profiling_results.json
 profiling.json
+reports/slo-snapshot.json
+reports/slo-live-snapshot.json
+reports/metrics-snapshot.json

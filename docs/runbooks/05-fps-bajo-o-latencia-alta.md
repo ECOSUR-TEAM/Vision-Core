@@ -72,3 +72,12 @@ resolución y versión de modelos, y escala al responsable de rendimiento. No
 subas el timeout de lectura como sustituto de una optimización. Más detalle en
 [monitor.md](../monitor.md#implementación-y-acceso) y
 [operations.md](../operations.md#retraso-del-video).
+
+## Evidencia ECM-104
+
+El SLO `processing_p95` usa el campo `p95` de
+`vision_core_frame_processing_duration_ms` en `/metrics`, con objetivo de
+60 ms para el perfil `synthetic-cpu-320x240`. La alerta `alert_processing_p95`
+es `warning` y este runbook es su destino. La tendencia y el valor actual se
+publican en [tablero de SLO](../../reports/slo-dashboard.md); la calibración de
+umbrales se documenta en [slo.md](../slo.md).

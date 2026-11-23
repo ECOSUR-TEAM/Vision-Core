@@ -59,8 +59,9 @@ de modo que los clientes existentes siguen capturando el tipo previo.
 | `REID_INPUT_INVALID` | no | 400 | Recorte BGR inválido o embedding no normalizable. |
 | `PIPELINE_CALIBRATION_MISMATCH` | no | 409 | La resolución del stream no coincide con la calibración de zonas. |
 | `PIPELINE_FAILED` | no | 500 | Fallo de orquestación del pipeline distinto a los anteriores. |
-| `VALIDATION_FAILED` | no | 400 | Parámetro `after` inválido o caja del detector no finita, sin área o fuera del frame. |
-| `REQUEST_NOT_FOUND` | no | 404 | Ruta HTTP desconocida. |
+| `ZONE_EDITOR_FORBIDDEN` | no | 403 | Token del editor de zonas ausente o incorrecto al intentar guardar. |
+| `VALIDATION_FAILED` | no | 400 | Parámetro `after` inválido, cuerpo HTTP rechazado o caja del detector no finita, sin área o fuera del frame. |
+| `REQUEST_NOT_FOUND` | no | 404 | Ruta HTTP desconocida o editor de zonas desactivado. |
 | `INTERNAL_ERROR` | no | 500 | Excepción inesperada en un límite; se sustituye por un mensaje genérico. |
 
 Los sinks de eventos reutilizan esta taxonomía sin códigos nuevos: un 5xx,

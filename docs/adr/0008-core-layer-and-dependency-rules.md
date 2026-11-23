@@ -57,7 +57,7 @@ src/vision_core/
     serialization/            # JSON y conversión de payloads
     validation/               # validación reutilizable en fronteras
     inference/                # utilidades de inferencia compartidas
-    telemetry/                # logging, métricas y health checks
+    telemetry/                # logging, métricas, health checks y profiling
     infrastructure/           # infraestructura compartida por varios slices
   model_registry/             # excepción transitoria (ADR 0007; ticket 67)
   features/                   # vertical slices; cada uno con sus capas internas
@@ -72,9 +72,10 @@ Los submódulos de `core/` previstos en este ticket ya están poblados. ECM-106
 migró aquí el contenido de `shared/` (`domain/`, `dto/`, `errors/`, `inference/`,
 `serialization/`, `telemetry/` y `validation/`). ECM-111 completó la limpieza de
 los paquetes viejos: `settings/` pasó a `core/config/`, los ports y repositorios
-a `core/contracts/`, `application/frame_profiler.py` a `core/inference/` y la
-persistencia a `core/infrastructure/persistence/`; los adaptadores concretos
-viven en `features/<slice>/infrastructure/`. `model_registry/` permanece en su
+a `core/contracts/`, `application/frame_profiler.py` a `core/inference/` (y de
+ahí a `core/telemetry/` en ECM-107) y la persistencia a
+`core/infrastructure/persistence/`; los adaptadores concretos viven en
+`features/<slice>/infrastructure/`. `model_registry/` permanece en su
 path transitorio hasta el ticket 67.
 
 ### Reglas de dependencia
@@ -129,7 +130,8 @@ código y actualiza imports, tests y documentación en el mismo cambio, dejando 
 suite en verde. Tras ECM-111, los paths antiguos (`vision_core.application`,
 `vision_core.domain`, `vision_core.infrastructure` y `vision_core.settings`) ya
 no existen: sus contenidos están en `core/config/`, `core/contracts/`,
-`core/inference/`, `core/infrastructure/persistence/` y en los adaptadores de
+`core/telemetry/` (profiling), `core/inference/`,
+`core/infrastructure/persistence/` y en los adaptadores de
 `features/<slice>/infrastructure/`. `vision_core.model_registry` sigue existiendo
 como excepción transitoria (ADR 0007); el ticket 67 activará la regla que prohíbe
 importarlo y completará su migración a `core/model_registry/`. `vision_core.shared`
@@ -207,3 +209,7 @@ incremental.
 | 2026-11-21 | Creación del ADR | Contrato de capas ECM-105 | — |
 | 2026-11-22 | Migración de `shared/` a `core/` completada (ECM-106, PR #109, commit `cb9b128`): `domain/`, `dto/`, `errors/`, `inference/`, `serialization/`, `telemetry/` y `validation/`; `vision_core.shared` eliminado | Implementación del contrato de capas | ADR 0008 |
 | 2026-11-22 | ECM-111 completa la limpieza legacy: desaparecen `application/`, `domain/`, `infrastructure/` y `settings/`; su contenido vive en `core/config/`, `core/contracts/`, `core/inference/`, `core/infrastructure/persistence/` y adaptadores de `features/<slice>/infrastructure/`. `model_registry/` queda como excepción transitoria (ADR 0007, ticket 67) | Finalización de la migración de paquetes de primer nivel | ADR 0008 |
+| 2026-11-23 | ECM-107 mueve `frame_profiler.py` de `core/inference/` a `core/telemetry/`; se actualizan imports, tests, umbrales de cobertura y documentación | Migrar `settings/` y `application/` a `core/config` y `core/telemetry` | ADR 0008 |
+| 2026-11-23 | El path `vision_core.core.inference.frame_profiler` queda eliminado sin shim; el import público canónico es `from vision_core.core.telemetry import FrameProfiler, STAGES` | Romper el path legacy de forma explícita tras la migración | ADR 0008 |
+| 2026-11-23 | ECM-108 consolida `ReIDMemory` como `Protocol` canónico en `core/contracts`, elimina el `Protocol` duplicado del slice y actualiza todos los imports | Contrato único compartido entre slices sin identidades de clase duplicadas | ADR 0008 |
+| 2026-11-23 | El path `vision_core.features.reid.domain.ports.reid_memory` queda eliminado sin shim; el import público canónico es `from vision_core.core.contracts import ReIDMemory` | Cumplir la política de migración sin facades ni re-exports | ADR 0008 |

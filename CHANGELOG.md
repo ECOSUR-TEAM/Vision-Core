@@ -14,11 +14,15 @@ All notable changes to this project are documented here using
 - Manual edge benchmark matrix for FP32/INT8/FP16 profiles with quality gates and registered precision variants.
 - Camera quality and calibration drift monitor with configurable signals, `degraded` status, metrics and non-intrusive monitor warning.
 - Event sinks with idempotent webhook delivery, bounded retries, dead-letter, backpressure metrics and documented MQTT port (ADR 0010).
+- Optional zone editor in the monitor with versioned HTTP contract, shared schema validation, token gate, atomic writes, mandatory JSONL audit and explicit restart-required response.
+- SLO dashboard, alert runbooks and synthetic incident drill harness with snapshot-scoped signals, p95 export and generated evidence artifacts.
 
 ### Changed
 - Frame buffer mantiene capacidad 1 con política drop-old explícita.
 - Rechazo HTTP del monitor drena la petición antes de cerrar para evitar RST en Windows.
 - Docker and CI workflows publish and validate versioned artifacts.
+- `FrameProfiler` y `STAGES` se importan desde `vision_core.core.telemetry`; el path legacy `vision_core.core.inference.frame_profiler` fue eliminado.
+- El contrato canónico `ReIDMemory` vive en `vision_core.core.contracts` y conserva compatibilidad estructural; el puerto duplicado del slice ReID y su re-export fueron eliminados sin shim.
 
 ### Security
 - Trivy image scanning and SARIF upload for fixable high and critical findings.

@@ -21,6 +21,7 @@ from vision_core.features.monitor.application.use_cases.get_snapshot import GetS
 from vision_core.features.monitor.infrastructure.http.error_response import error_envelope
 from vision_core.features.monitor.infrastructure.http.handler import Handler, security_headers
 from vision_core.features.monitor.infrastructure.http.limits_metrics import MonitorLimitsMetrics
+from vision_core.features.monitor.infrastructure.zone_editor.service import ZoneEditorService
 
 MAX_CONNECTIONS = 4
 MAX_LONG_POLLS = 2
@@ -33,13 +34,14 @@ _MAX_DRAIN_BYTES = 64 * 1024
 class MonitorHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address, page, get_snapshot, get_frame, metrics=None, health=None):
+    def __init__(self, address, page, get_snapshot, get_frame, metrics=None, health=None, zone_editor=None):
         super().__init__(address, Handler)
         self.page = page
         self.get_snapshot = get_snapshot
         self.get_frame = get_frame
         self.metrics = metrics
         self.health = health
+        self.zone_editor = zone_editor or ZoneEditorService.disabled()
         self.limits_metrics = MonitorLimitsMetrics()
         self._connections = threading.BoundedSemaphore(MAX_CONNECTIONS)
         self.long_poll_slots = threading.BoundedSemaphore(MAX_LONG_POLLS)
@@ -115,7 +117,7 @@ class MonitorHTTPServer(ThreadingHTTPServer):
             request.close()
 
 
-def make_server(host, port, state, page_path=None, metrics=None, health=None):
+def make_server(host, port, state, page_path=None, metrics=None, health=None, zone_editor=None):
     default_page = Path(__file__).with_name("index.html")
     page = Path(page_path or default_page).read_bytes()
     if page.count(_CSP_PLACEHOLDER) != _REQUIRED_PLACEHOLDERS:
@@ -130,4 +132,5 @@ def make_server(host, port, state, page_path=None, metrics=None, health=None):
         GetFrame(state),
         metrics or getattr(state, "metrics", None),
         health or getattr(state, "health", None),
+        zone_editor,
     )

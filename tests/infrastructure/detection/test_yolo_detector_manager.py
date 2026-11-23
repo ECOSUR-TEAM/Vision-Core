@@ -154,6 +154,17 @@ def test_configured_device_is_passed_to_prediction(monkeypatch):
     assert model.predict.call_args.kwargs["device"] == "cuda:0"
 
 
+def test_fp16_precision_is_passed_to_prediction(monkeypatch):
+    from unittest.mock import Mock
+
+    model = Mock()
+    model.predict.return_value = [SimpleNamespace(boxes=fake_boxes([]))]
+    monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: model))
+    manager = YoloDetectorManager("weights.pt", device="cuda:0", precision="fp16")
+    manager.process(np.zeros((48, 64, 3), dtype=np.uint8))
+    assert model.predict.call_args.kwargs["half"] is True
+
+
 @pytest.mark.parametrize(
     "first,second,expected",
     [

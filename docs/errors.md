@@ -63,6 +63,16 @@ de modo que los clientes existentes siguen capturando el tipo previo.
 | `REQUEST_NOT_FOUND` | no | 404 | Ruta HTTP desconocida. |
 | `INTERNAL_ERROR` | no | 500 | Excepción inesperada en un límite; se sustituye por un mensaje genérico. |
 
+### Motivos de calidad (no errores HTTP)
+
+La detección de calidad de cámara no produce excepciones ni envelopes de error.
+Publica motivos estables en `camera_quality.reason`, `/metrics` y logs; `status`
+sigue siendo `running` y `/ready` devuelve `200`. Los motivos son
+`RESOLUTION_MISMATCH`, `ZONES_STALE`, `FROZEN_FRAME`, `BLURRY_FRAME` y
+`EXPOSURE_OUT_OF_RANGE`. Su interpretación está en
+[calidad de cámara](camera-quality.md). No se reutilizan los códigos Http de esta
+tabla, en particular `PIPELINE_CALIBRATION_MISMATCH` (error duro de resolución).
+
 Los códigos se mantienen aunque cambie la implementación interna. Para retirar
 uno: documentar la sustitución, conservarlo al menos una versión menor y
 eliminarlo solo en un cambio incompatible anunciado con anticipación.

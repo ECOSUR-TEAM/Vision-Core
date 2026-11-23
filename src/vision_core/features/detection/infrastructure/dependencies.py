@@ -20,6 +20,7 @@ def build_detection(
     *,
     model_path: str | None = None,
     device: str | None = None,
+    precision: str | None = None,
     confidence: float | None = None,
     classes: tuple[int, ...] | None = None,
     tracking_enabled: bool | None = None,
@@ -33,6 +34,7 @@ def build_detection(
         detector = YoloDetectorManager(
             model_path or str(settings.model_path),
             device=device if device is not None else settings.device,
+            precision=precision if precision is not None else settings.precision,
             confidence=confidence if confidence is not None else settings.confidence,
             classes=classes if classes is not None else settings.classes,
             tracking_enabled=tracking_enabled if tracking_enabled is not None else settings.tracking_enabled,

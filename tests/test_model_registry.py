@@ -89,7 +89,11 @@ def test_default_registry_contains_all_pipeline_models():
     models = registry.all()
     assert {model.id for model in models} == {
         "detection.person.yolov8n",
+        "detection.person.yolov8n.fp16",
+        "detection.person.yolov8n.int8",
         "embedding.person.mobilenet_v3_small",
+        "embedding.person.mobilenet_v3_small.fp16",
+        "embedding.person.mobilenet_v3_small.int8",
         "embedding.person.resnet50",
     }
     assert {model.task for model in models} == {"detection", "embedding"}
@@ -217,6 +221,42 @@ def test_resnet50_resolves_with_matching_model_id():
     assert active.embedding.selector == "resnet50"
 
 
+def test_int8_embedding_variant_resolves_from_configuration():
+    settings = _settings(
+        VISION_CORE_EMBEDDING_MODEL="mobilenet_v3_small-int8",
+        VISION_CORE_EMBEDDING_MODEL_ID="embedding.person.mobilenet_v3_small.int8",
+        VISION_CORE_EMBEDDING_PRECISION="int8",
+    )
+    active = resolve_active_models(settings)
+    assert active.embedding.id == "embedding.person.mobilenet_v3_small.int8"
+    assert active.as_log_identity()["embedding_precision"] == "int8"
+    assert active.as_health_metadata()["embedding"]["precision"] == "int8"
+
+
+def test_detection_int8_variant_resolves_with_external_selector(tmp_path):
+    settings = _settings(
+        VISION_CORE_MODEL_PATH=str(tmp_path / "yolov8n-int8.onnx"),
+        VISION_CORE_DETECTION_MODEL_ID="detection.person.yolov8n.int8",
+        VISION_CORE_DETECTION_PRECISION="int8",
+    )
+    active = resolve_active_models(settings)
+    assert active.detection.id == "detection.person.yolov8n.int8"
+    assert active.as_log_identity()["precision"] == "int8"
+
+
+def test_precision_mismatch_fails_before_startup():
+    settings = _settings(VISION_CORE_EMBEDDING_PRECISION="int8")
+    with pytest.raises(ConfigurationError, match="VISION_CORE_EMBEDDING_PRECISION"):
+        resolve_active_models(settings)
+
+
+def test_settings_reject_fp16_on_cpu():
+    with pytest.raises(SettingsError, match="VISION_CORE_DETECTION_PRECISION"):
+        _settings(VISION_CORE_DETECTION_PRECISION="fp16")
+    with pytest.raises(SettingsError, match="VISION_CORE_EMBEDDING_PRECISION"):
+        _settings(VISION_CORE_EMBEDDING_PRECISION="fp16")
+
+
 def test_build_reid_injects_model_descriptor(monkeypatch):
     descriptor = resolve_active_models(_settings()).embedding
     embedder = object()
@@ -240,6 +280,7 @@ def test_health_snapshot_exposes_model_identity():
         "model_id": "detection.person.yolov8n",
         "model_version": "1.0.0",
         "model_hash": "unverified",
+        "precision": "fp32",
     }
     health = HealthStatus(minimum_free_disk_mb=0, model_metadata={"detection": identity})
     payload = health.snapshot()
@@ -254,9 +295,11 @@ def test_json_logs_include_model_identity():
         "model_id": "detection.person.yolov8n",
         "model_version": "1.0.0",
         "model_hash": "unverified",
+        "precision": "fp32",
         "embedding_model_id": "embedding.person.mobilenet_v3_small",
         "embedding_model_version": "1.0.0",
         "embedding_model_hash": "unverified",
+        "embedding_precision": "fp32",
     }
     formatter = StructuredJsonFormatter("camera-a", identity)
     record = logging_record()

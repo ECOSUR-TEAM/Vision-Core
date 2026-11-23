@@ -32,17 +32,24 @@ La decision esta registrada en el [ADR 0004](adr/0004-configuracion-tipada-y-val
 | `VISION_CORE_MODEL_REGISTRY_FILE` | `config/models.yml` | YAML versionado debe existir al arranque |
 | `VISION_CORE_DETECTION_MODEL_ID` | `detection.person.yolov8n` | ID presente, activo y de tarea `detection` |
 | `VISION_CORE_EMBEDDING_MODEL_ID` | `embedding.person.mobilenet_v3_small` | ID presente, activo y de tarea `embedding` |
+| `VISION_CORE_DETECTION_PRECISION` | `fp32` | `fp32`, `int8` o `fp16`; debe coincidir con el descriptor activo |
+| `VISION_CORE_EMBEDDING_PRECISION` | `fp32` | `fp32`, `int8` o `fp16`; debe coincidir con el descriptor activo |
 | `VISION_CORE_MODEL_CHECKSUM_VERIFY` | `1` | Booleano: exige y compara checksum declarado; falla si falta el archivo |
 
 El registro es texto (`config/models.yml`), no una base de datos ni un servidor de modelos.
 Si el `model_id` no existe, el arranque termina con `ConfigurationError` antes de abrir el stream.
 Si el checksum registrado no es `null` y el archivo local existe, un desajuste también detiene el arranque.
+La precisión configurada debe coincidir con `expected_config.precision` del descriptor; una mezcla como
+`VISION_CORE_EMBEDDING_MODEL_ID=embedding.person.mobilenet_v3_small` con
+`VISION_CORE_EMBEDDING_PRECISION=int8` falla antes de cargar pesos. `fp16` solo se acepta con
+`VISION_CORE_*_DEVICE=cuda`.
 
 ### Deteccion
 
 | Variable | Predeterminado | Validacion |
 |---|---|---|
-| `VISION_CORE_MODEL_PATH` | `yolov8n.pt` | Archivo existente |
+| `VISION_CORE_MODEL_PATH` | `yolov8n.pt` | Archivo existente; `yolov8n-int8.onnx` para el perfil INT8 |
+| `VISION_CORE_DETECTION_PRECISION` | `fp32` | `fp32`, `int8` o `fp16` (`fp16` exige CUDA) |
 | `VISION_CORE_DETECTION_DEVICE` | `cpu` | `cpu`, `cuda` o `cuda:<indice>` |
 | `VISION_CORE_DETECTION_CONFIDENCE` | `0.5` | Mayor que 0 y menor o igual a 1 |
 | `VISION_CORE_DETECTION_CLASSES` | `0` | Clases COCO separadas por comas |
@@ -53,7 +60,8 @@ Si el checksum registrado no es `null` y el archivo local existe, un desajuste t
 
 | Variable | Predeterminado | Validacion |
 |---|---|---|
-| `VISION_CORE_EMBEDDING_MODEL` | `mobilenet_v3_small` | Modelo soportado |
+| `VISION_CORE_EMBEDDING_MODEL` | `mobilenet_v3_small` | `mobilenet_v3_small`, `mobilenet_v3_small-int8`, `mobilenet_v3_small-fp16` o `resnet50` |
+| `VISION_CORE_EMBEDDING_PRECISION` | `fp32` | `fp32`, `int8` o `fp16` (`fp16` exige CUDA) |
 | `VISION_CORE_EMBEDDING_WEIGHTS` | `DEFAULT` | Perfil de pesos declarado en el registro |
 | `VISION_CORE_EMBEDDING_DEVICE` | Automatico | `cpu`, `cuda` o `cuda:<indice>` |
 | `VISION_CORE_REID_THRESHOLD` | `0.85` | Mayor que 0 y menor o igual a 1 |
@@ -78,6 +86,28 @@ Si el checksum registrado no es `null` y el archivo local existe, un desajuste t
 | `VISION_CORE_MINIMUM_FREE_DISK_MB` | `500` | Entero no negativo |
 | `VISION_CORE_DISK_CHECK_PATH` | `.` | Ruta existente para el check de disco |
 | `VISION_CORE_PERFORMANCE_INTERVAL_SECONDS` | `1.0` | Numero positivo |
+
+### Calidad de cámara y deriva
+
+Cada variable admite una variante específica por cámara con el prefijo
+`VISION_CORE_CAMERA_QUALITY_<CAMERA_ID>_` (por ejemplo,
+`VISION_CORE_CAMERA_QUALITY_CAMERA_1_CHECK_BLUR=0`). La variante específica gana
+sobre la global. Detalles y acciones en [calidad de cámara](camera-quality.md).
+
+| Variable | Predeterminado | Validacion |
+|---|---|---|
+| `VISION_CORE_CAMERA_QUALITY_ENABLED` | `1` | Booleano; `0` desactiva el monitor completo |
+| `VISION_CORE_CAMERA_QUALITY_SAMPLE_EVERY_N_FRAMES` | `15` | Entero ≥ 1 |
+| `VISION_CORE_CAMERA_QUALITY_FROZEN_FRAMES` | `30` | Entero ≥ 2 (muestras consecutivas) |
+| `VISION_CORE_CAMERA_QUALITY_FROZEN_DIFFERENCE` | `1.0` | Numero finito no negativo |
+| `VISION_CORE_CAMERA_QUALITY_MIN_BLUR_VARIANCE` | `50.0` | Numero finito no negativo |
+| `VISION_CORE_CAMERA_QUALITY_MIN_BRIGHTNESS` | `25.0` | `0 <= min < max <= 255` |
+| `VISION_CORE_CAMERA_QUALITY_MAX_BRIGHTNESS` | `230.0` | `0 <= min < max <= 255` |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_RESOLUTION` | `1` | Booleano |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_FROZEN` | `1` | Booleano |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_BLUR` | `1` | Booleano |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_EXPOSURE` | `1` | Booleano |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_ZONES` | `1` | Booleano |
 
 ### Render y pipeline
 

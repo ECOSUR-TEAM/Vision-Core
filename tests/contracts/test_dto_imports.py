@@ -15,6 +15,7 @@ FORBIDDEN_IMPORT_PREFIXES = (
     "vision_core.application",
     "vision_core.core.domain",
     "vision_core.core.infrastructure",
+    "vision_core.domain",
     "vision_core.infrastructure",
     "vision_core.settings",
     "vision_core.shared",

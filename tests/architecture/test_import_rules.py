@@ -141,6 +141,18 @@ def test_no_shared_imports_remain():
     assert not violations, f"shared import boundary violated: {violations}"
 
 
+def test_no_legacy_domain_imports_remain():
+    roots = (SRC, PROJECT_ROOT / "tests", PROJECT_ROOT / "main.py")
+    violations = []
+    for root in roots:
+        paths = (root,) if root.is_file() else _python_files(root)
+        for path in paths:
+            for module in _imports(path):
+                if module == "vision_core.domain" or module.startswith("vision_core.domain."):
+                    violations.append((path.as_posix(), module))
+    assert not violations, f"legacy domain import boundary violated: {violations}"
+
+
 def test_core_rule_detects_forbidden_imports(tmp_path, monkeypatch):
     core = tmp_path / "core"
     core.mkdir(parents=True)

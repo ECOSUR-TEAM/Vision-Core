@@ -65,7 +65,11 @@ def test_dto_type_hints_contain_no_infrastructure_or_domain_types():
                 for module_name in _annotation_modules(annotation):
                     root = module_name.split(".", 1)[0]
                     forbidden = (
-                        root in FORBIDDEN_ROOTS or ".domain." in module_name or ".infrastructure." in module_name
+                        root in FORBIDDEN_ROOTS
+                        or module_name == "vision_core.domain"
+                        or module_name.startswith("vision_core.domain.")
+                        or ".domain." in module_name
+                        or ".infrastructure." in module_name
                     )
                     if forbidden:
                         violations.append(f"{path.name}:{value.__name__}.{field_name} -> {module_name}")

@@ -89,6 +89,7 @@ hecha hasta que esa persona la confirme.
 | ECM-105: ADR 0008 y contrato de capas | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-106: migración de `shared/` a `core/` | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-107: migración de settings y application a core config y core telemetry | @MelissaZarate08 | @Carlosss2, @FabricioPRZ, @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-108: consolidación de domain en core domain y core contracts | @MelissaZarate08 | @Carlosss2, @FabricioPRZ, @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-111: eliminación de los paquetes legacy y documentación viva | @bchanona | @Carlosss2 | [x] Revisado por otra persona |
 | ECM-87: licencias, privacidad y retención de video | @bchanona | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
 | ECM-95: binding seguro y exposición del monitor | @bchanona | @Ameth-Toledo, @Carlosss2 | [x] Revisado por otra persona |

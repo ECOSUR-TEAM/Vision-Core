@@ -154,9 +154,10 @@ Estos checks se ejecutan junto con toda la suite mediante `python -m pytest` en
 cada pull request. Si un check falla, mueve la dependencia al límite correcto
 (normalmente un port o un mapper) en lugar de relajar la regla.
 
-Los repository ports transversales viven en
-`vision_core.core.contracts` y sus implementaciones SQLite en
-`vision_core.core.infrastructure.persistence`; el dominio no conoce SQL.
+Los repository ports transversales y el contrato `ReIDMemory` viven en
+`vision_core.core.contracts` y sus implementaciones concretas en
+`vision_core.core.infrastructure.persistence` o en el adaptador del slice
+correspondiente; el dominio no conoce SQL.
 `main.py` inyecta los adaptadores y hace degradar la persistencia ante errores sin
 detener el video.
 

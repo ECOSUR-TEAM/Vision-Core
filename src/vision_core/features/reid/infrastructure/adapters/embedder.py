@@ -118,6 +118,8 @@ class TorchvisionEmbeddingExtractor:
 
         crop_rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
         tensor = self._transform(Image.fromarray(crop_rgb)).unsqueeze(0).to(self.device)
+        if self.precision == "fp16":
+            tensor = tensor.half()
 
         with torch.inference_mode():
             embedding = self._model(tensor).flatten(start_dim=1)

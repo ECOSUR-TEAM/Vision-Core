@@ -17,11 +17,15 @@ def flatten_row(row: dict[str, Any]) -> dict[str, Any]:
     flat["detection_p95_ms"] = metrics.get("detection", {}).get("p95_ms")
     flat["embedding_p50_ms"] = metrics.get("embedding", {}).get("p50_ms")
     flat["embedding_p95_ms"] = metrics.get("embedding", {}).get("p95_ms")
+    flat["frame_p95_ms"] = metrics.get("frame", {}).get("p95_ms")
     flat["fps_end_to_end"] = metrics.get("fps_end_to_end")
     flat["memory_peak_tracemalloc_mb"] = metrics.get("memory_peak_tracemalloc_mb")
     flat["energy_j"] = metrics.get("energy_j")
     quality = row.get("quality") or {}
     flat["quality_passed"] = quality.get("passed")
+    flat["quality_detection_map50"] = quality.get("checks", {}).get("detection_map50", {}).get("value")
+    flat["quality_identity_recall"] = quality.get("checks", {}).get("identity_recall_at_1", {}).get("value")
+    flat["identity_source"] = row.get("quality_metrics", {}).get("identity", {}).get("source")
     flat["budget_passed"] = row.get("budget", {}).get("passed")
     flat["recommended"] = row.get("recommended")
     return flat
@@ -86,6 +90,7 @@ def render_markdown(matrix: dict[str, Any]) -> str:
         [
             "",
             "Las cifras son del conjunto sintético y de la máquina declarada en `environment`.",
+            "La recall de identidad exige una galería etiquetada; sin ella queda `sin_medicion`.",
             "Consulta `docs/benchmark-edge.md` antes de promover una variante a producción.",
             "",
         ]
@@ -114,7 +119,7 @@ def write_outputs(matrix: dict[str, Any], output: str | Path) -> dict[str, Path]
     rows = [flatten_row(row) for row in matrix["results"]]
     fieldnames = sorted({key for row in rows for key in row})
     with csv_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     markdown_path.write_text(render_markdown(matrix), encoding="utf-8")

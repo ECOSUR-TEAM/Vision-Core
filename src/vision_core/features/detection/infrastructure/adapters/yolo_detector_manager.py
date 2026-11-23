@@ -88,16 +88,18 @@ class YoloDetectorManager(DetectorManager):
                 code=codes.MODEL_INPUT_INVALID,
             )
         height, width = frame.shape[:2]
+        predict_kwargs = {
+            "verbose": False,
+            "classes": list(self._classes),
+            "conf": self._confidence,
+            "device": self._device,
+        }
+        if self._precision == "fp16":
+            predict_kwargs["half"] = True
         with torch.inference_mode():
             results = cast(
                 "list[Results]",
-                self._model.predict(
-                    np.ascontiguousarray(frame),
-                    verbose=False,
-                    classes=list(self._classes),
-                    conf=self._confidence,
-                    device=self._device,
-                ),
+                self._model.predict(np.ascontiguousarray(frame), **predict_kwargs),
             )
         if not results or results[0].boxes is None:
             return []

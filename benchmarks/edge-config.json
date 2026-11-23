@@ -23,6 +23,7 @@
     "scene": "benchmark-data/synthetic-cpu-320x240/scene.json",
     "seed": 20261120,
     "frames": 60,
+    "identity_gallery": null,
     "description": "Marcadores deterministas del generador 1.0.0; apto para comparar latencias y calidad relativa, no para precisión absoluta."
   },
   "quality_gates": {

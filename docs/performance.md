@@ -81,7 +81,10 @@ ella). La metodología, artefactos externos y criterios de promoción están en
 A diferencia del nightly, esta suite no exige CUDA ni descarga pesos: los perfiles sin
 artefactos quedan `not_measured` y los de CUDA `unsupported` salvo `--allow-cuda`. La
 calidad se evalúa antes que el rendimiento; si no pasa los umbrales, el perfil no es
-candidato a recomendación aunque tenga más FPS.
+candidato a recomendación aunque tenga más FPS. La recall de identidad se calcula
+contra una galería etiquetada; sin esa evidencia queda `sin_medicion` y no habilita
+recomendación. El método y los artefactos externos están en
+[`docs/benchmark-edge.md`](benchmark-edge.md).
 
 ## Regresiones
 

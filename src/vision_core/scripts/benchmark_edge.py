@@ -20,12 +20,17 @@ from vision_core.scripts.edge_benchmark_metrics import (
     sha256_file,
     summarize_latencies,
 )
-from vision_core.scripts.edge_benchmark_quality import detection_quality, evaluate_quality, identity_recall_at_1
+from vision_core.scripts.edge_benchmark_quality import (
+    detection_quality_by_frame,
+    evaluate_quality,
+    identity_recall_at_1,
+)
 from vision_core.scripts.edge_benchmark_report import write_outputs
 
 MEGABYTE = 1048576
-JITTER_FRAMES = 3
 CROP_RADIUS = 24
+Box = tuple[float, float, float, float]
+IdentityGallery = tuple[np.ndarray, np.ndarray]
 
 
 def _settings_for_profile(profile: dict, *, registry: Path, model_dir: Path) -> Settings:
@@ -103,52 +108,82 @@ def _load_validation_frames(validation: dict, frames_requested: int) -> list[tup
     return frames
 
 
-def _reference_boxes(frames: list[tuple[np.ndarray, dict]]) -> list[tuple[float, float, float, float]]:
-    boxes = []
+def _load_identity_gallery(validation: dict) -> IdentityGallery | None:
+    configured = validation.get("identity_gallery")
+    if not configured:
+        return None
+    source = Path(configured)
+    if not source.is_file():
+        raise FileNotFoundError(f"No existe la galería de identidades: {source}")
+    with np.load(source, allow_pickle=False) as data:
+        embeddings = np.asarray(data["embeddings"], dtype=np.float32)
+        labels = np.asarray(data["labels"]).astype(str)
+    if embeddings.ndim != 2 or labels.ndim != 1 or embeddings.shape[0] != labels.shape[0]:
+        raise ValueError("La galería de identidades requiere embeddings 2D y una etiqueta por embedding")
+    return embeddings, labels
+
+
+def _reference_boxes(frames: list[tuple[np.ndarray, dict]]) -> list[list[Box]]:
+    boxes: list[list[Box]] = []
     for _, entry in frames:
         x = int(entry["x"])
-        if entry["marker"] != "normal" or x < 10:
-            continue
-        boxes.append((float(x - 10), 100.0, float(x + 10), 140.0))
+        if entry["marker"] == "normal" and x >= 10:
+            boxes.append([(float(x - 10), 100.0, float(x + 10), 140.0)])
+        else:
+            boxes.append([])
     return boxes
 
 
-def _crops(frames: list[tuple[np.ndarray, dict]]) -> list[np.ndarray]:
-    crops = []
-    for frame, entry in frames[: max(JITTER_FRAMES, 0)]:
-        del entry
-        crops.append(frame)
-    selected = []
-    for frame, entry in frames:
+def _crops(frames: list[tuple[np.ndarray, dict]]) -> list[tuple[int, np.ndarray, str]]:
+    crops: list[tuple[int, np.ndarray, str]] = []
+    for index, (frame, entry) in enumerate(frames):
         x = int(entry["x"])
-        if x < CROP_RADIUS or x >= frame.shape[1] - CROP_RADIUS:
+        if entry["marker"] != "normal" or not CROP_RADIUS <= x < frame.shape[1] - CROP_RADIUS:
             continue
-        selected.append(frame[96:144, x - CROP_RADIUS : x + CROP_RADIUS])
-    return selected or crops
+        crop = frame[96:144, x - CROP_RADIUS : x + CROP_RADIUS]
+        crops.append((index, crop, f"marker-{x}"))
+    if not crops:
+        raise ValueError("El conjunto de validación no produce recortes de identidad")
+    return crops
 
 
-def _measure_detection(
-    detector, frames: list[tuple[np.ndarray, dict]]
-) -> tuple[dict, list[list[tuple[float, float, float, float]]]]:
-    samples: list[float] = []
-    predictions: list[list[tuple[float, float, float, float]]] = []
-    for frame, _ in frames:
+def _measure_pipeline(
+    detector,
+    embedder,
+    frames: list[tuple[np.ndarray, dict]],
+    crops: list[tuple[int, np.ndarray, str]],
+) -> tuple[dict, dict, list[float], list[list[Box]], np.ndarray, list[str]]:
+    crops_by_index = {index: (crop, label) for index, crop, label in crops}
+    detection_samples: list[float] = []
+    embedding_samples: list[float] = []
+    frame_samples: list[float] = []
+    predictions: list[list[Box]] = []
+    vectors: list[np.ndarray] = []
+    labels: list[str] = []
+    for index, (frame, _) in enumerate(frames):
         started = time.perf_counter()
+        detection_started = time.perf_counter()
         detections = detector.process(frame)
-        samples.append((time.perf_counter() - started) * 1000)
+        detection_samples.append((time.perf_counter() - detection_started) * 1000)
         predictions.append([(item.bbox.x1, item.bbox.y1, item.bbox.x2, item.bbox.y2) for item in detections])
-    return summarize_latencies(samples), predictions
-
-
-def _measure_embedding(embedder, crops: list[np.ndarray]) -> tuple[dict, np.ndarray]:
-    samples: list[float] = []
-    vectors = []
-    for crop in crops:
-        started = time.perf_counter()
-        vector = embedder(crop)
-        samples.append((time.perf_counter() - started) * 1000)
-        vectors.append(vector)
-    return summarize_latencies(samples), np.asarray(vectors, dtype=np.float32)
+        selected = crops_by_index.get(index)
+        if selected is not None:
+            crop, label = selected
+            embedding_started = time.perf_counter()
+            vector = embedder(crop)
+            embedding_samples.append((time.perf_counter() - embedding_started) * 1000)
+            vectors.append(vector)
+            labels.append(label)
+        frame_samples.append((time.perf_counter() - started) * 1000)
+    embeddings = np.asarray(vectors, dtype=np.float32) if vectors else np.empty((0, 0), dtype=np.float32)
+    return (
+        summarize_latencies(detection_samples),
+        summarize_latencies(embedding_samples),
+        frame_samples,
+        predictions,
+        embeddings,
+        labels,
+    )
 
 
 def _empty_result(profile: dict, *, status: str, reason: str, identity: dict) -> dict:
@@ -176,86 +211,99 @@ def _run_profile(
     args: argparse.Namespace,
     budgets: dict,
     validation: dict,
-    baseline_quality: dict | None,
-    baseline_embeddings: np.ndarray | None,
-) -> tuple[dict, np.ndarray | None]:
+    identity_gallery: IdentityGallery | None,
+) -> dict:
     identity: dict[str, str] = {}
     reason = _unsupported_reason(profile, allow_cuda=args.allow_cuda)
     if reason:
-        return _empty_result(profile, status="unsupported", reason=reason, identity=identity), None
+        return _empty_result(profile, status="unsupported", reason=reason, identity=identity)
 
-    settings = _settings_for_profile(profile, registry=args.registry, model_dir=args.model_dir)
-    detection_path = args.model_dir / profile["detection"]["selector"]
-    if not detection_path.is_file():
-        reason = f"Artefacto de detección ausente: {detection_path}. Los pesos no se versionan en el repositorio."
-        return _empty_result(profile, status="not_measured", reason=reason, identity=identity), None
-    if not args.allow_download and not _torchvision_weights_cached(profile["embedding"]["selector"]):
-        reason = "Pesos de torchvision sin caché local; use --allow-download para descargarlos fuera del repositorio."
-        return _empty_result(profile, status="not_measured", reason=reason, identity=identity), None
-
-    active = resolve_active_models(settings)
-    identity = active.as_log_identity()
-    from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
-
-    detector = YoloDetectorManager(
-        str(detection_path),
-        device=profile["device"],
-        precision=profile["detection"]["precision"],
-        confidence=settings.detection.confidence,
-        classes=settings.detection.classes,
-        tracking_enabled=False,
-        model_descriptor=active.detection,
-    )
-    embedder = TorchvisionEmbeddingExtractor(
-        profile["embedding"]["selector"],
-        profile["device"],
-        active.embedding,
-        profile["embedding"]["precision"],
-    )
-    frames = _load_validation_frames(validation, args.frames)
-    crops = _crops(frames)
-
-    energy_start = read_energy_uj()
     tracemalloc.start()
     try:
-        detection_latency, predictions = _measure_detection(detector, frames)
-        embedding_latency, embeddings = _measure_embedding(embedder, crops)
+        settings = _settings_for_profile(profile, registry=args.registry, model_dir=args.model_dir)
+        detection_path = args.model_dir / profile["detection"]["selector"]
+        if not detection_path.is_file():
+            reason = f"Artefacto de detección ausente: {detection_path}. Los pesos no se versionan en el repositorio."
+            return _empty_result(profile, status="not_measured", reason=reason, identity=identity)
+        if not args.allow_download and not _torchvision_weights_cached(profile["embedding"]["selector"]):
+            reason = (
+                "Pesos de torchvision sin caché local; use --allow-download para descargarlos fuera del repositorio."
+            )
+            return _empty_result(profile, status="not_measured", reason=reason, identity=identity)
+
+        active = resolve_active_models(settings)
+        identity = active.as_log_identity()
+        from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import YoloDetectorManager
+
+        detector = YoloDetectorManager(
+            str(detection_path),
+            device=profile["device"],
+            precision=profile["detection"]["precision"],
+            confidence=settings.detection.confidence,
+            classes=settings.detection.classes,
+            tracking_enabled=False,
+            model_descriptor=active.detection,
+        )
+        embedder = TorchvisionEmbeddingExtractor(
+            profile["embedding"]["selector"],
+            profile["device"],
+            active.embedding,
+            profile["embedding"]["precision"],
+        )
+        frames = _load_validation_frames(validation, args.frames)
+        crops = _crops(frames)
+        energy_start = read_energy_uj()
+        (
+            detection_latency,
+            embedding_latency,
+            frame_samples,
+            predictions,
+            embeddings,
+            labels,
+        ) = _measure_pipeline(detector, embedder, frames, crops)
         memory_peak_mb = round(tracemalloc.get_traced_memory()[1] / MEGABYTE, 3)
+        energy_end = read_energy_uj()
+    except Exception as error:
+        reason = f"Perfil omitido: {error}"
+        return _empty_result(profile, status="not_measured", reason=reason, identity=identity)
     finally:
         tracemalloc.stop()
-    energy_end = read_energy_uj()
-    energy_j = round((energy_end - energy_start) / 1_000_000, 3) if energy_start is not None and energy_end else None
 
-    elapsed = (detection_latency["samples"] * detection_latency["mean_ms"] or 0) + (
-        embedding_latency["samples"] * embedding_latency["mean_ms"] or 0
-    )
-    fps = round(len(frames) / (elapsed / 1000), 3) if elapsed else None
-    all_predictions = [box for frame_predictions in predictions for box in frame_predictions]
-    detection_summary = detection_quality(all_predictions, _reference_boxes(frames))
+    energy_j = round((energy_end - energy_start) / 1_000_000, 3) if energy_start is not None and energy_end else None
+    frame_summary = summarize_latencies(frame_samples)
+    total_ms = sum(frame_samples)
+    fps = round(len(frames) / (total_ms / 1000), 3) if total_ms else None
+    detection_summary = detection_quality_by_frame(predictions, _reference_boxes(frames))
+    reference_embeddings = identity_gallery[0] if identity_gallery else None
+    reference_labels = identity_gallery[1] if identity_gallery else None
     identity_summary = {
-        "recall_at_1_vs_fp32": identity_recall_at_1(embeddings, baseline_embeddings)
-        if baseline_embeddings is not None
-        else (identity_recall_at_1(embeddings, embeddings) if embeddings.size else None),
-        "samples": int(embeddings.shape[0]),
+        "recall_at_1_vs_gallery": identity_recall_at_1(
+            embeddings,
+            reference_embeddings,
+            expected_labels=np.asarray(labels, dtype=str),
+            reference_labels=reference_labels,
+        ),
+        "source": "labeled-gallery" if identity_gallery else "not-available",
+        "samples": int(embeddings.shape[0]) if embeddings.ndim == 2 else 0,
     }
     quality_metrics = {"detection": detection_summary, "identity": identity_summary}
-    quality = evaluate_quality(quality_metrics, baseline_quality, config["quality_gates"])
-
+    quality = evaluate_quality(quality_metrics, None, config["quality_gates"])
     metrics = {
         "detection": detection_latency,
         "embedding": embedding_latency,
+        "frame": frame_summary,
         "fps_end_to_end": fps,
-        "fps_scope": "detection+embedding sobre el conjunto de validación; sin decode/analytics",
+        "fps_scope": "detection+embedding por frame sobre el conjunto de validación; sin decode/analytics",
         "memory_peak_tracemalloc_mb": memory_peak_mb,
         "energy_j": energy_j,
         "energy_source": "linux-powercap" if energy_j is not None else "not-exposed",
         "frames": len(frames),
-        "crops": int(embeddings.shape[0]),
+        "crops": int(embeddings.shape[0]) if embeddings.ndim == 2 else 0,
     }
     budget_metrics = {
         "fps": fps or 0.0,
-        "frame_p95_ms": (detection_latency["p95_ms"] or 0.0) + (embedding_latency["p95_ms"] or 0.0),
-        "inference_p95_ms": detection_latency["p95_ms"] or 0.0,
+        "frame_p95_ms": frame_summary["p95_ms"] or 0.0,
+        "inference_p95_ms": frame_summary["p95_ms"] or 0.0,
         "memory_peak_mb": memory_peak_mb,
     }
     target = config["hardware_targets"][profile["target"]]
@@ -265,7 +313,7 @@ def _run_profile(
         "violations": violations,
         "scenario": target["budget_scenario"],
     }
-    result = {
+    return {
         "id": profile["id"],
         "target": profile["target"],
         "device": profile["device"],
@@ -281,59 +329,55 @@ def _run_profile(
         "budget": budget,
         "recommended": bool(quality["passed"] and budget["passed"]),
     }
-    return result, embeddings
 
 
 def _recommendations(config: dict, results: list[dict]) -> dict[str, dict]:
     baseline_id = config["quality_gates"]["baseline_profile"]
-    baseline = next((row for row in results if row["id"] == baseline_id), None)
     recommendations = {}
     for target in config["hardware_targets"]:
         candidates = [row for row in results if row["target"] == target and row["recommended"]]
-        fallback = baseline or next((row for row in results if row["target"] == target), None)
-        chosen = max(candidates, key=lambda row: row["metrics"]["fps_end_to_end"] or 0) if candidates else fallback
-        if chosen is None:
-            recommendations[target] = {"profile": None, "reason": "Sin perfiles para el target."}
-        elif candidates:
+        if candidates:
+            chosen = max(candidates, key=lambda row: row["metrics"]["fps_end_to_end"] or 0)
             recommendations[target] = {
                 "profile": chosen["id"],
                 "reason": "Pasa calidad y presupuesto; mayor FPS medido en este target.",
             }
-        else:
+            continue
+        measured = [row for row in results if row["target"] == target and row["status"] == "measured"]
+        if not measured:
             recommendations[target] = {
-                "profile": chosen["id"],
-                "reason": "Sin evidencia suficiente: se mantiene FP32 como rollback hasta medir.",
+                "profile": None,
+                "reason": "Sin medición en este target; no se recomienda variante.",
             }
+            continue
+        baseline = next((row for row in measured if row["id"] == baseline_id), None)
+        recommendations[target] = {
+            "profile": baseline["id"] if baseline else None,
+            "reason": "Sin variante que pase calidad y presupuesto; se mantiene el baseline medido como rollback."
+            if baseline
+            else "Sin variante válida ni baseline medido en este target.",
+        }
     return recommendations
 
 
 def run(config: dict, *, args: argparse.Namespace) -> dict:
     budgets = load_budgets(args.budgets)
     profiles = select_profiles(config, target=args.target, profile_id=args.profile)
-    baseline_id = config["quality_gates"]["baseline_profile"]
-    ordered = sorted(profiles, key=lambda profile: profile["id"] != baseline_id)
     validation = dict(config["validation_set"])
     if args.frames is not None:
         validation["frames"] = args.frames
-
-    results: list[dict] = []
-    baseline_quality: dict | None = None
-    baseline_embeddings: np.ndarray | None = None
-    for profile in ordered:
-        row, embeddings = _run_profile(
+    identity_gallery = _load_identity_gallery(validation)
+    results = [
+        _run_profile(
             profile,
             config=config,
             args=args,
             budgets=budgets,
             validation=validation,
-            baseline_quality=baseline_quality,
-            baseline_embeddings=baseline_embeddings,
+            identity_gallery=identity_gallery,
         )
-        if profile["id"] == baseline_id and row["status"] == "measured":
-            baseline_quality = row["quality_metrics"]
-            baseline_embeddings = embeddings
-        results.append(row)
-
+        for profile in profiles
+    ]
     recommendations = _recommendations(config, results)
     digest = config_digest(args.config)
     return {
@@ -341,7 +385,11 @@ def run(config: dict, *, args: argparse.Namespace) -> dict:
         "kind": "edge-benchmark-matrix",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "config": {"path": str(args.config), "sha256": digest},
-        "environment": environment_metadata(args.device, digest),
+        "environment": environment_metadata(
+            args.device,
+            digest,
+            devices=sorted({profile["device"] for profile in profiles}),
+        ),
         "hardware_targets": config["hardware_targets"],
         "validation_set": validation,
         "quality_gates": config["quality_gates"],

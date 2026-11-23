@@ -24,7 +24,8 @@ absoluta en el dataset objetivo.
 ## Datos de entrenamiento o proveniencia conocida
 
 Derivado de Ultralytics YOLOv8n preentrenado en COCO. El artefacto FP16 se genera fuera
-del repositorio con `yolo export model=yolov8n.pt format=engine half=True` en hardware CUDA.
+del repositorio cargando `yolov8n.pt`, aplicando `model.half()` y guardando
+`yolov8n-fp16.pt` en hardware CUDA; el selector del registro exige extensión `.pt`.
 
 ## Métricas del ticket 36
 
@@ -60,4 +61,5 @@ Sin hardware CUDA no hay medición: la fila se publica como `unsupported`.
 
 ## Verificación
 
-`python -m vision_core.scripts.benchmark_edge --config benchmarks/edge-config.json --target gpu-fp16`.
+`python -m vision_core.scripts.benchmark_edge --config benchmarks/edge-config.json --profile gpu-fp16 --allow-cuda --model-dir <dir>`.
+La recall de identidad exige `validation_set.identity_gallery`.

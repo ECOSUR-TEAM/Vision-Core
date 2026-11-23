@@ -21,9 +21,14 @@ def load_config(path: str | Path) -> dict:
 def validate_config(config: dict) -> None:
     if config.get("schema_version") != SUPPORTED_SCHEMA_VERSION:
         raise ValueError(f"schema_version debe ser {SUPPORTED_SCHEMA_VERSION}")
-    for key in ("hardware_targets", "validation_set", "quality_gates", "profiles"):
-        if not isinstance(config.get(key), (dict, list)) or not config[key]:
-            raise ValueError(f"La configuración requiere '{key}' no vacío")
+    for key in ("hardware_targets", "validation_set", "quality_gates"):
+        if not isinstance(config.get(key), dict) or not config[key]:
+            raise ValueError(f"La configuración requiere '{key}' como objeto no vacío")
+    if not isinstance(config.get("profiles"), list) or not config["profiles"]:
+        raise ValueError("La configuración requiere 'profiles' como lista no vacía")
+    gallery = config["validation_set"].get("identity_gallery")
+    if gallery is not None and not isinstance(gallery, str):
+        raise ValueError("validation_set.identity_gallery debe ser una ruta o null")
     gates = config["quality_gates"]
     for key in ("min_detection_map50", "min_identity_recall_at_1", "max_relative_drop_pct"):
         value = gates.get(key)

@@ -3,6 +3,7 @@
 import json
 import socket
 import threading
+from http import HTTPStatus
 from http.client import HTTPConnection
 from urllib.error import HTTPError
 from urllib.request import urlopen
@@ -10,6 +11,7 @@ from urllib.request import urlopen
 import pytest
 
 from vision_core.core.errors import codes
+from vision_core.features.monitor.infrastructure.http import server as server_module
 from vision_core.features.monitor.infrastructure.http.handler import MAX_HEADER_COUNT, MAX_REQUEST_LINE
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.features.monitor.infrastructure.state import MonitorState
@@ -146,3 +148,31 @@ def test_rejection_counters_do_not_replace_observability_metrics(monitor_server)
 
     assert server.metrics is state.metrics
     assert set(server.limits_metrics.snapshot()) == {"concurrency", "long_poll_concurrency", "timeout", "oversized"}
+
+
+def test_rejected_socket_drain_is_bounded(monkeypatch):
+    received = []
+
+    class FakeSocket:
+        def settimeout(self, timeout):
+            received.append(("timeout", timeout))
+
+        def sendall(self, payload):
+            del payload
+
+        def shutdown(self, how):
+            del how
+
+        def recv(self, size):
+            received.append(("recv", size))
+            return b"x" * size
+
+        def close(self):
+            received.append(("close", None))
+
+    monkeypatch.setattr(server_module.time, "monotonic", lambda: 0.0)
+    server_module.MonitorHTTPServer._reject_immediately(FakeSocket(), HTTPStatus.SERVICE_UNAVAILABLE)
+
+    drained = [size for kind, size in received if kind == "recv"]
+    assert drained and sum(drained) == server_module._MAX_DRAIN_BYTES
+    assert max(drained) <= 4096

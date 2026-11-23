@@ -59,4 +59,6 @@ entorno de exportación, no en el runtime de benchmark).
 
 ## Verificación
 
-`python -m vision_core.scripts.benchmark_edge --config benchmarks/edge-config.json --target cpu-int8 --model-dir <dir>`.
+`python -m vision_core.scripts.benchmark_edge --config benchmarks/edge-config.json --profile cpu-fp32 --model-dir <dir>` y
+`python -m vision_core.scripts.benchmark_edge --config benchmarks/edge-config.json --profile cpu-int8 --model-dir <dir>`.
+El perfil FP32 se ejecuta primero para que exista baseline medido.

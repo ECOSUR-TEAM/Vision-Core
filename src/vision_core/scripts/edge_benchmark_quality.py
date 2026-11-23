@@ -51,19 +51,61 @@ def detection_quality(predictions: list[Box], references: list[Box]) -> dict:
     }
 
 
-def identity_recall_at_1(variant: np.ndarray, reference: np.ndarray) -> float | None:
-    if variant.size == 0 or reference.size == 0 or variant.shape != reference.shape:
+def detection_quality_by_frame(predictions_by_frame: list[list[Box]], references_by_frame: list[list[Box]]) -> dict:
+    frame_results = [
+        detection_quality(predictions, references)
+        for predictions, references in zip(predictions_by_frame, references_by_frame)
+    ]
+    matches = sum(result["matches"] for result in frame_results)
+    predictions = sum(result["predictions"] for result in frame_results)
+    references = sum(result["references"] for result in frame_results)
+    ious = [
+        item[2]
+        for predictions_frame, references_frame in zip(predictions_by_frame, references_by_frame)
+        for item in match_boxes(predictions_frame, references_frame)
+    ]
+    return {
+        "matches": matches,
+        "predictions": predictions,
+        "references": references,
+        "frames": len(frame_results),
+        "precision_proxy": round(matches / predictions, 4) if predictions else None,
+        "map50_proxy": round(matches / references, 4) if references else None,
+        "mean_iou": round(sum(ious) / len(ious), 4) if ious else None,
+    }
+
+
+def identity_recall_at_1(
+    variant: np.ndarray,
+    reference: np.ndarray,
+    *,
+    expected_labels: np.ndarray | None = None,
+    reference_labels: np.ndarray | None = None,
+) -> float | None:
+    if variant.size == 0 or reference.size == 0 or variant.ndim != 2 or reference.ndim != 2:
+        return None
+    if expected_labels is not None and reference_labels is not None:
+        if len(expected_labels) != variant.shape[0] or len(reference_labels) != reference.shape[0]:
+            return None
+    elif expected_labels is not None or reference_labels is not None:
+        return None
+    elif variant.shape[0] != reference.shape[0]:
         return None
     variant_normalized = variant / np.maximum(np.linalg.norm(variant, axis=1, keepdims=True), 1e-12)
     reference_normalized = reference / np.maximum(np.linalg.norm(reference, axis=1, keepdims=True), 1e-12)
     similarities = variant_normalized @ reference_normalized.T
-    matches = np.argmax(similarities, axis=1)
-    return round(float(np.mean(matches == np.arange(len(variant)))), 4)
+    nearest = np.argmax(similarities, axis=1)
+    if expected_labels is not None and reference_labels is not None:
+        predicted = np.asarray(reference_labels)[nearest]
+        return round(float(np.mean(predicted == np.asarray(expected_labels))), 4)
+    return round(float(np.mean(nearest == np.arange(len(variant)))), 4)
 
 
 def evaluate_quality(quality: dict, baseline_quality: dict | None, gates: dict) -> dict:
     detection = quality.get("detection", {}).get("map50_proxy")
-    identity = quality.get("identity", {}).get("recall_at_1_vs_fp32")
+    identity = quality.get("identity", {}).get("recall_at_1_vs_gallery")
+    if identity is None:
+        identity = quality.get("identity", {}).get("recall_at_1_vs_fp32")
     max_drop = float(gates["max_relative_drop_pct"]) / 100
     checks: dict[str, dict] = {}
     for name, value, minimum in (
@@ -80,8 +122,10 @@ def evaluate_quality(quality: dict, baseline_quality: dict | None, gates: dict) 
                 if name.startswith("detection")
                 else (baseline_quality.get("identity", {}))
             )
-            key = "map50_proxy" if name.startswith("detection") else "recall_at_1_vs_fp32"
+            key = "map50_proxy" if name.startswith("detection") else "recall_at_1_vs_gallery"
             baseline_value = baseline_section.get(key)
+            if baseline_value is None and not name.startswith("detection"):
+                baseline_value = baseline_section.get("recall_at_1_vs_fp32")
         floor = baseline_value * (1 - max_drop) if baseline_value is not None else None
         passed = value >= minimum and (floor is None or value >= floor)
         checks[name] = {"passed": passed, "value": value, "minimum": minimum, "relative_floor": floor}

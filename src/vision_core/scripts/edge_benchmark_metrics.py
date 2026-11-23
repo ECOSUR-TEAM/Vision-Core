@@ -1,5 +1,6 @@
 import hashlib
 import platform
+import re
 import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -47,7 +48,11 @@ def sha256_file(path: str | Path) -> str:
 
 
 def read_energy_uj() -> float | None:
-    roots = [path for path in Path("/sys/class/powercap").glob("intel-rapl:[0-9]*") if path.is_dir()]
+    roots = [
+        path
+        for path in Path("/sys/class/powercap").glob("intel-rapl:*")
+        if re.fullmatch(r"intel-rapl:\d+", path.name) and path.is_dir()
+    ]
     total = 0.0
     for root in roots:
         sensor = root / "energy_uj"
@@ -60,12 +65,13 @@ def read_energy_uj() -> float | None:
     return total if roots else None
 
 
-def environment_metadata(device: str, config_sha256: str) -> dict[str, Any]:
+def environment_metadata(device: str, config_sha256: str, *, devices: list[str] | None = None) -> dict[str, Any]:
     metadata: dict[str, Any] = {
         "python": sys.version.split()[0],
         "platform": platform.platform(),
         "processor": platform.processor() or "unknown",
         "device_declared": device,
+        "devices_in_matrix": devices or [device],
         "config_sha256": config_sha256,
         "cuda_available": False,
     }

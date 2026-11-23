@@ -78,7 +78,7 @@ def _validate_embedding_config(model: ModelDescriptor, settings: Settings) -> No
 
 
 def _validate_precision(model: ModelDescriptor, configured: str, variable: str) -> None:
-    expected = cast(str, model.expected_config["precision"])
+    expected = cast(str, model.expected_config.get("precision", "fp32"))
     if configured != expected:
         raise ConfigurationError(
             f"{variable} debe ser '{expected}' para el modelo '{model.id}'.",

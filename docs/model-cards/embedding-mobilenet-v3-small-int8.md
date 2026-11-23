@@ -59,4 +59,6 @@ sintéticos deterministas (semilla `20261120`, 8 muestras) generados en el adapt
 
 ## Verificación
 
-`python -m vision_core.scripts.benchmark_edge --config benchmarks/edge-config.json --target cpu-int8`.
+`python -m vision_core.scripts.benchmark_edge --config benchmarks/edge-config.json --profile cpu-fp32 --model-dir <dir>` y
+`python -m vision_core.scripts.benchmark_edge --config benchmarks/edge-config.json --profile cpu-int8 --model-dir <dir>`.
+La galería etiquetada se configura en `validation_set.identity_gallery`.

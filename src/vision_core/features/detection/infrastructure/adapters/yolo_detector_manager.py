@@ -7,12 +7,12 @@ from vision_core.core.config.settings_precision import is_supported_precision
 from vision_core.core.domain.bbox import BBox
 from vision_core.core.errors import ConfigurationError, ModelError, ValidationError, codes
 from vision_core.core.inference.tensor_boxes import iter_prediction_boxes
+from vision_core.core.model_registry.model_descriptor import ModelDescriptor
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.detection.infrastructure.adapters.motion_tracker import (
     MotionTracker,
 )
-from vision_core.model_registry.model_descriptor import ModelDescriptor
 
 if TYPE_CHECKING:
     from ultralytics.engine.results import Results

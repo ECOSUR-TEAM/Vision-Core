@@ -7,11 +7,11 @@ from pathlib import Path
 
 from vision_core.core.config import Settings
 from vision_core.core.config.settings_helpers import is_exposed_monitor_host, normalize_monitor_host
+from vision_core.core.model_registry.activation import resolve_active_models
 from vision_core.core.telemetry.structured_logging import configure_structured_logging
 from vision_core.features.monitor.infrastructure.http.server import make_server
 from vision_core.features.monitor.infrastructure.zone_editor.config import ZoneEditorConfig
 from vision_core.features.monitor.infrastructure.zone_editor.service import ZoneEditorService
-from vision_core.model_registry.activation import resolve_active_models
 
 
 def main(*, state=None, build_state=None, build_runtime=None, config=None):

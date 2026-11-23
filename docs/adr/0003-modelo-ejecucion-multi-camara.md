@@ -320,8 +320,8 @@ todas las cachés de worker en menos de 1 s.
 El `FrameProfiler` actual se convierte en la fuente de p50/p95 por etapa; debe
 añadir `camera_id` como dimensión y exportar las mismas etapas que hoy registra
 en JSON, sin cambiar el significado de `frame_total`. El panel actual
-(`/api/state`) sigue siendo por cámara; la agregación es responsabilidad de un
-colector nuevo, no del worker.
+(`/api/v1/state`, con `/api/state` como alias deprecado) sigue siendo por cámara;
+la agregación es responsabilidad de un colector nuevo, no del worker.
 
 **Reinicios y aislamiento:** cada worker se reinicia de forma independiente con
 un supervisor, con backoff y un límite de intentos para evitar bucles. El

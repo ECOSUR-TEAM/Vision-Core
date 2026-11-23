@@ -1,5 +1,5 @@
 from vision_core.core.errors import ConfigurationError
-from vision_core.model_registry.model_descriptor import ModelDescriptor
+from vision_core.core.model_registry.model_descriptor import ModelDescriptor
 
 
 class ModelRegistry:

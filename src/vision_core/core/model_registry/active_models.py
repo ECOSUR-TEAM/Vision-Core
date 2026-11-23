@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from vision_core.model_registry.model_descriptor import ModelDescriptor
+from vision_core.core.model_registry.model_descriptor import ModelDescriptor
 
 
 @dataclass(frozen=True, slots=True)

@@ -391,9 +391,9 @@ actualización de dependencias y regeneración del lockfile están en
 
 | Componente | Responsabilidad |
 |---|---|
-| `src/vision_core/features/` | Features de detección, puerta, monitor, pipeline, ReID y video |
+| `src/vision_core/features/` | Features de cámara (health), detección, eventos, puerta, monitor, pipeline, ReID y video |
 | `src/vision_core/features/pipeline/` | `RunPipeline`, DTOs, mappers y fábrica del pipeline |
-| `src/vision_core/core/` | Kernel compartido: configuración, contratos, dominio, DTOs, errores, inferencia, persistencia, serialización, telemetría y validación |
+| `src/vision_core/core/` | Kernel compartido: configuración, contratos, dominio, DTOs, errores, inferencia, persistencia, registro de modelos, serialización, telemetría y validación |
 | `src/vision_core/scripts/` | Demostración, diagnóstico, ejecución medida y evaluación |
 | `main.py` | Composition root único y entrypoint raíz de Docker y ejecución local |
 
@@ -437,7 +437,7 @@ python -m pytest tests/test_one_class_per_file.py -q
 
 ## Seguridad de UI y output encoding
 
-El monitor servido por `src/vision_core/features/monitor/infrastructure/http/index.html` trata
+El monitor servido por `src/vision_core/features/monitor/infrastructure/http/static/index.html` trata
 **todo** dato que llega de `/api/v1/state` como texto no confiable, incluyendo
 `person_id`, `display_name`, zonas y `metadata`.
 

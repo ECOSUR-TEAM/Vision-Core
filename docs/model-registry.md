@@ -77,12 +77,12 @@ torchvision no tienen ruta local verificable y declaran `null`.
 
 ```bash
 python -m pytest tests/test_model_registry.py -q
-python -c "from vision_core.core.config import Settings; from vision_core.model_registry.activation import resolve_active_models; print(resolve_active_models(Settings.from_env({'VISION_CORE_RTSP_URL':'rtsp://localhost:8554/x'}, validate_startup=False)).as_log_identity())"
+python -c "from vision_core.core.config import Settings; from vision_core.core.model_registry.activation import resolve_active_models; print(resolve_active_models(Settings.from_env({'VISION_CORE_RTSP_URL':'rtsp://localhost:8554/x'}, validate_startup=False)).as_log_identity())"
 curl http://127.0.0.1:8080/ready
 ```
 
-`vision_core.model_registry` sigue siendo el path transitorio permitido por ADR 0007;
-su migración a `core/model_registry/` está diferida al ticket 67 (ADR 0008).
+El registro de modelos vive en `core/model_registry/` según ADR 0007; el antiguo
+path de primer nivel fue eliminado en ECM-112 (ADR 0008).
 
 Para simular una alerta de checksum, cambia temporalmente `checksum.value` en una copia
 del registro y apunta `VISION_CORE_MODEL_REGISTRY_FILE` a esa copia con un archivo local

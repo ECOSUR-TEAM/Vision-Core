@@ -21,11 +21,11 @@ from vision_core.core.errors import (
     ValidationError,
     codes,
 )
+from vision_core.core.model_registry.model_descriptor import ModelDescriptor
 from vision_core.features.reid.infrastructure.adapters.embedding_quantization import (
     quantize_embedding_model,
     synthetic_calibration_crops,
 )
-from vision_core.model_registry.model_descriptor import ModelDescriptor
 
 SUPPORTED_BASE_MODELS = frozenset({"resnet50", "mobilenet_v3_small"})
 PRECISION_SUFFIXES = {"-int8": "int8", "-fp16": "fp16"}

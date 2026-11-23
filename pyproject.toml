@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"vision_core.features.monitor.infrastructure.http" = ["index.html"]
+"vision_core.features.monitor.infrastructure.http.static" = ["index.html"]
 
 [tool.setuptools.data-files]
 "config" = ["config/models.yml"]

@@ -370,7 +370,7 @@ Las rutas de destino reflejan el árbol vigente
 | `infrastructure/video/rtsp_video_source.py` | `src/vision_core/features/video/infrastructure/adapters/rtsp_video_source.py` | ECM-106 |
 | `infrastructure/video/file_video_source.py` | `src/vision_core/features/video/infrastructure/adapters/file_video_source.py` | ECM-106 |
 | `infrastructure/video/latest_frame_source.py` | `src/vision_core/features/video/infrastructure/adapters/latest_frame_source.py` | ECM-106 |
-| `infrastructure/video/frame_validation.py` | `src/vision_core/features/video/infrastructure/frame_validation.py` | ECM-106 |
+| `infrastructure/video/frame_validation.py` | `src/vision_core/core/validation/validation.py` (`validate_frame`) | ECM-110; ECM-112 eliminó el shim |
 | `infrastructure/video/capture_reference.py` | `src/vision_core/scripts/capture_reference.py` (herramienta de calibración, no feature) | ECM-111 |
 | — | `src/vision_core/features/video/infrastructure/dependencies.py` (`build_video`) | ECM-106 |
 
@@ -429,7 +429,7 @@ Las rutas de destino reflejan el árbol vigente
 | `infrastructure/monitor/http_server.py` | `src/vision_core/features/monitor/infrastructure/http/handler.py` y `http/server.py` | ECM-65 |
 | `infrastructure/monitor/server.py` | se integra en `src/vision_core/features/monitor/infrastructure/http/server.py` | ECM-106 |
 | `infrastructure/monitor/__main__.py` | `src/vision_core/features/monitor/infrastructure/__main__.py` | ECM-106 |
-| `infrastructure/monitor/index.html` | `src/vision_core/features/monitor/infrastructure/http/index.html` (recurso estático) | ECM-111 |
+| `infrastructure/monitor/index.html` | `src/vision_core/features/monitor/infrastructure/http/static/index.html` (recurso estático) | ECM-110 |
 | — | `application/dto/request/request_frame.py`, `request_snapshot.py` | ECM-65 |
 | — | `application/dto/response/response_frame.py`, `response_snapshot.py` | ECM-65 |
 | — | `application/use_cases/get_frame.py`, `get_snapshot.py`, `publish_monitor_state.py` | ECM-65 |

@@ -10,15 +10,19 @@ DTO_ROOTS = [
     ],
 ]
 FORBIDDEN_ROOTS = {"numpy", "cv2", "torch", "torchvision", "ultralytics"}
-ALLOWED_CORE_IMPORTS = ("vision_core.core.dto", "vision_core.core.serialization")
-FORBIDDEN_IMPORT_PREFIXES = (
-    "vision_core.application",
-    "vision_core.core.domain",
-    "vision_core.core.infrastructure",
-    "vision_core.domain",
-    "vision_core.infrastructure",
-    "vision_core.settings",
-    "vision_core.shared",
+PACKAGE_NAME = "vision_core"
+ALLOWED_CORE_IMPORTS = (f"{PACKAGE_NAME}.core.dto", f"{PACKAGE_NAME}.core.serialization")
+FORBIDDEN_IMPORT_PREFIXES = tuple(
+    f"{PACKAGE_NAME}.{suffix}"
+    for suffix in (
+        "application",
+        "core.domain",
+        "core.infrastructure",
+        "domain",
+        "infrastructure",
+        "settings",
+        "shared",
+    )
 )
 
 
@@ -27,7 +31,7 @@ def _is_forbidden(module):
         return True
     if module.startswith(FORBIDDEN_IMPORT_PREFIXES) or ".domain" in module or ".infrastructure" in module:
         return True
-    if module.startswith("vision_core.core."):
+    if module.startswith(f"{PACKAGE_NAME}.core."):
         return not any(module == root or module.startswith(f"{root}.") for root in ALLOWED_CORE_IMPORTS)
     return False
 

@@ -11,25 +11,28 @@ from vision_core.core.infrastructure.persistence.persistence_service import Pers
 from vision_core.core.infrastructure.persistence.persisting_reid_memory import PersistingReIDMemory
 from vision_core.core.infrastructure.persistence.retention_job import RetentionJob
 from vision_core.core.infrastructure.persistence.retention_worker import RetentionWorker
+from vision_core.core.model_registry.activation import resolve_active_models
+from vision_core.core.serialization.events import event_to_json_dict
 from vision_core.core.telemetry.health import HealthStatus
 from vision_core.core.telemetry.metrics import get_observability_metrics
+from vision_core.features.camera_health.application.camera_quality_monitor import CameraQualityMonitor
+from vision_core.features.camera_health.application.quality_thread import QualityThread
 from vision_core.features.detection.infrastructure.dependencies import build_detection
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics import UncalibratedAnalytics
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 from vision_core.features.door.infrastructure.dependencies import build_door
+from vision_core.features.events.infrastructure.dependencies import build_event_sink
 from vision_core.features.monitor.infrastructure import __main__ as monitor_cli
 from vision_core.features.monitor.infrastructure.dependencies import build_monitor
 from vision_core.features.monitor.infrastructure.latest_frame_buffer import LatestFrameBuffer
 from vision_core.features.monitor.infrastructure.renderer import render_frame
 from vision_core.features.monitor.infrastructure.renderer_thread import RendererThread
 from vision_core.features.monitor.infrastructure.runtime import MonitorRuntime
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict
 from vision_core.features.pipeline.infrastructure.dependencies import build_pipeline
 from vision_core.features.reid.infrastructure.dependencies import build_reid
 from vision_core.features.video.infrastructure.dependencies import build_video
-from vision_core.model_registry.activation import resolve_active_models
 
 logger = logging.getLogger(__name__)
 
@@ -107,9 +110,12 @@ def build_monitor_pipeline(
         retention_worker = None
         renderer = None
         renderer_error = None
+        quality_thread: QualityThread | None = None
+        event_sink = None
         session_id = str(uuid.uuid4())
         try:
             persistence.start_session(session_id, time.time())
+            event_sink = build_event_sink(settings.events, metrics=state.metrics)
             zones = load_zones(zones_file) if zones_file else None
             if zones is not None:
                 persistence.save_zones((zones.door, zones.exterior, zones.interior))
@@ -123,10 +129,27 @@ def build_monitor_pipeline(
                     zones.door,
                     confirmation_frames=settings.zones.confirmation_frames,
                 )
+
+            def on_camera_quality(observation):
+                publish_quality = getattr(state, "set_camera_quality", None)
+                if publish_quality is not None:
+                    publish_quality(observation.status, observation.reason, observation.signals)
+
+            def on_quality_error(_error):
+                state.metrics.increment("vision_core_camera_quality_errors_total", camera_id=camera_id)
+
+            quality_monitor = CameraQualityMonitor(
+                settings.camera_quality,
+                expected_frame_size=(zones.width, zones.height) if zones else None,
+                zones=zones,
+                on_observation=on_camera_quality,
+                on_error=on_quality_error,
+            )
             door = build_door(analytics=analytics)
             detection = build_detection(
                 model_path=str(settings.detection.model_path),
                 device=settings.detection.device,
+                precision=settings.detection.precision,
                 confidence=settings.detection.confidence,
                 classes=settings.detection.classes,
                 tracking_enabled=settings.detection.tracking_enabled,
@@ -139,9 +162,17 @@ def build_monitor_pipeline(
                 reid = build_reid(memory=memory, embedder=reid.embedder)
             source = build_video(latest=True, metrics=state.metrics)
             buffer: LatestFrameBuffer | None = LatestFrameBuffer() if config.render_enabled else None
+            if buffer is None and settings.camera_quality.enabled:
+                quality_thread = QualityThread(
+                    lambda frame: quality_monitor.observe(frame, sampled=True),
+                    sample_every_n_frames=settings.camera_quality.sample_every_n_frames,
+                    on_error=on_quality_error,
+                )
+                quality_thread.start()
             if buffer is not None:
 
                 def render_job(job):
+                    quality_monitor.observe(job.frame)
                     jpeg, people = render_frame(
                         job.frame,
                         job.tracks,
@@ -186,6 +217,8 @@ def build_monitor_pipeline(
                         time.time(),
                     )
                 if renderer is None or buffer is None:
+                    if quality_thread is not None:
+                        quality_thread.submit(frame)
                     return
                 zone_by_person = {}
                 for track in tracks:
@@ -212,6 +245,7 @@ def build_monitor_pipeline(
                 door=door.analytics,
                 embedder=reid.embedder,
                 on_event=on_event,
+                event_sink=event_sink,
                 expected_frame_size=(zones.width, zones.height) if zones else None,
                 on_frame=on_frame,
                 config=config,
@@ -229,9 +263,13 @@ def build_monitor_pipeline(
             if renderer is not None and renderer.failed.is_set():
                 raise renderer.error or RuntimeError("Fallo en el hilo de renderizado")
         finally:
+            if event_sink is not None:
+                event_sink.close()
             if renderer is not None:
                 renderer.close(timeout=2)
                 renderer_error = renderer.error
+            if quality_thread is not None:
+                quality_thread.close(timeout=2)
             if retention_worker is not None:
                 retention_worker.stop()
             persistence.finish_session(session_id, time.time())

@@ -6,6 +6,7 @@ from pathlib import Path
 class DetectionSettings:
     model_path: Path
     device: str | None
+    precision: str
     confidence: float
     classes: tuple[int, ...]
     tracking_enabled: bool

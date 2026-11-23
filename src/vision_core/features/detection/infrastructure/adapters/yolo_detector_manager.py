@@ -1,17 +1,18 @@
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import torch
 
+from vision_core.core.config.settings_precision import is_supported_precision
 from vision_core.core.domain.bbox import BBox
-from vision_core.core.errors import ModelError, ValidationError, codes
+from vision_core.core.errors import ConfigurationError, ModelError, ValidationError, codes
 from vision_core.core.inference.tensor_boxes import iter_prediction_boxes
+from vision_core.core.model_registry.model_descriptor import ModelDescriptor
 from vision_core.features.detection.domain.entities.detection import Detection
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.detection.infrastructure.adapters.motion_tracker import (
     MotionTracker,
 )
-from vision_core.model_registry.model_descriptor import ModelDescriptor
 
 if TYPE_CHECKING:
     from ultralytics.engine.results import Results
@@ -29,19 +30,32 @@ class YoloDetectorManager(DetectorManager):
         model_path: str = "yolov8n.pt",
         *,
         device: str | None = None,
+        precision: str = "fp32",
         confidence: float = CONFIDENCE_THRESHOLD,
         classes: tuple[int, ...] = (PERSON_CLASS_ID,),
         tracking_enabled: bool = True,
         max_missed_frames: int = 30,
         model_descriptor: ModelDescriptor | None = None,
     ) -> None:
+        if not is_supported_precision(precision):
+            raise ConfigurationError(
+                "La precisión de detección debe ser fp32, fp16 o int8.",
+                context={"variable": "VISION_CORE_DETECTION_PRECISION"},
+            )
+        resolved_device = device or "cpu"
+        if precision == "fp16" and not resolved_device.startswith("cuda"):
+            raise ConfigurationError(
+                "La precisión fp16 de detección requiere un dispositivo cuda.",
+                context={"variable": "VISION_CORE_DETECTION_DEVICE"},
+            )
         try:
             from ultralytics import YOLO
         except ImportError as error:
             raise ModelError("La librería de detección no está instalada.") from error
+        self._precision = precision
         self._model_path = model_path
         self._model_descriptor = model_descriptor
-        self._device = device or "cpu"
+        self._device = resolved_device
         try:
             self._model = YOLO(model_path)
         except Exception as error:
@@ -74,16 +88,18 @@ class YoloDetectorManager(DetectorManager):
                 code=codes.MODEL_INPUT_INVALID,
             )
         height, width = frame.shape[:2]
+        predict_kwargs: dict[str, Any] = {
+            "verbose": False,
+            "classes": list(self._classes),
+            "conf": self._confidence,
+            "device": self._device,
+        }
+        if self._precision == "fp16":
+            predict_kwargs["half"] = True
         with torch.inference_mode():
             results = cast(
                 "list[Results]",
-                self._model.predict(
-                    np.ascontiguousarray(frame),
-                    verbose=False,
-                    classes=list(self._classes),
-                    conf=self._confidence,
-                    device=self._device,
-                ),
+                self._model.predict(np.ascontiguousarray(frame), **predict_kwargs),
             )
         if not results or results[0].boxes is None:
             return []

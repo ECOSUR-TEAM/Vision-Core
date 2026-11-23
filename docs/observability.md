@@ -9,6 +9,8 @@
 | `/metrics` | Telemetria JSON equivalente a metricas | Contadores, gauges e histogramas |
 | `/api/v1/state` | Estado operativo del monitor | Estado, FPS, persistencia y eventos existentes |
 | `/api/v1/frame?after=N` | Frame JPEG para el visor | `200` JPEG nuevo · `204` sin imagen nueva · `400` `VALIDATION_FAILED` · `503` `VIDEO_FRAME_PENDING` |
+| `/api/v1/zones` | Editor de zonas (`GET`/`PUT`, opcional) | `200` · `403` `ZONE_EDITOR_FORBIDDEN` · `404` `REQUEST_NOT_FOUND` · `413` `VALIDATION_FAILED` · `422` |
+| `/api/v1/zones/validate` | Validación sin escritura (opcional) | `200` · `404` · `422` |
 
 Las rutas `/api/state` y `/api/frame` siguen disponibles como alias deprecados;
 los clientes nuevos deben usar `/api/v1/*`. Ver [contratos](api-contracts.md).
@@ -36,10 +38,13 @@ Cuando `VISION_CORE_LOG_JSON=1`, los logs son JSON con estos campos:
 - `model_id`, `model_version`, `model_hash`
 - `embedding_model_id`, `embedding_model_version`, `embedding_model_hash`
 - `message`
+- `zone_editor_audit` y `zone_editor_access_denied` (sin token, URL ni payload)
 
 `VISION_CORE_LOG_LEVEL` controla el nivel y `VISION_CORE_CAMERA_ID` identifica la camara.
 Los frames, imagenes, embeddings y rutas sensibles no se registran. Las URLs RTSP con
-credenciales se redactan antes de emitir texto.
+credenciales se redactan antes de emitir texto. Los sinks de eventos tampoco registran
+URLs ni valores de headers: solo `code`, `attempts` y `event_id` cuando aplica
+([sinks de eventos](event-sinks.md)).
 
 ## Catalogo de metricas
 
@@ -52,22 +57,39 @@ credenciales se redactan antes de emitir texto.
 | `vision_core_events_emitted_total` | counter | Eventos de puerta emitidos |
 | `vision_core_errors_total` | counter | Errores de pipeline (se cuentan una sola vez) |
 | `vision_core_reconnections_total` | counter | Reconexiones exitosas del stream |
+| `vision_core_camera_recovery_seconds` | gauge | Segundos de recuperación tras pérdida de cámara; lo publica el recolector externo; si falta, el SLO queda `sin_datos` |
 | `vision_core_fps` | gauge | FPS suavizado del monitor |
 | `vision_core_active_people` | gauge | Personas actualmente resueltas |
 | `vision_core_queue_size` | gauge | Frames pendientes en la cola de captura |
 | `vision_core_inference_latency_ms` | histogram | Duracion de inferencia de deteccion |
 | `vision_core_reid_latency_ms` | histogram | Duracion de embedding y ReID |
 | `vision_core_frame_processing_duration_ms` | histogram | Duracion completa por frame |
+| `vision_core_camera_quality_degraded` | gauge | `1` cuando la calidad de camara esta degradada |
+| `vision_core_camera_quality_degraded_total` | counter | Transiciones a `degraded` (cambio de motivo) |
+| `vision_core_camera_quality_<motivo>_total` | counter | Aparicion de cada motivo de calidad |
+| `vision_core_camera_quality_errors_total` | counter | Fallos del analisis de calidad |
+| `vision_core_event_sink_submitted_total` | counter | Eventos enviados al despachante (incluye duplicados) |
+| `vision_core_event_sink_delivered_total` | counter | Entregas confirmadas por el destino |
+| `vision_core_event_sink_retried_total` | counter | Reintentos efectuados |
+| `vision_core_event_sink_dropped_total` | counter | Eventos descartados por cola llena, cierre o `send()` posterior al cierre |
+| `vision_core_event_sink_duplicate_total` | counter | Claves de idempotencia suprimidas |
+| `vision_core_event_sink_dead_letter_total` | counter | Eventos agotados o rechazados de forma permanente |
+| `vision_core_event_sink_enqueue_failed_total` | counter | Fallos al encolar desde el pipeline |
+| `vision_core_event_sink_queue_depth` | gauge | Profundidad de la cola acotada del sink |
 
-Cada histograma conserva una ventana de las ultimas 1000 muestras para `min` y `max`,
-mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan
-`person_id`, rutas o URLs como labels. `vision_core_frames_discarded_total` suma el
-delta del acumulado de la captura, no el total en cada frame.
+Cada histograma conserva una ventana de las ultimas 1000 muestras para `min`, `max` y
+`p95`, mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan
+`person_id`, rutas o URLs como labels. Los SLOs consumen la clave base agregada;
+las claves con `{camera_id=<id>}` complementan ese total sin sumarse dos veces.
+`vision_core_frames_discarded_total` suma el delta del acumulado de la captura,
+no el total en cada frame.
 
 Cuando `VISION_CORE_CAMERA_ID` no es `default`, cada metrica se publica dos veces:
 con su nombre historico (agregado) y con el sufijo `{camera_id=<id>}`. Por ejemplo,
 `vision_core_frames_discarded_total{camera_id=camera-1}` complementa a
 `vision_core_frames_discarded_total` sin romper consumidores anteriores. Los
+motivos de calidad son codigos estables documentados en
+[calidad de camara](camera-quality.md); no cambian `status` ni `/ready`. Los
 caracteres no válidos en `camera_id` se normalizan a `_` en la clave de métrica;
 el valor original se conserva en `profiling_results.json` y en logs JSON.
 
@@ -98,6 +120,9 @@ telemetría de apoyo y usa `FrameProfiler` para el gate de presupuestos. El e2e
 con `ObservabilityMetrics` fresco comprueba `vision_core_events_emitted_total` y
 `vision_core_inference_latency_ms` a través de `/metrics`. Consulta
 [performance.md](performance.md) para las cifras y los hotspots.
+
+Los objetivos operativos se consumen desde estos mismos payloads; consulta
+[SLOs y tablero](slo.md) para el mapeo de métricas, errores, alertas y runbooks.
 
 ## Variables
 

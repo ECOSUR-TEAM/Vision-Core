@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
+from vision_core.core.contracts import ReIDMemory
+from vision_core.core.model_registry.model_descriptor import ModelDescriptor
 from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
-from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 from vision_core.features.reid.infrastructure.adapters.embedder import TorchvisionEmbeddingExtractor
 from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
-from vision_core.model_registry.model_descriptor import ModelDescriptor
 
 
 @dataclass(frozen=True)

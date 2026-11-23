@@ -3,19 +3,15 @@
 from vision_core.core.domain.event import Event
 from vision_core.core.dto.event_payload import EventPayload
 from vision_core.core.dto.observation_payload import ObservationPayload
-from vision_core.core.validation import finite_float, json_metadata, required_str
+from vision_core.core.serialization.events import event_to_payload as core_event_to_payload
+from vision_core.core.validation import finite_float, required_str
 from vision_core.features.door.domain.entities.zone_observation import ZoneObservation
 
 
 def event_to_dto(event: Event | None) -> EventPayload | None:
     if event is None:
         return None
-    return EventPayload(
-        event=required_str(event.event, "event"),
-        person_id=required_str(event.person_id, "person_id"),
-        timestamp=finite_float(event.timestamp, "timestamp"),
-        metadata=json_metadata(event.metadata),
-    )
+    return core_event_to_payload(event)
 
 
 def observation_to_dto(observation: ZoneObservation) -> ObservationPayload:

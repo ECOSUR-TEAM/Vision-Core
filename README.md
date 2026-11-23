@@ -228,6 +228,8 @@ temporales; no identifican nombres ni rostros. Mientras no calibremos la sala,
 `VISION_CORE_MONITOR_UNCALIBRATED=1` evita inventar cruces de puerta.
 
 [Detalles del monitor](docs/monitor.md). La interfaz de Frigate sigue en 15000.
+Para recalibrar polígonos desde el navegador, activa explícitamente el
+[editor de zonas](docs/zone-editor.md) con token y archivo de auditoría.
 
 ## Validación manual con Python
 
@@ -389,9 +391,9 @@ actualización de dependencias y regeneración del lockfile están en
 
 | Componente | Responsabilidad |
 |---|---|
-| `src/vision_core/features/` | Features de detección, puerta, monitor, pipeline, ReID y video |
+| `src/vision_core/features/` | Features de cámara (health), detección, eventos, puerta, monitor, pipeline, ReID y video |
 | `src/vision_core/features/pipeline/` | `RunPipeline`, DTOs, mappers y fábrica del pipeline |
-| `src/vision_core/core/` | Kernel compartido: configuración, contratos, dominio, DTOs, errores, inferencia, persistencia, serialización, telemetría y validación |
+| `src/vision_core/core/` | Kernel compartido: configuración, contratos, dominio, DTOs, errores, inferencia, persistencia, registro de modelos, serialización, telemetría y validación |
 | `src/vision_core/scripts/` | Demostración, diagnóstico, ejecución medida y evaluación |
 | `main.py` | Composition root único y entrypoint raíz de Docker y ejecución local |
 
@@ -435,7 +437,7 @@ python -m pytest tests/test_one_class_per_file.py -q
 
 ## Seguridad de UI y output encoding
 
-El monitor servido por `src/vision_core/features/monitor/infrastructure/http/index.html` trata
+El monitor servido por `src/vision_core/features/monitor/infrastructure/http/static/index.html` trata
 **todo** dato que llega de `/api/v1/state` como texto no confiable, incluyendo
 `person_id`, `display_name`, zonas y `metadata`.
 
@@ -486,7 +488,7 @@ de PR publica cobertura y el nightly publica logs. Consulta:
 
 - [Índice de documentación](docs/README.md), [onboarding](docs/onboarding.md) y [glosario](docs/glossary.md).
 - [Niveles de prueba, cobertura y comandos](docs/testing.md).
-- [Presupuestos de rendimiento, benchmark y hotspots](docs/performance.md).
+- [Presupuestos de rendimiento, benchmark y hotspots](docs/performance.md) y [matriz edge / INT8](docs/benchmark-edge.md).
 - [Calibración, stream, eventos y pruebas](docs/validation.md).
 - [Diagramas C4 y flujo](docs/diagrams.md) y [runbooks](docs/runbooks/README.md).
 - [Type checking con mypy](docs/type-checking.md).

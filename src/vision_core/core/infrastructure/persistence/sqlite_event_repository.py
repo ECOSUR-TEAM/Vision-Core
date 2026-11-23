@@ -7,7 +7,7 @@ from vision_core.core.infrastructure.persistence.connection import Database
 from vision_core.core.infrastructure.persistence.event_identity import event_id_for
 from vision_core.core.infrastructure.persistence.utc import utc_text
 from vision_core.core.serialization import to_json_value
-from vision_core.core.serialization.event_serializer import event_to_payload
+from vision_core.core.serialization.events import event_to_payload
 
 
 class SqliteEventRepository(EventRepository):

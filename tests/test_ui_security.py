@@ -17,7 +17,7 @@ from vision_core.features.monitor.infrastructure.state import MonitorState
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_ROOTS = (PROJECT_ROOT / "src" / "vision_core" / "features" / "monitor" / "infrastructure" / "http",)
-INDEX = FRONTEND_ROOTS[0] / "index.html"
+INDEX = FRONTEND_ROOTS[0] / "static" / "index.html"
 
 FORBIDDEN_SINKS = (
     "innerHTML",
@@ -101,6 +101,18 @@ globalThis.__RESULT__ = JSON.stringify({ texts, tags, videoSrc: document.getElem
 console.log(globalThis.__RESULT__);
 """
 
+QUALITY_DRIVER = r"""
+state = globalThis.__STATE__;
+lastImageAt = performance.now();
+render();
+globalThis.__RESULT__ = JSON.stringify({
+  hidden: document.getElementById('qualityNotice').hidden,
+  text: document.getElementById('qualityNotice').textContent,
+  statusText: document.getElementById('statusText').textContent,
+});
+console.log(globalThis.__RESULT__);
+"""
+
 IMAGE_SOURCE_DRIVER = r"""
 const video = document.getElementById('video');
 const results = [];
@@ -114,6 +126,43 @@ for (const url of globalThis.__URLS__) {
   }
 }
 console.log(JSON.stringify(results));
+"""
+
+ZONE_VALIDATION_DRIVER = r"""
+const valid = {
+  version: '1.0', frame_size: [640, 480],
+  exterior: [[0, 0], [320, 0], [320, 479], [0, 479]],
+  interior: [[320, 0], [639, 0], [639, 479], [320, 479]],
+  door: [[290, 120], [350, 120], [350, 420], [290, 420]]
+};
+const short = JSON.parse(JSON.stringify(valid));
+short.door = [[1, 1], [2, 2]];
+const selfCrossing = JSON.parse(JSON.stringify(valid));
+selfCrossing.door = [[300, 100], [500, 400], [350, 120], [350, 420]];
+const oversized = JSON.parse(JSON.stringify(valid));
+oversized.exterior = 'x'.repeat(101 * 1024);
+globalThis.__RESULT__ = JSON.stringify({
+  valid: validateZoneDraft(valid),
+  short: validateZoneDraft(short),
+  crossing: validateZoneDraft(selfCrossing),
+  oversized: validateZoneDraft(oversized),
+});
+console.log(globalThis.__RESULT__);
+"""
+
+ZONE_XSS_DRIVER = r"""
+const payload = '<script>alert(1)</script>';
+const node = zoneLabelNode(payload);
+showZoneIssue(payload);
+const issue = document.getElementById('zoneValidation');
+globalThis.__RESULT__ = JSON.stringify({
+  tag: node.tagName,
+  text: node.textContent,
+  children: node.children.length,
+  issue: issue.textContent,
+  issueChildren: issue.children.length,
+});
+console.log(globalThis.__RESULT__);
 """
 
 
@@ -172,6 +221,18 @@ def _render_with_node(state):
 def _image_source_results(urls):
     driver = f"globalThis.__URLS__ = {json.dumps(urls)};\n" + IMAGE_SOURCE_DRIVER
     return json.loads(_run_monitor_js(None, driver))
+
+
+def _render_quality(state):
+    return json.loads(_run_monitor_js(state, QUALITY_DRIVER))
+
+
+def _zone_validation_results():
+    return json.loads(_run_monitor_js(None, ZONE_VALIDATION_DRIVER))
+
+
+def _zone_xss_result():
+    return json.loads(_run_monitor_js(None, ZONE_XSS_DRIVER))
 
 
 @pytest.fixture
@@ -244,6 +305,39 @@ def test_image_source_guard_allows_only_monitor_blobs(url, accepted):
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")
+def test_quality_warning_is_visible_without_blocking_live_view():
+    result = _render_quality(
+        {
+            "status": "running",
+            "demo_zones": False,
+            "people": [],
+            "events": [],
+            "camera_quality": {"status": "degraded", "reason": "BLURRY_FRAME", "signals": {"BLURRY_FRAME": True}},
+        }
+    )
+
+    assert result["hidden"] is False
+    assert "borrosa" in result["text"]
+    assert result["statusText"] == "En vivo"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")
+def test_quality_warning_is_hidden_when_camera_is_ok():
+    result = _render_quality(
+        {
+            "status": "running",
+            "demo_zones": False,
+            "people": [],
+            "events": [],
+            "camera_quality": {"status": "ok", "reason": None, "signals": {}},
+        }
+    )
+
+    assert result["hidden"] is True
+    assert result["text"] == ""
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")
 def test_unknown_zone_with_prototype_key_falls_back_to_camera_label():
     result = _render_with_node(
         {
@@ -256,3 +350,24 @@ def test_unknown_zone_with_prototype_key_falls_back_to_camera_label():
 
     assert "En cámara" in result["texts"]
     assert not any("function" in text for text in result["texts"])
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")
+def test_zone_editor_validates_geometry_and_size_before_saving():
+    result = _zone_validation_results()
+
+    assert result["valid"] is None
+    assert "al menos 3 vértices" in result["short"]
+    assert "cruza consigo mismo" in result["crossing"]
+    assert "tamaño máximo" in result["oversized"]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")
+def test_zone_editor_renders_dynamic_labels_as_text():
+    result = _zone_xss_result()
+
+    assert result["tag"] == "OPTION"
+    assert result["text"] == "<script>alert(1)</script>"
+    assert result["children"] == 0
+    assert result["issue"] == "<script>alert(1)</script>"
+    assert result["issueChildren"] == 0

@@ -5,24 +5,29 @@ from collections.abc import Callable
 from typing import Any
 
 from vision_core.core.config.pipeline_config import PipelineConfig
+from vision_core.core.contracts import ReIDMemory
 from vision_core.core.errors import PipelineError, ValidationError, codes
-from vision_core.core.inference.frame_profiler import FrameProfiler
+from vision_core.core.serialization.events import event_to_dto
+from vision_core.core.telemetry import FrameProfiler
 from vision_core.core.validation import validate_frame
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
+from vision_core.features.events.domain.event_envelope_factory import envelope_for
+from vision_core.features.events.domain.ports.event_sink import EventSink
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.dto.request.request_run_pipeline import RequestRunPipeline
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
 from vision_core.features.pipeline.application.dto.response.response_process_frame import ResponseProcessFrame
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_dto, resolved_track_to_dto
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import resolved_track_to_dto
 from vision_core.features.pipeline.domain.attendance import SessionAttendance
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 from vision_core.features.pipeline.domain.ports.event_consumer import EventConsumer
 from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
-from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 from vision_core.features.video.domain.ports.video_source import VideoSource
 
 logger = logging.getLogger(__name__)
+
+_ENQUEUE_FAILED = "vision_core_event_sink_enqueue_failed_total"
 
 
 class RunPipeline:
@@ -34,6 +39,7 @@ class RunPipeline:
         door: DoorAnalytics,
         embedder: EmbeddingExtractor,
         on_event: EventConsumer,
+        event_sink: EventSink | None = None,
         expected_frame_size: tuple[int, int] | None = None,
         on_frame: Callable[[Any, tuple[ResolvedTrack, ...], float], None] | None = None,
         config: PipelineConfig | None = None,
@@ -47,6 +53,7 @@ class RunPipeline:
         self._door = door
         self._embed = embedder
         self._on_event = on_event
+        self._event_sink = event_sink
         self._attendance = SessionAttendance()
         self._person_by_track: dict[int, str] = {}
         self._last_embedding_by_track: dict[int, Any] = {}
@@ -95,6 +102,16 @@ class RunPipeline:
                     raise
             finally:
                 self._save_profile()
+
+    def _emit_event(self, event) -> None:
+        if self._event_sink is None:
+            return
+        try:
+            self._event_sink.send(envelope_for(event))
+        except Exception:  # noqa: BLE001 - la entrega nunca debe detener el pipeline
+            if self._metrics is not None:
+                self._metrics.increment(_ENQUEUE_FAILED, camera_id=self._metrics_camera_id)
+            logger.warning("No se pudo encolar el evento para el sink (%s)", type(event).__name__)
 
     def _save_profile(self) -> None:
         if not self.profiler.enabled or not self._profiling_output:
@@ -175,8 +192,18 @@ class RunPipeline:
                 event = self._door.update(person_id, det.bbox.center)
             if event is not None:
                 event.metadata.update(self._attendance.apply(event))
-                events.append(event_to_dto(event))
+                payload = event_to_dto(event)
+                events.append(
+                    ResponsePipelineEvent(
+                        event=payload.event,
+                        person_id=payload.person_id,
+                        timestamp=payload.timestamp,
+                        metadata=payload.metadata,
+                        schema_version=payload.schema_version,
+                    )
+                )
                 self._on_event(event)
+                self._emit_event(event)
         if self._metrics is not None:
             self._metrics.increment("vision_core_tracks_created_total", new_tracks, camera_id=self._metrics_camera_id)
             self._metrics.set_gauge(

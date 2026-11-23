@@ -23,6 +23,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Índice de ADR](adr/README.md) | Todas las decisiones de arquitectura, su estado y sus enmiendas |
 | [ADR 0007: registro de modelos](adr/0007-registro-de-modelos-y-model-cards.md) | Identidad, checksum y trazabilidad de modelos |
 | [ADR 0008: capa core](adr/0008-core-layer-and-dependency-rules.md) | Contrato de dependencias entre `features/`, `core/` y `scripts/` |
+| [ADR 0010: sinks de eventos](adr/0010-sinks-de-eventos-y-entrega-idempotente.md) | Entrega idempotente, reintentos y backpressure hacia destinos externos |
 | [Plantilla de ADR](adr/_template.md) | Cómo registrar una decisión nueva |
 
 ## Operación
@@ -34,6 +35,8 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Requisitos y problemas conocidos](operations.md) | Límites funcionales y diagnóstico |
 | [Configuración tipada](configuration.md) | Variables, defaults y validación |
 | [Observabilidad](observability.md) | `/health`, `/ready`, `/metrics`, logs y métricas |
+| [SLOs y tablero](slo.md) | Objetivos, alertas, simulacros y evidencia de confiabilidad |
+| [Calidad de cámara](camera-quality.md) | Señales de calidad, deriva, umbrales y acciones |
 | [Persistencia y retención](persistence.md) | SQLite, TTLs, backup y degradación |
 | [Monitor](monitor.md) | Interfaz web, API y render |
 | [Exposición del monitor y binding](monitor-exposure.md) | Binding seguro, advertencias y verificación de puertos |
@@ -41,6 +44,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Frigate](frigate.md) | Integración local con webcam y go2rtc |
 | [Catálogo de errores](errors.md) | Códigos estables y jerarquía |
 | [Contratos versionados](api-contracts.md) | API `v1` y esquema de eventos |
+| [Sinks de eventos](event-sinks.md) | Webhook, idempotencia, reintentos, backpressure y MQTT futuro |
 | [Releases](releases.md) | Versionado, tags, publicación y rollback |
 | [Registro de modelos](model-registry.md) | Alta, adopción y rollback de modelos |
 | [Seguridad y supply chain](security.md) | Escaneos, dependencias y permisos |
@@ -58,6 +62,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Property testing](property-testing.md) | Geometría de zonas, invariantes y fuzz determinista |
 | [Replay determinista](replay.md) | Golden videos, fixtures y comparación de eventos |
 | [Presupuestos de rendimiento](performance.md) | Baselines, hotspots, smoke y benchmark nocturno |
+| [Matriz edge / INT8](benchmark-edge.md) | Perfiles FP32/INT8/FP16, calidad antes que FPS y promoción |
 | [Plan G0](g0-baseline-plan.md) | Instrumentación del pipeline de una cámara |
 | [Model cards](model-cards/TEMPLATE.md) | Plantilla y fichas de procedencia, licencia y límites |
 | [Evaluación de la sala](../reports/room-evaluation.md) | Resultados y pendientes reales |
@@ -86,6 +91,16 @@ hecha hasta que esa persona la confirme.
 | ECM-99: registro de modelos y model cards | @MelissaZarate08 | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-105: ADR 0008 y contrato de capas | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-106: migración de `shared/` a `core/` | @bchanona | @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-107: migración de settings y application a core config y core telemetry | @MelissaZarate08 | @Carlosss2, @FabricioPRZ, @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-108: consolidación de domain en core domain y core contracts | @MelissaZarate08 | @Carlosss2, @FabricioPRZ, @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-111: eliminación de los paquetes legacy y documentación viva | @bchanona | @Carlosss2 | [x] Revisado por otra persona |
 | ECM-87: licencias, privacidad y retención de video | @bchanona | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
 | ECM-95: binding seguro y exposición del monitor | @bchanona | @Ameth-Toledo, @Carlosss2 | [x] Revisado por otra persona |
+| ECM-101: matriz edge INT8/FP16 con presupuestos | @MelissaZarate08 | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
+| ECM-102: sinks de eventos webhook/MQTT con idempotencia y backpressure | @bchanona | @Carlosss2, @FabricioPRZ, @MelissaZarate08 | [x] Revisado por otra persona |
+| ECM-100: calidad de cámara y deriva de calibración | @MelissaZarate08 | @Ameth-Toledo, @bchanona, @Carlosss2, @FabricioPRZ | Pendiente de revisión |
+| ECM-109: persistencia en core y serialización de eventos | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08, @FabricioPRZ | [x] Revisado por otra persona |
+| ECM-103: editor de zonas en el monitor | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08 | [x] Revisado por otra persona |
+| ECM-110: infraestructura feature-specific y fin del paquete horizontal | @bchanona | @Carlosss2, @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-112: limpieza final y guardrails del Sprint 10 | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08, @FabricioPRZ | [x] Revisado por otra persona |
+| ECM-104: SLOs, simulacros y tablero | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08 | [x] Revisado por otra persona |

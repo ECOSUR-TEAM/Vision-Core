@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "kind": "slo-dashboard",
+  "generated_at": "2026-11-23T19:53:53Z",
+  "source": "smoke",
+  "window": "snapshot",
+  "slos": [
+    {
+      "id": "monitor_availability",
+      "title": "Disponibilidad instantánea del monitor",
+      "objective": 0.99,
+      "comparison": "gte",
+      "unit": "ratio",
+      "current": 1.0,
+      "status": "ok",
+      "trend": "estable",
+      "signals": [
+        "/ready.ready",
+        "vision_core_errors_total"
+      ],
+      "error_codes": [
+        "VIDEO_SOURCE_UNAVAILABLE",
+        "CONFIGURATION_INVALID",
+        "INTERNAL_ERROR"
+      ],
+      "alert": {
+        "id": "alert_monitor_availability",
+        "severity": "critical",
+        "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md"
+      }
+    },
+    {
+      "id": "frame_freshness",
+      "title": "Frescura del frame",
+      "objective": 2.0,
+      "comparison": "lte",
+      "unit": "seconds",
+      "current": 0.8,
+      "status": "ok",
+      "trend": "estable",
+      "signals": [
+        "/api/v1/state.age_seconds",
+        "vision_core_fps",
+        "vision_core_frames_discarded_total"
+      ],
+      "error_codes": [
+        "VIDEO_FRAME_PENDING",
+        "VIDEO_FRAME_INVALID"
+      ],
+      "alert": {
+        "id": "alert_frame_freshness",
+        "severity": "warning",
+        "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md"
+      }
+    },
+    {
+      "id": "processing_p95",
+      "title": "Latencia p95 de procesamiento",
+      "objective": 60.0,
+      "comparison": "lte",
+      "unit": "ms",
+      "current": 60.0,
+      "status": "ok",
+      "trend": "estable",
+      "signals": [
+        "/metrics.histograms.vision_core_frame_processing_duration_ms.p95",
+        "benchmarks/budgets.json"
+      ],
+      "error_codes": [
+        "PIPELINE_FAILED"
+      ],
+      "alert": {
+        "id": "alert_processing_p95",
+        "severity": "warning",
+        "runbook": "docs/runbooks/05-fps-bajo-o-latencia-alta.md"
+      }
+    },
+    {
+      "id": "event_delivery",
+      "title": "Entrega observada de eventos (proxy desde arranque)",
+      "objective": 0.99,
+      "comparison": "gte",
+      "unit": "ratio",
+      "current": 0.9916666666666667,
+      "status": "ok",
+      "trend": "estable",
+      "signals": [
+        "vision_core_events_emitted_total (base, desde arranque)",
+        "/api/v1/state.persistence.failures (desde arranque)"
+      ],
+      "error_codes": [
+        "PIPELINE_FAILED",
+        "VALIDATION_FAILED"
+      ],
+      "alert": {
+        "id": "alert_event_delivery",
+        "severity": "warning",
+        "runbook": "docs/runbooks/06-no-se-generan-eventos.md"
+      }
+    },
+    {
+      "id": "camera_recovery",
+      "title": "Recuperación tras fallo de cámara",
+      "objective": 30.0,
+      "comparison": "lte",
+      "unit": "seconds",
+      "current": null,
+      "status": "sin_datos",
+      "trend": "sin_datos_previos",
+      "signals": [
+        "vision_core_camera_recovery_seconds",
+        "vision_core_reconnections_total"
+      ],
+      "error_codes": [
+        "VIDEO_SOURCE_UNAVAILABLE",
+        "VIDEO_FRAME_PENDING"
+      ],
+      "alert": {
+        "id": "alert_camera_recovery",
+        "severity": "critical",
+        "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md"
+      }
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "ok": 4,
+    "breach": 0,
+    "no_data": 1
+  }
+}

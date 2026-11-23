@@ -59,9 +59,28 @@ de modo que los clientes existentes siguen capturando el tipo previo.
 | `REID_INPUT_INVALID` | no | 400 | Recorte BGR inválido o embedding no normalizable. |
 | `PIPELINE_CALIBRATION_MISMATCH` | no | 409 | La resolución del stream no coincide con la calibración de zonas. |
 | `PIPELINE_FAILED` | no | 500 | Fallo de orquestación del pipeline distinto a los anteriores. |
-| `VALIDATION_FAILED` | no | 400 | Parámetro `after` inválido o caja del detector no finita, sin área o fuera del frame. |
-| `REQUEST_NOT_FOUND` | no | 404 | Ruta HTTP desconocida. |
+| `ZONE_EDITOR_FORBIDDEN` | no | 403 | Token del editor de zonas ausente o incorrecto al intentar guardar. |
+| `VALIDATION_FAILED` | no | 400 | Parámetro `after` inválido, cuerpo HTTP rechazado o caja del detector no finita, sin área o fuera del frame. |
+| `REQUEST_NOT_FOUND` | no | 404 | Ruta HTTP desconocida o editor de zonas desactivado. |
 | `INTERNAL_ERROR` | no | 500 | Excepción inesperada en un límite; se sustituye por un mensaje genérico. |
+
+Los sinks de eventos reutilizan esta taxonomía sin códigos nuevos: un 5xx, 408,
+429, timeout, DNS o fallo de red del webhook es `PipelineError` con
+`code=PIPELINE_FAILED` y `retryable=True`; otros 4xx y las redirecciones son
+`ValidationError` con `code=VALIDATION_FAILED` y `retryable=False`. El array `retryable` de la tabla
+es el valor por defecto de la clase; una instancia puede refinarlo. El adaptador
+MQTT no adopta códigos propios: con el flag activo falla con
+`CONFIGURATION_INVALID`. Ver [sinks de eventos](event-sinks.md).
+
+### Motivos de calidad (no errores HTTP)
+
+La detección de calidad de cámara no produce excepciones ni envelopes de error.
+Publica motivos estables en `camera_quality.reason`, `/metrics` y logs; `status`
+sigue siendo `running` y `/ready` devuelve `200`. Los motivos son
+`RESOLUTION_MISMATCH`, `ZONES_STALE`, `FROZEN_FRAME`, `BLURRY_FRAME` y
+`EXPOSURE_OUT_OF_RANGE`. Su interpretación está en
+[calidad de cámara](camera-quality.md). No se reutilizan los códigos Http de esta
+tabla, en particular `PIPELINE_CALIBRATION_MISMATCH` (error duro de resolución).
 
 Los códigos se mantienen aunque cambie la implementación interna. Para retirar
 uno: documentar la sustitución, conservarlo al menos una versión menor y

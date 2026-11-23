@@ -9,9 +9,9 @@ from collections.abc import Sequence
 import numpy as np
 
 from vision_core.core.config import Settings
+from vision_core.core.contracts import ReIDMemory
 from vision_core.core.domain.bbox import BBox
 from vision_core.core.errors import ConfigurationError, ReIDError, codes
-from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 
 TTL_SECONDS = 60
 SIMILARITY_THRESHOLD = 0.85

@@ -67,7 +67,7 @@ módulo crítico baja de su umbral:
 | `core_serialization` | `/core/serialization/` | 80% |
 | `core_persistence` | `/core/infrastructure/persistence/` | 80% |
 | `observability` | `/core/telemetry/` | 85% |
-| `profiling` | `/core/inference/frame_profiler.py` | 90% |
+| `profiling` | `/core/telemetry/frame_profiler.py` | 90% |
 | `global` | `vision_core` sin scripts | 80% |
 
 `python -m vision_core.scripts.check_coverage coverage.json` imprime el valor de

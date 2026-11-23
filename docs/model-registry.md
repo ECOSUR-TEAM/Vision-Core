@@ -20,7 +20,7 @@ Cada entrada usa estos campos:
 | `license` / `license_url` / `license_notes` | Licencia declarada y salvedades. |
 | `registered_at` | Fecha ISO 8601 de alta en el registro; no fecha de entrenamiento. |
 | `checksum.algorithm` / `checksum.value` | Algoritmo y hash/checksum SHA-256; `null` significa no verificado. |
-| `expected_config` | Configuración esperada que debe coincidir con el entorno. |
+| `expected_config` | Configuración esperada que debe coincidir con el entorno; `precision` es opcional y por defecto `fp32`. |
 | `model_card` | Ruta a la ficha del modelo. |
 | `status` | `active`, `deprecated` o `experimental`; solo `active` se resuelve en arranques normales. |
 
@@ -36,7 +36,9 @@ el registro declara checksum y el archivo local se verificó. En cualquier otro 
 2. `VISION_CORE_DETECTION_MODEL_ID` y `VISION_CORE_EMBEDDING_MODEL_ID` existen, están
    activos y corresponden a la tarea solicitada.
 3. El `selector` coincide con `VISION_CORE_MODEL_PATH` y `VISION_CORE_EMBEDDING_MODEL`.
-4. La configuración esperada coincide con confianza, clases y perfil de pesos.
+4. La configuración esperada coincide con confianza, clases, perfil de pesos y precisión.
+   Las variantes INT8 y FP16 son entradas distintas: cambio de `id`, `selector` y
+   `expected_config.precision`; la familia (`name`) se conserva para rollback.
 5. Si el registro declara checksum, el SHA-256 calculado coincide. Si el archivo local
    falta o no coincide, el arranque falla; sin checksum declarado, el hash queda
    `unverified`.
@@ -75,12 +77,12 @@ torchvision no tienen ruta local verificable y declaran `null`.
 
 ```bash
 python -m pytest tests/test_model_registry.py -q
-python -c "from vision_core.core.config import Settings; from vision_core.model_registry.activation import resolve_active_models; print(resolve_active_models(Settings.from_env({'VISION_CORE_RTSP_URL':'rtsp://localhost:8554/x'}, validate_startup=False)).as_log_identity())"
+python -c "from vision_core.core.config import Settings; from vision_core.core.model_registry.activation import resolve_active_models; print(resolve_active_models(Settings.from_env({'VISION_CORE_RTSP_URL':'rtsp://localhost:8554/x'}, validate_startup=False)).as_log_identity())"
 curl http://127.0.0.1:8080/ready
 ```
 
-`vision_core.model_registry` sigue siendo el path transitorio permitido por ADR 0007;
-su migración a `core/model_registry/` está diferida al ticket 67 (ADR 0008).
+El registro de modelos vive en `core/model_registry/` según ADR 0007; el antiguo
+path de primer nivel fue eliminado en ECM-112 (ADR 0008).
 
 Para simular una alerta de checksum, cambia temporalmente `checksum.value` en una copia
 del registro y apunta `VISION_CORE_MODEL_REGISTRY_FILE` a esa copia con un archivo local

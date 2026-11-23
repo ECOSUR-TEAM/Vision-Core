@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Vision Core · Cámara en vivo</title>
+    <style nonce="__CSP_NONCE__">
+        :root {
+            color-scheme: light;
+            --bg: #f5f6f2;
+            --panel: #fff;
+            --line: #dce3dc;
+            --text: #20352b;
+            --muted: #5a6c60;
+            --accent: #286444;
+            --soft: #edf5ee;
+            --warn: #805b20
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", sans-serif;
+            font-size: 16px;
+            line-height: 1.45;
+            font-kerning: normal
+        }
+
+        main {
+            max-width: 1500px;
+            margin: auto;
+            padding: 28px clamp(16px, 3vw, 48px)
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            padding-bottom: 24px
+        }
+
+        .brand {
+            font-size: 14px;
+            color: var(--muted);
+            margin: 0 0 4px
+        }
+
+        h1 {
+            font-size: clamp(24px, 3vw, 30px);
+            font-weight: 600;
+            margin: 0
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0
+        }
+
+        p {
+            max-width: 65ch;
+            margin: 8px 0;
+            color: var(--muted)
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--line);
+            border-radius: 30px;
+            padding: 8px 14px;
+            color: var(--warn);
+            font-size: 14px;
+            white-space: nowrap;
+            background: var(--panel)
+        }
+
+        .status.live {
+            color: var(--accent);
+            background: var(--soft)
+        }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 270px;
+            gap: 24px;
+            align-items: start
+        }
+
+        .video-card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden
+        }
+
+        .viewer {
+            width: 100%;
+            background: #17201b;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 4/3;
+            max-height: 73vh
+        }
+
+        #video {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain
+        }
+
+        .offline #video {
+            opacity: .2
+        }
+
+        .overlay {
+            position: absolute;
+            inset: auto 20px 20px;
+            padding: 16px;
+            background: #ffffffed;
+            border-radius: 8px;
+            color: var(--text);
+            max-width: 60ch
+        }
+
+        .overlay[hidden] {
+            display: none
+        }
+
+        .caption {
+            padding: 14px 18px;
+            font-size: 14px;
+            color: var(--muted);
+            margin: 0
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 22px
+        }
+
+        .count {
+            font-size: 48px;
+            font-weight: 500;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+            display: block;
+            margin: 20px 0 4px
+        }
+
+        .hint {
+            font-size: 14px
+        }
+
+        .people {
+            list-style: none;
+            margin: 20px 0 0;
+            padding: 0
+        }
+
+        .person {
+            border-top: 1px solid var(--line);
+            padding: 14px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px
+        }
+
+        .person strong {
+            font-size: 16px;
+            font-weight: 600
+        }
+
+        .person span {
+            font-size: 14px;
+            color: var(--muted)
+        }
+
+        .empty {
+            margin-top: 18px;
+            font-size: 14px;
+            color: var(--muted)
+        }
+
+        .note {
+            font-size: 14px;
+            margin: 18px 4px 0;
+            max-width: 65ch
+        }
+
+        .note strong {
+            font-weight: 600;
+            color: var(--text)
+        }
+
+        .privacy {
+            font-size: 13px;
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px solid var(--line)
+        }
+
+        .events-panel {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid var(--line)
+        }
+
+        .events {
+            list-style: none;
+            margin: 12px 0 0;
+            padding: 0
+        }
+
+        .event {
+            border-top: 1px solid var(--line);
+            padding: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 13px;
+            overflow-wrap: anywhere
+        }
+
+        .event .id {
+            font-weight: 600
+        }
+
+        .event .meta {
+            color: var(--muted)
+        }
+
+        .zone-editor {
+            margin-top: 20px;
+            padding: 18px
+        }
+
+        .zone-toolbar,
+        .zone-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 12px
+        }
+
+        .zone-editor select,
+        .zone-editor input,
+        .zone-editor button {
+            font: inherit;
+            padding: 6px 10px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: var(--panel);
+            color: var(--text)
+        }
+
+        .zone-editor button {
+            cursor: pointer;
+            border-color: var(--accent);
+            color: var(--accent)
+        }
+
+        #zoneCanvas {
+            display: block;
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            margin-top: 12px;
+            background: #17201b;
+            border-radius: 8px;
+            cursor: crosshair
+        }
+
+        .zone-validation {
+            font-size: 14px;
+            color: #a32626
+        }
+
+        @media(max-width:850px) {
+            .workspace {
+                grid-template-columns: minmax(0, 1fr) 230px;
+                gap: 16px
+            }
+
+            .panel {
+                padding: 18px
+            }
+        }
+
+        @media(max-width:650px) {
+            main {
+                padding-top: 20px
+            }
+
+            .workspace {
+                grid-template-columns: 1fr
+            }
+
+            .viewer {
+                max-height: none
+            }
+
+            .panel {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 0 16px
+            }
+
+            .count {
+                grid-column: 2;
+                grid-row: 1/3;
+                font-size: 38px;
+                margin: 0
+            }
+
+            .people,
+            .empty,
+            .privacy,
+            .events-panel {
+                grid-column: 1/-1
+            }
+
+            .people {
+                margin-top: 12px
+            }
+
+            .privacy {
+                margin-top: 12px
+            }
+
+            .status {
+                padding: 7px 10px;
+                font-size: 13px
+            }
+
+            header {
+                gap: 12px;
+                align-items: flex-start
+            }
+
+            .overlay {
+                inset: auto 12px 12px;
+                font-size: 14px;
+                padding: 12px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <header>
+            <div>
+                <p class="brand">Vision Core</p>
+                <h1>Cámara en vivo</h1>
+            </div>
+            <div id="status" class="status" role="status"><span class="dot"></span><span id="statusText">Preparando
+                    cámara…</span></div>
+        </header>
+        <div class="workspace">
+            <section aria-label="Video de la cámara">
+                <div class="video-card">
+                    <div class="viewer offline" id="viewer"><img id="video"
+                            alt="Cámara en vivo. Los recuadros señalan a las personas detectadas.">
+                        <div id="overlay" class="overlay">Estamos preparando la cámara y la detección de personas.</div>
+                    </div>
+                    <p class="caption">Cada recuadro señala a una persona que aparece en la imagen.</p>
+                </div>
+                <p id="notice" class="note" hidden><strong>Calibración pendiente.</strong> Más adelante marcaremos la
+                    entrada, el interior y la puerta.</p>
+                <p id="qualityNotice" class="note" role="status" hidden></p>
+                <section id="zoneEditor" class="panel zone-editor" aria-label="Editor de zonas" hidden>
+                    <h2>Editor de zonas</h2>
+                    <p class="hint">Dibuja o arrastra vértices sobre el frame. Los cambios son una vista previa hasta que
+                        guardes.</p>
+                    <div class="zone-toolbar">
+                        <label for="zoneSelect">Zona</label>
+                        <select id="zoneSelect"></select>
+                        <button type="button" id="zoneAddToggle">Añadir vértice</button>
+                    </div>
+                    <canvas id="zoneCanvas" width="640" height="480" aria-label="Vista previa de zonas"></canvas>
+                    <p id="zoneValidation" class="zone-validation" role="alert" hidden></p>
+                    <div class="zone-actions">
+                        <label for="zoneToken">Token de edición</label>
+                        <input id="zoneToken" type="password" autocomplete="off">
+                        <label for="zoneUser">Usuario para auditoría</label>
+                        <input id="zoneUser" type="text" autocomplete="off" value="operador">
+                        <button type="button" id="zoneSave">Guardar zonas</button>
+                        <button type="button" id="zoneDiscard">Descartar cambios</button>
+                    </div>
+                </section>
+            </section>
+            <aside class="panel">
+                <h2>Personas visibles</h2><span class="count" id="visible">—</span>
+                <p class="hint">Detectadas en este momento</p>
+                <ul id="people" class="people"></ul>
+                <p id="emptyPeople" class="empty">Esperando la imagen…</p>
+                <p class="privacy">El número ayuda a seguir a cada persona mientras aparece en cámara. No identifica su
+                    nombre.</p>
+                <section class="events-panel" aria-label="Eventos recientes">
+                    <h2>Eventos recientes</h2>
+                    <ul id="events" class="events"></ul>
+                </section>
+            </aside>
+        </div>
+    </main>
+    <script nonce="__CSP_NONCE__">
+        const el = id => document.getElementById(id);
+        let lastFrame = 0, lastImageAt = 0, state = null, imageUrl = null, videoFailed = false;
+        const labels = { starting: 'Preparando cámara…', running: 'En vivo', stale: 'Imagen detenida', error: 'Cámara no disponible', stopped: 'Cámara detenida' };
+        const zoneNames = {
+            interior: 'En el interior',
+            exterior: 'En el exterior',
+            fuera: 'Fuera de las zonas marcadas',
+        };
+        const qualityMessages = {
+            RESOLUTION_MISMATCH: 'La resolución de la cámara cambió. Revisa la calibración.',
+            ZONES_STALE: 'Las zonas marcadas ya no coinciden con la imagen. Revisa la calibración.',
+            FROZEN_FRAME: 'La imagen lleva rato sin cambiar. Revisa la cámara.',
+            BLURRY_FRAME: 'La imagen está borrosa. Revisa el enfoque de la cámara.',
+            EXPOSURE_OUT_OF_RANGE: 'La imagen está demasiado oscura o clara. Revisa la iluminación.',
+        };
+
+        const zoneOrder = ['exterior', 'interior', 'door'];
+        const zoneLabels = { exterior: 'Exterior', interior: 'Interior', door: 'Puerta' };
+        const zoneColors = { exterior: '#ffb400', interior: '#00c800', door: '#ff4d4d' };
+        const MAX_ZONE_POINTS = 100;
+        const MAX_ZONE_PAYLOAD_CHARS = 100 * 1024;
+        let zonesOriginal = null, zonesDraft = null, zoneName = 'exterior', addMode = false;
+        let dragIndex = -1, zoneDidDrag = false, zoneFrameImage = null, editorInfo = null;
+
+        function zoneLabelNode(name) {
+            const node = document.createElement('option');
+            node.textContent = Object.hasOwn(zoneLabels, name) ? zoneLabels[name] : name;
+            node.value = name;
+            return node;
+        }
+
+        function cloneZones(document) {
+            return JSON.parse(JSON.stringify(document));
+        }
+
+        function segmentsCross(a, b, c, d) {
+            const cross = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+            const onSegment = (p, q, r) => Math.abs(cross(p, q, r)) < 1e-9
+                && Math.min(p[0], q[0]) <= r[0] && r[0] <= Math.max(p[0], q[0])
+                && Math.min(p[1], q[1]) <= r[1] && r[1] <= Math.max(p[1], q[1]);
+            return (cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0)
+                || onSegment(a, b, c) || onSegment(a, b, d) || onSegment(c, d, a) || onSegment(c, d, b);
+        }
+
+        function validateZoneDraft(draft) {
+            if (!draft || !Array.isArray(draft.frame_size) || draft.frame_size.length !== 2
+                || !draft.frame_size.every(value => Number.isInteger(value) && value > 0)) {
+                return 'frame_size debe tener dos enteros positivos.';
+            }
+            if (JSON.stringify(draft).length > MAX_ZONE_PAYLOAD_CHARS) {
+                return 'El payload supera el tamaño máximo permitido.';
+            }
+            const [width, height] = draft.frame_size;
+            for (const name of zoneOrder) {
+                const label = Object.hasOwn(zoneLabels, name) ? zoneLabels[name] : name;
+                const points = draft[name];
+                if (!Array.isArray(points) || points.length < 3) return label + ': se necesitan al menos 3 vértices.';
+                if (points.length > MAX_ZONE_POINTS) return label + ': demasiados vértices.';
+                for (const point of points) {
+                    if (!Array.isArray(point) || point.length !== 2 || point.some(value => !Number.isFinite(value))) {
+                        return label + ': coordenadas no válidas.';
+                    }
+                    if (point[0] < 0 || point[0] >= width || point[1] < 0 || point[1] >= height) {
+                        return label + ': hay vértices fuera del frame.';
+                    }
+                }
+                if (new Set(points.map(point => point.join(','))).size !== points.length) {
+                    return label + ': vértices repetidos.';
+                }
+                let area = 0;
+                for (let index = 0; index < points.length; index++) {
+                    const a = points[index], b = points[(index + 1) % points.length];
+                    area += a[0] * b[1] - b[0] * a[1];
+                }
+                if (Math.abs(area) < 1e-9) return label + ': el polígono no tiene área.';
+                for (let i = 0; i < points.length; i++) {
+                    const a = points[i], b = points[(i + 1) % points.length];
+                    for (let j = i + 2; j < points.length; j++) {
+                        if (i === 0 && j === points.length - 1) continue;
+                        if (segmentsCross(a, b, points[j], points[(j + 1) % points.length])) {
+                            return label + ': el polígono se cruza consigo mismo.';
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function showZoneIssue(message) {
+            const node = el('zoneValidation');
+            node.textContent = message || '';
+            node.hidden = !message;
+        }
+
+        function drawZones() {
+            if (!zonesDraft) return;
+            const canvas = el('zoneCanvas');
+            if (typeof canvas.getContext !== 'function') return;
+            const ctx = canvas.getContext('2d');
+            const [width, height] = zonesDraft.frame_size;
+            if (canvas.width !== width) canvas.width = width;
+            if (canvas.height !== height) canvas.height = height;
+            ctx.clearRect(0, 0, width, height);
+            if (zoneFrameImage && zoneFrameImage.complete) {
+                ctx.drawImage(zoneFrameImage, 0, 0, width, height);
+            } else {
+                ctx.fillStyle = '#17201b';
+                ctx.fillRect(0, 0, width, height);
+            }
+            for (const name of zoneOrder) {
+                const points = zonesDraft[name];
+                if (!Array.isArray(points) || points.length === 0) continue;
+                ctx.beginPath();
+                ctx.moveTo(points[0][0], points[0][1]);
+                for (let index = 1; index < points.length; index++) ctx.lineTo(points[index][0], points[index][1]);
+                ctx.closePath();
+                ctx.strokeStyle = zoneColors[name];
+                ctx.lineWidth = name === zoneName ? 3 : 2;
+                ctx.stroke();
+                if (name === zoneName) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                    ctx.fill();
+                }
+                points.forEach((point, index) => {
+                    ctx.beginPath();
+                    ctx.arc(point[0], point[1], name === zoneName ? 5 : 3, 0, Math.PI * 2);
+                    ctx.fillStyle = zoneColors[name];
+                    ctx.fill();
+                    if (name === zoneName) {
+                        ctx.fillStyle = '#17201b';
+                        ctx.font = '12px sans-serif';
+                        ctx.fillText(String(index + 1), point[0] + 6, point[1] - 6);
+                    }
+                });
+            }
+        }
+
+        function refreshZones() {
+            showZoneIssue(validateZoneDraft(zonesDraft));
+            drawZones();
+        }
+
+        function zoneCanvasPoint(event) {
+            const canvas = el('zoneCanvas');
+            const rect = canvas.getBoundingClientRect();
+            return [
+                Math.round((event.clientX - rect.left) * canvas.width / Math.max(rect.width, 1)),
+                Math.round((event.clientY - rect.top) * canvas.height / Math.max(rect.height, 1)),
+            ];
+        }
+
+        function zoneVertexAt(point) {
+            const points = zonesDraft[zoneName] || [];
+            for (let index = 0; index < points.length; index++) {
+                if (Math.abs(points[index][0] - point[0]) <= 8 && Math.abs(points[index][1] - point[1]) <= 8) return index;
+            }
+            return -1;
+        }
+
+        async function loadZones() {
+            try {
+                const response = await fetch('/api/v1/zones', { cache: 'no-store', signal: AbortSignal.timeout(3000) });
+                if (!response.ok) {
+                    el('zoneEditor').hidden = true;
+                    return;
+                }
+                const payload = await response.json();
+                zonesOriginal = payload.zones;
+                zonesDraft = cloneZones(zonesOriginal);
+                editorInfo = payload.editor;
+                el('zoneSelect').replaceChildren(...zoneOrder.map(zoneLabelNode));
+                el('zoneSelect').value = zoneName;
+                el('zoneEditor').hidden = false;
+                refreshZones();
+            } catch {
+                el('zoneEditor').hidden = true;
+            }
+        }
+
+        function initZoneEditor() {
+            const canvas = el('zoneCanvas');
+            el('zoneSelect').addEventListener('change', () => {
+                zoneName = el('zoneSelect').value;
+                refreshZones();
+            });
+            el('zoneAddToggle').addEventListener('click', () => {
+                addMode = !addMode;
+                el('zoneAddToggle').textContent = addMode ? 'Añadir vértice (activo)' : 'Añadir vértice';
+                refreshZones();
+            });
+            el('zoneDiscard').addEventListener('click', () => {
+                if (!zonesOriginal) return;
+                zonesDraft = cloneZones(zonesOriginal);
+                refreshZones();
+            });
+            el('zoneSave').addEventListener('click', async () => {
+                const issue = validateZoneDraft(zonesDraft);
+                if (issue) {
+                    showZoneIssue(issue);
+                    return;
+                }
+                try {
+                    const response = await fetch('/api/v1/zones', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + el('zoneToken').value,
+                            'X-Vision-User': el('zoneUser').value,
+                        },
+                        body: JSON.stringify(zonesDraft),
+                        cache: 'no-store',
+                        signal: AbortSignal.timeout(3000),
+                    });
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        showZoneIssue(payload?.error?.message || 'No se pudo guardar.');
+                        return;
+                    }
+                    zonesOriginal = cloneZones(payload.zones);
+                    zonesDraft = cloneZones(payload.zones);
+                    refreshZones();
+                    showZoneIssue('Zonas guardadas. Reinicia el monitor para aplicarlas.');
+                } catch {
+                    showZoneIssue('No se pudo conectar con el servidor.');
+                }
+            });
+            canvas.addEventListener('mousedown', event => {
+                dragIndex = zoneVertexAt(zoneCanvasPoint(event));
+                zoneDidDrag = dragIndex >= 0;
+            });
+            canvas.addEventListener('mousemove', event => {
+                if (dragIndex < 0 || !zonesDraft) return;
+                zonesDraft[zoneName][dragIndex] = zoneCanvasPoint(event);
+                zoneDidDrag = true;
+                refreshZones();
+            });
+            canvas.addEventListener('mouseup', () => { dragIndex = -1; });
+            canvas.addEventListener('mouseleave', () => { dragIndex = -1; });
+            canvas.addEventListener('click', event => {
+                if (!addMode || zoneDidDrag || dragIndex >= 0) {
+                    zoneDidDrag = false;
+                    return;
+                }
+                zonesDraft[zoneName].push(zoneCanvasPoint(event));
+                zoneDidDrag = false;
+                refreshZones();
+            });
+        }
+
+        function setImageSource(image, url) {
+            if (!image || image.tagName !== 'IMG') {
+                throw new Error('La fuente dinámica solo se permite en imágenes generadas por el monitor');
+            }
+            const candidate = String(url);
+            const normalized = candidate.toLowerCase();
+            if (
+                normalized.startsWith('javascript:')
+                || normalized.startsWith('data:text/html')
+                || !normalized.startsWith('blob:')
+            ) {
+                throw new Error('URL de imagen no permitida');
+            }
+            image.src = candidate;
+        }
+
+        function render() {
+            const fresh = lastImageAt > 0 && performance.now() - lastImageAt < 2500;
+            const live = state?.status === 'running' && fresh && !videoFailed;
+            const status = !state ? 'Sin conexión' : state.status === 'running' && !live ? (lastImageAt ? 'stale' : 'starting') : state.status;
+            el('statusText').textContent = labels[status] || status; el('status').classList.toggle('live', live);
+            el('viewer').classList.toggle('offline', !live); el('overlay').hidden = live;
+            el('overlay').textContent = status === 'starting' ? 'Estamos preparando la cámara y la detección de personas.' : !state ? 'Se perdió la conexión. Intentaremos conectarnos de nuevo automáticamente.' : 'La imagen no se está actualizando. Estamos esperando que vuelva la cámara.';
+            el('notice').hidden = !state?.demo_zones;
+            const quality = state?.camera_quality;
+            const degraded = quality?.status === 'degraded';
+            el('qualityNotice').hidden = !degraded;
+            if (degraded) {
+                el('qualityNotice').textContent = 'Aviso de cámara: ' + (Object.hasOwn(qualityMessages, quality.reason) ? qualityMessages[quality.reason] : 'La calidad de la imagen no es habitual. Revisa la cámara.');
+            } else {
+                el('qualityNotice').textContent = '';
+            }
+            el('visible').textContent = live ? state.people.length : '—';
+            el('people').replaceChildren();
+            if (live) {
+                for (const person of state.people) {
+                    const li = document.createElement('li');
+                    li.className = 'person';
+                    const name = document.createElement('strong');
+                    name.textContent = person.display_name;
+                    const zoneLabel = document.createElement('span');
+                    zoneLabel.textContent = state.demo_zones ? 'En cámara' : (Object.hasOwn(zoneNames, person.zone) ? zoneNames[person.zone] : 'En cámara');
+                    const zoneValue = document.createElement('span');
+                    zoneValue.textContent = 'Zona: ' + String(person.zone ?? '');
+                    li.append(name, zoneLabel, zoneValue);
+                    el('people').append(li);
+                }
+            }
+            el('emptyPeople').hidden = live && state.people.length > 0;
+            el('emptyPeople').textContent = live ? 'No hay personas a la vista.' : 'Esperando la imagen…';
+            el('events').replaceChildren();
+            for (const event of (state?.events || [])) {
+                const li = document.createElement('li');
+                li.className = 'event';
+                const who = document.createElement('span');
+                who.className = 'id';
+                who.textContent = event.person_id;
+                const meta = document.createElement('span');
+                meta.className = 'meta';
+                meta.textContent = JSON.stringify(event.metadata);
+                li.append(who, meta);
+                el('events').append(li);
+            }
+        }
+        async function pollState() {
+            try { const response = await fetch('/api/v1/state', { cache: 'no-store', signal: AbortSignal.timeout(3000) }); if (!response.ok) throw new Error(); state = await response.json(); if (state.frame < lastFrame) lastFrame = 0; }
+            catch { state = null; }
+            render(); setTimeout(pollState, 500);
+        }
+        async function videoLoop() {
+            while (true) {
+                try {
+                    const response = await fetch(`/api/v1/frame?after=${lastFrame}`, { cache: 'no-store', signal: AbortSignal.timeout(3000) });
+                    if (response.status === 204) continue;
+                    if (!response.ok) throw new Error();
+                    const next = URL.createObjectURL(await response.blob());
+                    const decoded = new Image();
+                    setImageSource(decoded, next);
+                    try { await decoded.decode(); } catch (error) { URL.revokeObjectURL(next); throw error; }
+                    zoneFrameImage = decoded;
+                    drawZones();
+                    setImageSource(el('video'), next);
+                    if (imageUrl) URL.revokeObjectURL(imageUrl);
+                    imageUrl = next;
+                    lastFrame = Number(response.headers.get('X-Frame-Sequence')); lastImageAt = performance.now(); videoFailed = false;
+                } catch { videoFailed = true; render(); await new Promise(resolve => setTimeout(resolve, 500)); }
+            }
+        }
+        if (typeof el('zoneCanvas')?.getContext === 'function') {
+            initZoneEditor();
+            loadZones();
+        }
+        pollState(); videoLoop();
+    </script>
+</body>
+
+</html>

@@ -13,6 +13,9 @@ Versión actual: `v1`. Prefijo: `/api/v1/`. El panel en `/` no está versionado.
 | `GET /api/v1/state` | 200, JSON con estado, personas, métricas y eventos. | Envelope JSON; 400, 404, 409, 422, 500 o 503 según el `code` (ver tabla siguiente). |
 | `GET /api/v1/frame` | 200, JPEG anotado. | 503 `VIDEO_FRAME_PENDING` si aún no hay imagen. |
 | `GET /api/v1/frame?after=N` | 200 con imagen nueva, 204 sin imagen nueva tras 1 s. | 400 `VALIDATION_FAILED` si `N` no es entero no negativo. |
+| `GET /api/v1/zones` | 200 con `zones` y `editor`; 404 si el editor está inactivo. | Envelope JSON; 404 `REQUEST_NOT_FOUND`. |
+| `PUT /api/v1/zones` | 200 con `zones` y `audit` (requiere editor activo). | 400, 403 `ZONE_EDITOR_FORBIDDEN`, 404, 413, 422. |
+| `POST /api/v1/zones/validate` | 200 con `zones` validadas sin escribir. | 400, 404, 413, 422. |
 | Cualquier otra ruta | — | 404 `REQUEST_NOT_FOUND`. |
 
 Los endpoints no versionados `/health`, `/ready` y `/metrics` no forman parte de `v1`.
@@ -21,7 +24,8 @@ añadir campos de forma compatible: `model_id`, `model_version`, `model_hash` y 
 con la identidad declarada en `config/models.yml`.
 
 La API puede responder `400` (`VALIDATION_FAILED`, `VIDEO_FRAME_INVALID`,
-`MODEL_INPUT_INVALID`), `404` (`REQUEST_NOT_FOUND`), `409`
+`MODEL_INPUT_INVALID`), `403` (`ZONE_EDITOR_FORBIDDEN`), `404`
+(`REQUEST_NOT_FOUND`), `409`
 (`PIPELINE_CALIBRATION_MISMATCH`), `422` (`ZONE_CONFIG_INVALID`,
 `ZONE_GEOMETRY_INVALID`), `500` (errores de configuración, modelo, ReID,
 pipeline o `INTERNAL_ERROR`) y `503` (`VIDEO_SOURCE_UNAVAILABLE`,
@@ -40,9 +44,15 @@ HTTP es una conveniencia para clientes.
 
 El cuerpo de `/api/v1/state` contiene: `status`, `error`, `demo_zones`, `frame`,
 `updated_at`, `age_seconds`, `people`, `events`, `counts`, `processing_ms`,
-`fps`, `dropped_frames`, `persistence`. Cada elemento de `events` sigue el esquema descrito
-más abajo. El cuerpo no incorpora `camera_id` en G0: la dimension se expone solo
-en `/metrics` y en `profiling_results.json` para preservar este contrato.
+`fps`, `dropped_frames`, `persistence` y `camera_quality`. Cada elemento de
+`events` sigue el esquema descrito más abajo. El cuerpo no incorpora `camera_id`
+en G0: la dimension se expone solo en `/metrics` y en `profiling_results.json`
+para preservar este contrato.
+
+`camera_quality` es un objeto con `status` (`ok` o `degraded`), `reason`
+(`null` o uno de los motivos estables de [calidad de cámara](camera-quality.md))
+y `signals` (mapa de motivo → booleano). Es un campo adicional compatible con
+`v1`: no modifica `status`, por lo que `/ready` y la inferencia no cambian.
 
 ### Envelope de error
 
@@ -91,7 +101,12 @@ incluye `schema_version`:
 serializables. Los productores son los mappers de door y pipeline y el
 serializador por defecto de `MonitorState`; todos construyen un DTO de evento
 que declara `schema_version` y validan los campos en la frontera. El
-serializador de `MonitorState` reutiliza el mapper de pipeline.
+serializador de `MonitorState` reutiliza `core/serialization/events.py`.
+
+Los envíos a sinks externos no alteran este esquema: el sobre `EventEnvelope`
+mantiene el JSON anterior en `payload` y coloca la clave de idempotencia en
+`event_id` (y, para webhook, en la cabecera `Idempotency-Key`). Ver
+[sinks de eventos](event-sinks.md).
 
 ## Política de versionado y deprecación
 

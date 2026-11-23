@@ -9,6 +9,7 @@ from vision_core.core.dto import BBoxPayload, EventPayload, JSONValue, MonitorPe
 from vision_core.core.serialization import dumps_json
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
+from vision_core.features.monitor.application.dto.response.response_camera_quality import ResponseCameraQuality
 from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
 from vision_core.features.monitor.application.dto.response.response_snapshot import ResponseSnapshot
 from vision_core.features.monitor.application.mappers.monitor_mapper import snapshot_to_response
@@ -58,10 +59,12 @@ def test_response_fields_and_types():
         "fps",
         "dropped_frames",
         "persistence",
+        "camera_quality",
     ]
     hints = get_type_hints(ResponseSnapshot)
     assert hints["persistence"] == get_type_hints(_persistence_hint)["return"]
-    assert {key: value for key, value in hints.items() if key != "persistence"} == {
+    assert hints["camera_quality"] == ResponseCameraQuality
+    assert {key: value for key, value in hints.items() if key not in {"persistence", "camera_quality"}} == {
         "status": str,
         "error": str | None,
         "demo_zones": bool,
@@ -103,6 +106,7 @@ def test_dtos_are_immutable_and_slotted():
                 fps=15.0,
                 dropped_frames=0,
                 persistence=None,
+                camera_quality=ResponseCameraQuality(status="ok", reason=None, signals={}),
             ),
             "status",
         ),
@@ -128,12 +132,22 @@ def test_snapshot_response_is_json_serializable():
         fps=15.0,
         dropped_frames=0,
         persistence=None,
+        camera_quality=ResponseCameraQuality(
+            status="degraded",
+            reason="BLURRY_FRAME",
+            signals={"BLURRY_FRAME": True},
+        ),
     )
 
     payload = json.loads(dumps_json(response))
 
     assert payload["status"] == "running"
     assert payload["counts"] == {"interior": 1}
+    assert payload["camera_quality"] == {
+        "status": "degraded",
+        "reason": "BLURRY_FRAME",
+        "signals": {"BLURRY_FRAME": True},
+    }
     assert payload["people"] == [
         {
             "person_id": "person-1",
@@ -178,6 +192,7 @@ def test_nested_mappings_are_immutable():
             "fps": 15.0,
             "dropped_frames": 0,
             "persistence": {"enabled": True, "health": {"ready": True}},
+            "camera_quality": {"status": "degraded", "reason": "BLURRY_FRAME", "signals": {"BLURRY_FRAME": True}},
         }
     )
 
@@ -187,6 +202,8 @@ def test_nested_mappings_are_immutable():
         response.events[0].metadata["zone"] = "exterior"
     with pytest.raises(TypeError):
         response.events[0].metadata["zone"]["name"] = "exterior"
+    with pytest.raises(TypeError):
+        response.camera_quality.signals["BLURRY_FRAME"] = False
     assert response.persistence is not None
     persistence_health = cast("Mapping[str, JSONValue]", response.persistence["health"])
     with pytest.raises(TypeError):

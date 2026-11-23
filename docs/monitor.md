@@ -47,6 +47,9 @@ producir transiciones: estos eventos no representan una puerta real calibrada.
   indica si están dentro, fuera o fuera de las zonas marcadas.
 - Avisos claros cuando la imagen se detiene o se pierde la conexión. Si el navegador
   no recibe una imagen nueva en 2,5 segundos, deja de mostrar el conteo como actual.
+- Un aviso textual no intrusivo cuando la calidad de la cámara está `degraded`;
+  el video y el conteo siguen funcionando. Consulta
+  [calidad de cámara](camera-quality.md) para interpretarlo y actuar.
 
 El panel no muestra FPS, porcentajes, identificadores técnicos, tiempos ni tablas
  de eventos. Estos datos siguen disponibles en `/api/v1/state`. En modo demostración
@@ -72,6 +75,17 @@ zonas de ejemplo incluso cuando se proporciona `--zones`. La resolución real de
 coincidir con la calibración. Un error detiene la analítica y permanece visible
 en el panel; corrige la configuración y reinicia el monitor.
 
+## Editor de zonas (opcional)
+
+Con `--zone-editor` o `VISION_CORE_ZONE_EDITOR_ENABLED=1`, más un token y una
+ruta de auditoría configurados, el panel muestra un canvas para arrastrar
+vértices, validar y guardar el JSON de zonas. Los cambios se auditan y se
+escriben de forma atómica en el archivo indicado por `--zones`, pero no se
+recargan en el proceso en ejecución: reinicia el monitor para aplicarlos. Sin
+esos valores, las rutas del editor devuelven `404` y la UI permanece oculta.
+Consulta la [guía del editor](zone-editor.md) antes de habilitarlo: no sustituye
+la autenticación pendiente del ticket 42.
+
 ## Docker
 
 El archivo principal `docker-compose.yml` ejecuta el monitor y sus dependencias.
@@ -96,16 +110,20 @@ una inferencia adicional por navegador. La API expone:
 | `/api/v1/state` | Estado, personas, métricas y eventos recientes JSON |
 | `/api/v1/frame` | Último JPEG anotado; 503 con envelope de error mientras no haya frames |
 | `/api/v1/frame?after=N` | Espera hasta 1 s por una imagen posterior a N; 204 si aún no llega. Incluye `X-Frame-Sequence`. |
+| `/api/v1/zones` | Zonas y capacidades del editor; 404 si el editor está desactivado |
+| `/api/v1/zones/validate` | `POST` valida sin escribir (sólo con editor activo) |
 
 Las rutas sin versionar (`/api/state`, `/api/frame`) quedan como alias obsoletos
 con cabecera `Deprecation: true`. El contrato completo, el envelope de error y
 la política de deprecación están en [contratos versionados](api-contracts.md);
 los códigos estables en el [catálogo de errores](errors.md).
 
-El contrato es estricto: solo `GET`; `/`, `/api/v1/state`, `/health`, `/ready` y
-`/metrics` rechazan cualquier query, y `/api/v1/frame` solo acepta un `after`
-único (sin duplicados ni parámetros desconocidos) de hasta 30 dígitos. Los
-errores siguen usando el envelope con `code`, `message` y `request_id`, salvo en
+El contrato es estricto: las rutas de sólo lectura aceptan `GET`; `PUT /api/v1/zones`
+y `POST /api/v1/zones/validate` existen únicamente con el editor activo. `/`,
+`/api/v1/state`, `/health`, `/ready` y `/metrics` rechazan cualquier query, y
+`/api/v1/frame` solo acepta un `after` único (sin duplicados ni parámetros
+desconocidos) de hasta 30 dígitos. Los errores siguen usando el envelope con
+`code`, `message` y `request_id`, salvo en
 `HEAD`, que por RFC 9110 solo devuelve estado y cabeceras (405 con
 `Allow: GET`). Un 204 no incluye cuerpo, `Content-Type` ni `Content-Length`; un
 503 conserva el envelope y añade `Retry-After: 1`. Todas las respuestas llevan

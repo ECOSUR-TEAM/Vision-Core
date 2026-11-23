@@ -2,17 +2,16 @@
 
 Vision Core usa Vertical Slice: cada feature es dueño de sus casos de uso,
 dominio y adaptadores. `core/` contiene únicamente el kernel compartido; no debe
-convertirse en un segundo dominio global. `shared/` ya fue eliminado y su
-contenido migró a `core/` (ECM-106). Los antiguos paquetes de primer nivel
-`application/`, `domain/`, `infrastructure/` y `settings/` fueron eliminados por
-ECM-111; solo `model_registry/` permanece como excepción transitoria (ADR 0007,
-ticket 67). El kernel, los contratos y la infraestructura comunes viven en
-`core/` (ADR 0008).
+convertirse en un segundo dominio global. Los antiguos paquetes horizontales de
+primer nivel fueron eliminados por ECM-106 y ECM-111. ECM-112 movió el registro
+de modelos a `core/model_registry/` y activó guardrails para que solo existan
+`core/`, `features/`, `scripts/` y `__init__.py` como contenido de primer nivel
+(ADR 0008).
 
 ## Estructura
 
-El árbol de `src/vision_core/` tiene tres paquetes de primer nivel, más
-`model_registry/` como excepción transitoria:
+El árbol de `src/vision_core/` tiene tres paquetes de primer nivel y el módulo
+`__init__.py`:
 
 ```text
 src/vision_core/
@@ -27,7 +26,7 @@ src/vision_core/
     inference/
     telemetry/
     infrastructure/
-  model_registry/               # ADR 0007; excepción transitoria, ticket 67
+    model_registry/             # ADR 0007
   features/
     <slice>/application/
     <slice>/domain/
@@ -39,8 +38,8 @@ src/vision_core/
 errores, configuración, DTOs y serialización compartidos, validación, inferencia,
 telemetría e infraestructura compartida. La infraestructura específica de un
 feature permanece en `features/<slice>/infrastructure`; la compartida por varios
-slices vive en `core/infrastructure`. `model_registry/` se migrará a
-`core/model_registry/` en el ticket 67.
+slices vive en `core/infrastructure`. El registro de modelos vive en
+`core/model_registry/` (ADR 0007).
 
 ## Reglas de capas
 
@@ -60,13 +59,13 @@ from vision_core.features.door.application.use_cases.update_zone import UpdateZo
 Ejemplos prohibidos:
 
 ```python
-from vision_core.features.door.domain.entities.polygon import Polygon  # en core/
+from vision_core.features.door.domain.entities.zone_observation import ZoneObservation  # en core/
 from vision_core.scripts.check_zones import main  # en features/ o core/
 from vision_core.features.monitor.infrastructure.state import MonitorState  # en otro slice
 ```
 
-La decisión completa, incluida la política "sin shims nuevos" y el diferimiento
-de la prohibición de `model_registry/` al ticket 67, está en
+La decisión completa, incluida la política "sin shims nuevos" y la prohibición
+total de los paths horizontales antiguos, está en
 [ADR 0008](adr/0008-core-layer-and-dependency-rules.md).
 
 ## Estructura de tests
@@ -117,6 +116,11 @@ desde DTOs.
   PNG), se sirven como `image/jpeg` y `to_json_value` los sustituye por `null`
   en JSON (nunca viaja su contenido binario); los floats no finitos se
   rechazan con contexto.
+- Serialización de eventos: `core/serialization/events.py` concentra la
+  implementación de `event_to_payload`, `event_to_json_dict` y `event_to_json`.
+  Devuelve el payload versionado de `core/dto` y es consumido por persistencia,
+  monitor, scripts y el composition root; los mappers de puerta y pipeline sólo
+  conservan adaptadores delgados y no reimplementan la serialización.
 
 La convención normativa está en
 [ADR-0001, § Convención DTO](adr/0001-screaming-architecture-vertical-slice.md#convención-dto).
@@ -125,7 +129,10 @@ La convención normativa está en
 
 `tests/architecture/test_import_rules.py` verifica que:
 
-- No queden imports de `vision_core.shared` ni el paquete `shared/`.
+- No queden imports de paquetes horizontales antiguos, incluidos los cinco paths
+  legacy y el antiguo path del registro de modelos.
+- `src/vision_core` solo contenga `core/`, `features/`, `scripts/` y
+  `__init__.py` como entradas persistentes.
 - El dominio de un feature no importe `application` ni `infrastructure`.
 - `application/` no importe `infrastructure`.
 - Un feature no importe la infraestructura de otro feature. Los imports
@@ -154,9 +161,10 @@ Estos checks se ejecutan junto con toda la suite mediante `python -m pytest` en
 cada pull request. Si un check falla, mueve la dependencia al límite correcto
 (normalmente un port o un mapper) en lugar de relajar la regla.
 
-Los repository ports transversales viven en
-`vision_core.core.contracts` y sus implementaciones SQLite en
-`vision_core.core.infrastructure.persistence`; el dominio no conoce SQL.
+Los repository ports transversales y el contrato `ReIDMemory` viven en
+`vision_core.core.contracts` y sus implementaciones concretas en
+`vision_core.core.infrastructure.persistence` o en el adaptador del slice
+correspondiente; el dominio no conoce SQL.
 `main.py` inyecta los adaptadores y hace degradar la persistencia ante errores sin
 detener el video.
 

@@ -6,15 +6,23 @@ import time
 from collections import Counter, deque
 from collections.abc import Callable
 
+from vision_core.core.serialization.events import event_to_json_dict as event_to_dict
 from vision_core.core.telemetry.health import HealthStatus
 from vision_core.core.telemetry.metrics import ObservabilityMetrics
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict as event_to_dict
 
 logger = logging.getLogger(__name__)
 
 
 def _event_to_dict(event):
     return event_to_dict(event)
+
+
+def _copy_camera_quality(value: dict[str, object]) -> dict[str, object]:
+    copied = dict(value)
+    signals = copied.get("signals")
+    if isinstance(signals, dict):
+        copied["signals"] = dict(signals)
+    return copied
 
 
 class MonitorState:
@@ -51,11 +59,37 @@ class MonitorState:
         self.camera_id = camera_id or "default"
         self.event_sequence = 0
         self._last_dropped = 0
+        self.camera_quality: dict[str, object] = {"status": "ok", "reason": None, "signals": {}}
+        self._quality_reason: str | None = None
 
     def set_status(self, status, error=None):
         with self.lock:
             self.status, self.error = status, error
         self.health.set_ready(source_connected=status == "running")
+
+    def set_camera_quality(self, status, reason=None, signals=None):
+        active_signals = dict(signals or {})
+        with self.lock:
+            reason_changed = reason != self._quality_reason
+            self.camera_quality = {"status": status, "reason": reason, "signals": active_signals}
+            self._quality_reason = reason
+        degraded = status == "degraded"
+        self.metrics.set_gauge(
+            "vision_core_camera_quality_degraded",
+            1.0 if degraded else 0.0,
+            camera_id=self.camera_id,
+        )
+        if not degraded or not reason_changed:
+            return
+        self.metrics.increment("vision_core_camera_quality_degraded_total", camera_id=self.camera_id)
+        for signal, active in active_signals.items():
+            if active:
+                self.metrics.increment(f"vision_core_camera_quality_{signal.lower()}_total", camera_id=self.camera_id)
+        logger.warning(
+            "Calidad de cámara degradada: %s",
+            reason,
+            extra={"camera_id": self.camera_id, "reason": reason},
+        )
 
     def set_persistence(self, health):
         with self.lock:
@@ -150,4 +184,5 @@ class MonitorState:
                 "fps": self.fps,
                 "dropped_frames": self.dropped,
                 "persistence": persistence,
+                "camera_quality": _copy_camera_quality(self.camera_quality),
             }

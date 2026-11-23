@@ -274,15 +274,18 @@ def _run_profile(
     total_ms = sum(frame_samples)
     fps = round(len(frames) / (total_ms / 1000), 3) if total_ms else None
     detection_summary = detection_quality_by_frame(predictions, _reference_boxes(frames))
-    reference_embeddings = identity_gallery[0] if identity_gallery else None
-    reference_labels = identity_gallery[1] if identity_gallery else None
-    identity_summary = {
-        "recall_at_1_vs_gallery": identity_recall_at_1(
+    if identity_gallery is None:
+        identity_recall = None
+    else:
+        reference_embeddings, reference_labels = identity_gallery
+        identity_recall = identity_recall_at_1(
             embeddings,
             reference_embeddings,
             expected_labels=np.asarray(labels, dtype=str),
             reference_labels=reference_labels,
-        ),
+        )
+    identity_summary = {
+        "recall_at_1_vs_gallery": identity_recall,
         "source": "labeled-gallery" if identity_gallery else "not-available",
         "samples": int(embeddings.shape[0]) if embeddings.ndim == 2 else 0,
     }

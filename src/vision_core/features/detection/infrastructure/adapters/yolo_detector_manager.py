@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 import torch
@@ -88,7 +88,7 @@ class YoloDetectorManager(DetectorManager):
                 code=codes.MODEL_INPUT_INVALID,
             )
         height, width = frame.shape[:2]
-        predict_kwargs = {
+        predict_kwargs: dict[str, Any] = {
             "verbose": False,
             "classes": list(self._classes),
             "conf": self._confidence,

@@ -68,3 +68,10 @@ documenta el consumo por tipo de dato y escala al responsable de retención.
 La política de privacidad y borrado de video se coordina con el ticket 42;
 este runbook no elimina frames ni video. Contexto:
 [ADR 0002](../adr/0002-persistence-and-retention.md).
+
+## Evidencia ECM-104
+
+Simulacro `disk_full`: latencia inyectada de detección 1.00 s y recuperación
+9.00 s, dentro del objetivo de 9.00 s. `/ready` marcó `disk=false`, la retención dejó de escribir y
+el monitor siguió activo en modo fail-open. Evidencia completa en
+[resultados de simulacros](../../reports/incident-drills.md).

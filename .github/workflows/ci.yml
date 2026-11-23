@@ -63,6 +63,12 @@ jobs:
       - name: Verificar umbrales por módulo
         run: python -m vision_core.scripts.check_coverage coverage.json
 
+      - name: Verificar SLOs y simulacros
+        run: |
+          make slo-check
+          make incident-drills
+          make slo-dashboard
+
       - name: Subir reporte de cobertura
         if: always()
         uses: actions/upload-artifact@v7

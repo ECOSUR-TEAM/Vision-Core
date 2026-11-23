@@ -13,6 +13,7 @@ MODULES = {
     "core_serialization": (("/core/serialization/",), 80.0),
     "core_persistence": (("/core/infrastructure/persistence/",), 80.0),
     "observability": (("/core/telemetry/",), 85.0),
+    "core_operations": (("/core/operations/",), 85.0),
     "profiling": (("/core/telemetry/frame_profiler.py",), 90.0),
     "global": ((), 80.0),
 }

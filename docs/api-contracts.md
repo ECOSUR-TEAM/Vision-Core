@@ -99,6 +99,11 @@ serializador por defecto de `MonitorState`; todos construyen un DTO de evento
 que declara `schema_version` y validan los campos en la frontera. El
 serializador de `MonitorState` reutiliza el mapper de pipeline.
 
+Los envíos a sinks externos no alteran este esquema: el sobre `EventEnvelope`
+mantiene el JSON anterior en `payload` y coloca la clave de idempotencia en
+`event_id` (y, para webhook, en la cabecera `Idempotency-Key`). Ver
+[sinks de eventos](event-sinks.md).
+
 ## Política de versionado y deprecación
 
 - API: el número de versión va en la ruta (`/api/v1/`). Añadir un campo opcional

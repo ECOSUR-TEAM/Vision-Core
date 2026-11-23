@@ -39,7 +39,9 @@ Cuando `VISION_CORE_LOG_JSON=1`, los logs son JSON con estos campos:
 
 `VISION_CORE_LOG_LEVEL` controla el nivel y `VISION_CORE_CAMERA_ID` identifica la camara.
 Los frames, imagenes, embeddings y rutas sensibles no se registran. Las URLs RTSP con
-credenciales se redactan antes de emitir texto.
+credenciales se redactan antes de emitir texto. Los sinks de eventos tampoco registran
+URLs ni valores de headers: solo `code`, `attempts` y `event_id` cuando aplica
+([sinks de eventos](event-sinks.md)).
 
 ## Catalogo de metricas
 
@@ -62,6 +64,13 @@ credenciales se redactan antes de emitir texto.
 | `vision_core_camera_quality_degraded_total` | counter | Transiciones a `degraded` (cambio de motivo) |
 | `vision_core_camera_quality_<motivo>_total` | counter | Aparicion de cada motivo de calidad |
 | `vision_core_camera_quality_errors_total` | counter | Fallos del analisis de calidad |
+| `vision_core_event_sink_submitted_total` | counter | Eventos enviados al despachante (incluye duplicados) |
+| `vision_core_event_sink_delivered_total` | counter | Entregas confirmadas por el destino |
+| `vision_core_event_sink_retried_total` | counter | Reintentos efectuados |
+| `vision_core_event_sink_dropped_total` | counter | Eventos descartados por cola llena |
+| `vision_core_event_sink_duplicate_total` | counter | Claves de idempotencia suprimidas |
+| `vision_core_event_sink_dead_letter_total` | counter | Eventos agotados o rechazados de forma permanente |
+| `vision_core_event_sink_queue_depth` | gauge | Profundidad de la cola acotada del sink |
 
 Cada histograma conserva una ventana de las ultimas 1000 muestras para `min` y `max`,
 mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan

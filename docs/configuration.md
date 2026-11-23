@@ -142,6 +142,29 @@ Un TTL de `0` desactiva el borrado por tiempo de ese tipo. Esta tabla es un
 resumen; [persistencia](persistence.md) es la fuente canónica de defaults, TTLs
 y backup, con [ADR 0002](adr/0002-persistence-and-retention.md) como decisión.
 
+### Sinks de eventos
+
+| Variable | Predeterminado | Validacion |
+|---|---|---|
+| `VISION_CORE_EVENT_SINK_BACKEND` | `none` | `none`, `webhook` o `mqtt` |
+| `VISION_CORE_EVENT_SINK_WEBHOOK_URL` | Ninguno | Obligatoria para `webhook`; `http(s)://` sin credenciales |
+| `VISION_CORE_EVENT_SINK_HEADERS` | `{}` | Objeto JSON con nombres y valores de texto |
+| `VISION_CORE_EVENT_SINK_TLS_VERIFY` | `1` | Booleano; verificación del certificado |
+| `VISION_CORE_EVENT_SINK_TIMEOUT_SECONDS` | `2.0` | Positivo y finito |
+| `VISION_CORE_EVENT_SINK_QUEUE_SIZE` | `256` | Entero positivo; cola acotada |
+| `VISION_CORE_EVENT_SINK_OVERFLOW_POLICY` | `drop-oldest` | `drop-oldest` o `drop-newest` |
+| `VISION_CORE_EVENT_SINK_MAX_ATTEMPTS` | `3` | Entero positivo; incluye el primer intento |
+| `VISION_CORE_EVENT_SINK_RETRY_BASE_SECONDS` | `0.2` | Finito y no negativo |
+| `VISION_CORE_EVENT_SINK_RETRY_MAX_SECONDS` | `5.0` | Finito y `>= base` |
+| `VISION_CORE_EVENT_SINK_RETRY_JITTER` | `0.2` | Entre `0` y `1` |
+| `VISION_CORE_EVENT_SINK_DEDUPE_SIZE` | `4096` | Entero positivo |
+| `VISION_CORE_EVENT_SINK_DEAD_LETTER_SIZE` | `128` | Entero positivo |
+| `VISION_CORE_EVENT_SINK_MQTT_HOST` / `_PORT` / `_TOPIC` / `_QOS` | — / `1883` / — / `0` | Requeridos para `mqtt` (ver nota abajo) |
+
+La semántica de entrega, los ejemplos y las precauciones sobre secretos están en
+[sinks de eventos](event-sinks.md). El backend `mqtt` queda documentado como
+puerto para futura adopción: hoy falla en arranque con `CONFIGURATION_INVALID`.
+
 ### Integracion de Frigate
 
 | Variable | Predeterminado | Validacion |

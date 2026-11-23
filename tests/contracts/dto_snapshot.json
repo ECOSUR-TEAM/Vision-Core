@@ -96,6 +96,26 @@
     "slots": true
   },
   {
+    "class": "EventEnvelope",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "event_id",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "payload",
+        "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]]"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.core.dto.event_envelope",
+    "slots": true
+  },
+  {
     "class": "EventPayload",
     "fields": [
       {

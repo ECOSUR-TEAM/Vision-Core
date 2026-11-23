@@ -370,7 +370,7 @@ Las rutas de destino reflejan el árbol vigente
 | `infrastructure/video/rtsp_video_source.py` | `src/vision_core/features/video/infrastructure/adapters/rtsp_video_source.py` | ECM-106 |
 | `infrastructure/video/file_video_source.py` | `src/vision_core/features/video/infrastructure/adapters/file_video_source.py` | ECM-106 |
 | `infrastructure/video/latest_frame_source.py` | `src/vision_core/features/video/infrastructure/adapters/latest_frame_source.py` | ECM-106 |
-| `infrastructure/video/frame_validation.py` | `src/vision_core/features/video/infrastructure/frame_validation.py` | ECM-106 |
+| `infrastructure/video/frame_validation.py` | `src/vision_core/core/validation/frame_validation.py` | ECM-106; ECM-112 eliminó el shim |
 | `infrastructure/video/capture_reference.py` | `src/vision_core/scripts/capture_reference.py` (herramienta de calibración, no feature) | ECM-111 |
 | — | `src/vision_core/features/video/infrastructure/dependencies.py` (`build_video`) | ECM-106 |
 

@@ -11,6 +11,7 @@ import torch
 
 from vision_core.core.config import Settings
 from vision_core.core.errors import VisionCoreError, codes
+from vision_core.core.model_registry.activation import resolve_active_models
 from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import (
     YoloDetectorManager,
 )
@@ -21,7 +22,6 @@ from vision_core.features.reid.infrastructure.adapters.embedder import Torchvisi
 from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
 from vision_core.features.video.infrastructure.adapters.file_video_source import FileVideoSource
 from vision_core.features.video.infrastructure.adapters.rtsp_video_source import RtspVideoSource
-from vision_core.model_registry.activation import resolve_active_models
 from vision_core.scripts.pipeline_tools.limited_source import LimitedSource
 from vision_core.scripts.pipeline_tools.measured_app import MeasuredApp
 from vision_core.scripts.pipeline_tools.recorded_detector import RecordedDetector

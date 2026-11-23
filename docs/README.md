@@ -96,3 +96,4 @@ hecha hasta que esa persona la confirme.
 | ECM-101: matriz edge INT8/FP16 con presupuestos | @MelissaZarate08 | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
 | ECM-100: calidad de cámara y deriva de calibración | @MelissaZarate08 | @Ameth-Toledo, @bchanona, @Carlosss2, @FabricioPRZ | Pendiente de revisión |
 | ECM-103: editor de zonas en el monitor | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08 | [x] Revisado por otra persona |
+| ECM-112: limpieza final y guardrails del Sprint 10 | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08, @FabricioPRZ | Pendiente de revisión |

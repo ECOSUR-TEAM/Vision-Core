@@ -13,19 +13,17 @@
 
 ## Contexto
 
-Antes de ECM-111, `src/vision_core` exponía `application/`, `domain/`,
-`infrastructure/` y `settings/` como paquetes de primer nivel, además de
-`features/`, `scripts/` y el path transitorio `model_registry/`. `shared/` era
-otro paquete de primer nivel, pero ECM-106 ya migró su contenido a `core/` y el
-path `vision_core.shared` ha desaparecido. ECM-111 completó la limpieza: los
-paquetes viejos ya no existen y sus contenidos viven en `core/config/`,
-`core/contracts/`, `core/inference/`, `core/infrastructure/persistence/` y en los
-adaptadores de `features/<slice>/infrastructure/`. Esa división mezclaba capas
-horizontales con vertical slices: el mismo concepto podía vivir en dos árboles,
-había implementaciones duplicadas y nada impedía un import de
-`infrastructure → features` o de `features → scripts`. `model_registry/` sigue
-siendo la única excepción transitoria introducida por ADR 0007; su destino final
-es `core/model_registry/` y su migración queda diferida al ticket 67.
+Antes de ECM-111, `src/vision_core` exponía paquetes horizontales de primer nivel
+además de `features/` y `scripts/`. ECM-106 migró el contenido compartido a
+`core/` y ECM-111 eliminó los paquetes horizontales restantes: sus contenidos
+viven en `core/config/`, `core/contracts/`, `core/inference/`,
+`core/infrastructure/persistence/` y en los adaptadores de
+`features/<slice>/infrastructure/`. Esa división mezclaba capas horizontales con
+vertical slices: el mismo concepto podía vivir en dos árboles, había
+implementaciones duplicadas y nada impedía un import de infraestructura hacia
+features o de features hacia scripts. ECM-112 completó la migración del registro
+de modelos a `core/model_registry/` y activó la prohibición total de los paths
+antiguos.
 
 ADR 0001 fijó el Vertical Slice dentro de cada feature y ADR 0002 fijó la
 persistencia compartida. Esta decisión define el kernel transversal y las reglas
@@ -38,11 +36,11 @@ ejecución multi-cámara y ADR 0007 el registro de modelos.
 ## Decisión
 
 Adoptar `features/`, `core/` y `scripts/` como únicos paquetes de primer nivel de
-`src/vision_core`. `core/` es el kernel compartido: contratos y tipos estables que
-usen varios slices. `features/` contiene los vertical slices del negocio.
-`scripts/` contiene herramientas de operación, benchmark y calibración. Tras
-ECM-111, `model_registry/` es la única excepción transitoria permitida hasta su
-migración a `core/model_registry/` (ADR 0007, ticket 67).
+`src/vision_core`, además de `__init__.py`. `core/` es el kernel compartido:
+contratos y tipos estables que usen varios slices. `features/` contiene los
+vertical slices del negocio. `scripts/` contiene herramientas de operación,
+benchmark y calibración. El registro de modelos vive en `core/model_registry/`
+según ADR 0007.
 
 ### Estructura vigente
 
@@ -59,7 +57,7 @@ src/vision_core/
     inference/                # utilidades de inferencia compartidas
     telemetry/                # logging, métricas, health checks y profiling
     infrastructure/           # infraestructura compartida por varios slices
-  model_registry/             # excepción transitoria (ADR 0007; ticket 67)
+    model_registry/           # registro de modelos y model cards (ADR 0007)
   features/                   # vertical slices; cada uno con sus capas internas
     <slice>/
       application/
@@ -69,14 +67,13 @@ src/vision_core/
 ```
 
 Los submódulos de `core/` previstos en este ticket ya están poblados. ECM-106
-migró aquí el contenido de `shared/` (`domain/`, `dto/`, `errors/`, `inference/`,
+migró aquí el contenido compartido (`domain/`, `dto/`, `errors/`, `inference/`,
 `serialization/`, `telemetry/` y `validation/`). ECM-111 completó la limpieza de
-los paquetes viejos: `settings/` pasó a `core/config/`, los ports y repositorios
-a `core/contracts/`, `application/frame_profiler.py` a `core/inference/` (y de
-ahí a `core/telemetry/` en ECM-107) y la persistencia a
-`core/infrastructure/persistence/`; los adaptadores concretos viven en
-`features/<slice>/infrastructure/`. `model_registry/` permanece en su
-path transitorio hasta el ticket 67.
+los paquetes horizontales: la configuración pasó a `core/config/`, los ports y
+repositorios a `core/contracts/`, el profiler a `core/telemetry/` y la
+persistencia a `core/infrastructure/persistence/`; los adaptadores concretos
+viven en `features/<slice>/infrastructure/`. ECM-112 movió el registro de modelos
+a `core/model_registry/` y añadió el guard que mantiene el árbol final.
 
 ### Reglas de dependencia
 
@@ -127,24 +124,18 @@ from vision_core.scripts.check_zones import main  # no
 
 No se crean facades ni shims de compatibilidad. Cada ticket de la serie mueve el
 código y actualiza imports, tests y documentación en el mismo cambio, dejando la
-suite en verde. Tras ECM-111, los paths antiguos (`vision_core.application`,
-`vision_core.domain`, `vision_core.infrastructure` y `vision_core.settings`) ya
-no existen: sus contenidos están en `core/config/`, `core/contracts/`,
-`core/telemetry/` (profiling), `core/inference/`,
-`core/infrastructure/persistence/` y en los adaptadores de
-`features/<slice>/infrastructure/`. `vision_core.model_registry` sigue existiendo
-como excepción transitoria (ADR 0007); el ticket 67 activará la regla que prohíbe
-importarlo y completará su migración a `core/model_registry/`. `vision_core.shared`
-ya no existe: ECM-106 migró su contenido a `core/domain/`, `core/dto/`,
-`core/errors/`, `core/inference/`, `core/serialization/`, `core/telemetry/` y
-`core/validation/`. Este ADR no añade aún esas reglas para no romper la migración
-incremental.
+suite en verde. Los paths horizontales antiguos ya no existen: sus contenidos
+están en `core/config/`, `core/contracts/`, `core/telemetry/`,
+`core/inference/`, `core/infrastructure/persistence/`,
+`core/model_registry/` y en los adaptadores de
+`features/<slice>/infrastructure/`. ECM-112 activa reglas automáticas que fallan
+si reaparece cualquiera de esos imports o si aparece una entrada de primer nivel
+fuera de `core/`, `features/` y `scripts/`.
 
 ### Fuera de alcance
 
-- Mover más módulos de producción a `core/` (salvo la migración de `shared/`
-  completada en ECM-106, la consolidación completada en ECM-111 y la migración
-  posterior de `model_registry/`).
+- Mover más módulos de producción a `core/` (salvo las migraciones ya completadas
+  en ECM-106, ECM-111 y ECM-112).
 - Reintroducir carpetas viejas: `application/`, `domain/`, `infrastructure/` y
   `settings/` ya se eliminaron en ECM-111.
 - Cambiar el comportamiento de los imports públicos existentes.
@@ -173,8 +164,8 @@ incremental.
 | `core/` importe un feature "por comodidad" | Test estructural que prohíbe `vision_core.features` y `vision_core.scripts` dentro de `core/`. |
 | `features/` importe un script de operación | Test estructural que prohíbe `vision_core.scripts` dentro de `features/`. |
 | Se reintroduzcan shims para evitar actualizar imports | Política "sin shims nuevos" y revisión de cada diff del sprint. |
-| Se reintroduzcan los paths viejos eliminados en ECM-111 | Revisión de diffs: `application/`, `domain/`, `infrastructure/` y `settings/` no vuelven a crearse. |
-| La prohibición de `model_registry` se active antes de tiempo | Regla diferida al ticket 67; `shared` ya se eliminó en ECM-106 y los otros paths viejos en ECM-111. |
+| Se reintroduzcan paths horizontales eliminados | Tests parametrizados de imports y test de contenido permitido de `src/vision_core`. |
+| Se reintroduzcan shims de paths viejos | Revisión de diffs y regla "sin shims nuevos"; ningún path legacy queda declarado en código, tests, docs ni configuración. |
 
 ## Alternativas consideradas
 
@@ -187,17 +178,17 @@ incremental.
 
 - `tests/architecture/test_import_rules.py` verifica que `core/` no importa
   `features/` ni `scripts/`, que `scripts/` no es importado por `features/` ni
-  `core/`, que no quedan imports de `vision_core.shared` y que los DTOs no
-  importan dominio, infraestructura ni frameworks.
+  `core/`, que no quedan imports de paquetes horizontales antiguos y que los DTOs
+  no importan dominio, infraestructura ni frameworks.
 - `tests/architecture/test_one_class_per_file.py` y
   `tests/test_one_class_per_file.py` incluyen `src/vision_core` de forma
   recursiva, por lo que cubren `core/`.
 - `tests/architecture/test_dto_convention.py` y
   `tests/contracts/test_dto_boundary_contract.py` tratan `core/dto` como path
   legítimo de transporte, con los mismos invariantes que el resto de DTOs.
-- La prohibición de `vision_core.model_registry` se difiere al ticket 67 y no se
-  activa en este ADR; los demás paths viejos ya se eliminaron en ECM-111 y
-  `vision_core.shared` ya fue eliminado por ECM-106.
+- ECM-112 prohíbe todos los paths horizontales antiguos, incluido el antiguo
+  path del registro de modelos, y valida que el contenido de primer nivel de
+  `src/vision_core` sea solo `__init__.py`, `core/`, `features/` y `scripts/`.
 - Validar con `PYTHONPATH=.:src python -m pytest -q --no-cov`,
   `python -m mypy --config-file pyproject.toml --no-site-packages`,
   `python -m ruff check .` y `python -m ruff format --check .`.
@@ -207,9 +198,10 @@ incremental.
 | Fecha | Cambio | Motivo | ADR que la motiva |
 |---|---|---|---|
 | 2026-11-21 | Creación del ADR | Contrato de capas ECM-105 | — |
-| 2026-11-22 | Migración de `shared/` a `core/` completada (ECM-106, PR #109, commit `cb9b128`): `domain/`, `dto/`, `errors/`, `inference/`, `serialization/`, `telemetry/` y `validation/`; `vision_core.shared` eliminado | Implementación del contrato de capas | ADR 0008 |
-| 2026-11-22 | ECM-111 completa la limpieza legacy: desaparecen `application/`, `domain/`, `infrastructure/` y `settings/`; su contenido vive en `core/config/`, `core/contracts/`, `core/inference/`, `core/infrastructure/persistence/` y adaptadores de `features/<slice>/infrastructure/`. `model_registry/` queda como excepción transitoria (ADR 0007, ticket 67) | Finalización de la migración de paquetes de primer nivel | ADR 0008 |
+| 2026-11-22 | Migración del paquete compartido a `core/` completada (ECM-106, PR #109, commit `cb9b128`): `domain/`, `dto/`, `errors/`, `inference/`, `serialization/`, `telemetry/` y `validation/`; el path compartido legacy eliminado | Implementación del contrato de capas | ADR 0008 |
+| 2026-11-22 | ECM-111 completa la limpieza legacy: desaparecen los paquetes horizontales de primer nivel; su contenido vive en `core/config/`, `core/contracts/`, `core/inference/`, `core/infrastructure/persistence/` y adaptadores de `features/<slice>/infrastructure/` | Finalización de la migración de paquetes de primer nivel | ADR 0008 |
 | 2026-11-23 | ECM-107 mueve `frame_profiler.py` de `core/inference/` a `core/telemetry/`; se actualizan imports, tests, umbrales de cobertura y documentación | Migrar `settings/` y `application/` a `core/config` y `core/telemetry` | ADR 0008 |
 | 2026-11-23 | El path `vision_core.core.inference.frame_profiler` queda eliminado sin shim; el import público canónico es `from vision_core.core.telemetry import FrameProfiler, STAGES` | Romper el path legacy de forma explícita tras la migración | ADR 0008 |
 | 2026-11-23 | ECM-108 consolida `ReIDMemory` como `Protocol` canónico en `core/contracts`, elimina el `Protocol` duplicado del slice y actualiza todos los imports | Contrato único compartido entre slices sin identidades de clase duplicadas | ADR 0008 |
 | 2026-11-23 | El path `vision_core.features.reid.domain.ports.reid_memory` queda eliminado sin shim; el import público canónico es `from vision_core.core.contracts import ReIDMemory` | Cumplir la política de migración sin facades ni re-exports | ADR 0008 |
+| 2026-11-23 | ECM-112 mueve el registro de modelos a `core/model_registry/`, activa guardrails para todos los paths horizontales antiguos y restringe el contenido de primer nivel de `src/vision_core` | Cierre final del Sprint 10 con el árbol prohibido por tests | ADR 0008 |

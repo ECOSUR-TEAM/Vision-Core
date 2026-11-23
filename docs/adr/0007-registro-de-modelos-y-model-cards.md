@@ -25,7 +25,7 @@ mediciones disponibles son sintéticas y no separan la precisión por modelo.
 ## Decisión
 
 Mantener un registro ligero en texto en `config/models.yml`, validado por un loader
-estricto en `vision_core.model_registry`. Cada entrada define un `id` estable, nombre,
+estricto en `core/model_registry`. Cada entrada define un `id` estable, nombre,
 versión, `artifact_version`, selector, proveniencia, licencia, fecha de registro,
 checksum opcional, configuración esperada y ruta a una model card.
 

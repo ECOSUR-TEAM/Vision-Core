@@ -15,9 +15,9 @@ from vision_core.core.errors import (
     VideoSourceStateError,
     VisionCoreError,
 )
+from vision_core.core.validation import validate_frame
 
 from ...domain.ports.video_source import VideoSource
-from ..frame_validation import validate_frame
 
 logger = logging.getLogger(__name__)
 

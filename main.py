@@ -11,6 +11,7 @@ from vision_core.core.infrastructure.persistence.persistence_service import Pers
 from vision_core.core.infrastructure.persistence.persisting_reid_memory import PersistingReIDMemory
 from vision_core.core.infrastructure.persistence.retention_job import RetentionJob
 from vision_core.core.infrastructure.persistence.retention_worker import RetentionWorker
+from vision_core.core.model_registry.activation import resolve_active_models
 from vision_core.core.telemetry.health import HealthStatus
 from vision_core.core.telemetry.metrics import get_observability_metrics
 from vision_core.features.camera_health.application.camera_quality_monitor import CameraQualityMonitor
@@ -31,7 +32,6 @@ from vision_core.features.pipeline.application.mappers.pipeline_mapper import ev
 from vision_core.features.pipeline.infrastructure.dependencies import build_pipeline
 from vision_core.features.reid.infrastructure.dependencies import build_reid
 from vision_core.features.video.infrastructure.dependencies import build_video
-from vision_core.model_registry.activation import resolve_active_models
 
 logger = logging.getLogger(__name__)
 

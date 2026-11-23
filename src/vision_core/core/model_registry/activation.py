@@ -4,11 +4,11 @@ from typing import cast
 
 from vision_core.core.config import Settings
 from vision_core.core.errors import ConfigurationError
-from vision_core.model_registry.active_models import ActiveModels
-from vision_core.model_registry.checksum import compute_file_checksum
-from vision_core.model_registry.model_descriptor import ModelDescriptor
-from vision_core.model_registry.model_registry import ModelRegistry
-from vision_core.model_registry.registry_loader import load_model_registry
+from vision_core.core.model_registry.active_models import ActiveModels
+from vision_core.core.model_registry.checksum import compute_file_checksum
+from vision_core.core.model_registry.model_descriptor import ModelDescriptor
+from vision_core.core.model_registry.model_registry import ModelRegistry
+from vision_core.core.model_registry.registry_loader import load_model_registry
 
 
 def resolve_active_models(settings: Settings, *, registry: ModelRegistry | None = None) -> ActiveModels:

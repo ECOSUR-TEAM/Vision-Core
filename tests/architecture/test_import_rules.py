@@ -25,6 +25,15 @@ ALLOWED_DTO_STDLIB_IMPORTS = {
     "uuid",
 }
 ALLOWED_DTO_STDLIB_ROOTS = {module.split(".", 1)[0] for module in ALLOWED_DTO_STDLIB_IMPORTS}
+PACKAGE_NAME = "vision_core"
+LEGACY_PACKAGE_NAMES = ("application", "domain", "infrastructure", "settings", "shared", "model_registry")
+LEGACY_IMPORT_PREFIXES = tuple(f"{PACKAGE_NAME}.{name}" for name in LEGACY_PACKAGE_NAMES)
+ALLOWED_TOP_LEVEL_DIRS = {"__pycache__", "core", "features", "scripts"}
+ALLOWED_TOP_LEVEL_FILES = {"__init__.py"}
+
+
+def _is_legacy_import(module: str) -> bool:
+    return any(module == prefix or module.startswith(f"{prefix}.") for prefix in LEGACY_IMPORT_PREFIXES)
 
 
 def _import_records(path: Path) -> list[tuple[str, int]]:
@@ -94,6 +103,7 @@ def test_core_layout_is_present():
         "errors/__init__.py",
         "inference/__init__.py",
         "infrastructure/__init__.py",
+        "model_registry/__init__.py",
         "serialization/__init__.py",
         "telemetry/__init__.py",
         "validation/__init__.py",
@@ -110,6 +120,7 @@ def test_core_layout_is_present():
         "vision_core.core.dto",
         "vision_core.core.errors",
         "vision_core.core.errors.codes",
+        "vision_core.core.model_registry",
         "vision_core.core.serialization",
         "vision_core.core.telemetry",
         "vision_core.core.validation",
@@ -119,38 +130,39 @@ def test_core_subpackages_are_importable(module):
     __import__(module)
 
 
-def test_shared_package_is_absent():
-    assert not (SRC / "shared").exists()
+def test_src_vision_core_top_level_entries_are_allowed():
+    entries = {path.name: path for path in SRC.iterdir()}
+    directories = {name for name, path in entries.items() if path.is_dir()}
+    files = {name for name, path in entries.items() if path.is_file()}
+    assert directories <= ALLOWED_TOP_LEVEL_DIRS, directories - ALLOWED_TOP_LEVEL_DIRS
+    assert files <= ALLOWED_TOP_LEVEL_FILES, files - ALLOWED_TOP_LEVEL_FILES
+    assert {"core", "features", "scripts"} <= directories
 
 
-def test_legacy_top_level_packages_are_absent():
-    for name in ("application", "domain", "infrastructure", "settings"):
-        assert not (SRC / name).exists(), name
-    assert (SRC / "model_registry").is_dir()
+@pytest.mark.parametrize("name", LEGACY_PACKAGE_NAMES)
+def test_legacy_top_level_packages_are_absent(name):
+    assert not (SRC / name).exists(), name
 
 
-def test_no_shared_imports_remain():
-    roots = (SRC, PROJECT_ROOT / "tests", PROJECT_ROOT / "main.py")
+@pytest.mark.parametrize("name", LEGACY_PACKAGE_NAMES)
+def test_no_legacy_package_imports_remain(name):
+    prefix = f"{PACKAGE_NAME}.{name}"
+    roots = (SRC, PROJECT_ROOT / "tests", PROJECT_ROOT / "main.py", PROJECT_ROOT / "scripts")
     violations = []
     for root in roots:
         paths = (root,) if root.is_file() else _python_files(root)
         for path in paths:
             for module in _imports(path):
-                if module == "vision_core.shared" or module.startswith("vision_core.shared."):
+                if module == prefix or module.startswith(f"{prefix}."):
                     violations.append((path.as_posix(), module))
-    assert not violations, f"shared import boundary violated: {violations}"
+    assert not violations, f"legacy import boundary violated for {name}: {violations}"
 
 
-def test_no_legacy_domain_imports_remain():
-    roots = (SRC, PROJECT_ROOT / "tests", PROJECT_ROOT / "main.py")
-    violations = []
-    for root in roots:
-        paths = (root,) if root.is_file() else _python_files(root)
-        for path in paths:
-            for module in _imports(path):
-                if module == "vision_core.domain" or module.startswith("vision_core.domain."):
-                    violations.append((path.as_posix(), module))
-    assert not violations, f"legacy domain import boundary violated: {violations}"
+def test_legacy_import_rule_detects_every_forbidden_prefix():
+    for name in LEGACY_PACKAGE_NAMES:
+        assert _is_legacy_import(f"{PACKAGE_NAME}.{name}")
+        assert _is_legacy_import(f"{PACKAGE_NAME}.{name}.child")
+    assert not _is_legacy_import(f"{PACKAGE_NAME}.core.domain")
 
 
 def test_core_rule_detects_forbidden_imports(tmp_path, monkeypatch):

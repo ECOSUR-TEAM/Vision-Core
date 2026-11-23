@@ -6,9 +6,9 @@ import time
 from collections import Counter, deque
 from collections.abc import Callable
 
+from vision_core.core.serialization.events import event_to_json_dict as event_to_dict
 from vision_core.core.telemetry.health import HealthStatus
 from vision_core.core.telemetry.metrics import ObservabilityMetrics
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict as event_to_dict
 
 logger = logging.getLogger(__name__)
 

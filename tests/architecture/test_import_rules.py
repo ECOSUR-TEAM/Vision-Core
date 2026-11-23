@@ -54,9 +54,7 @@ def _resolve_relative_import(path: Path, module: str, level: int) -> str:
         package = path.parent.relative_to(SRC).parts
     except ValueError:
         return f"{'.' * level}{module}"
-    if level - 1 > len(package):
-        return f"{'.' * level}{module}"
-    base = package[: len(package) - (level - 1)]
+    base = package[: max(0, len(package) - (level - 1))]
     parts = ("vision_core", *base)
     if module:
         parts = (*parts, module)
@@ -65,6 +63,27 @@ def _resolve_relative_import(path: Path, module: str, level: int) -> str:
 
 def _imports(path: Path) -> list[str]:
     return [_resolve_relative_import(path, module, level) for module, level in _import_records(path)]
+
+
+def _legacy_modules(path: Path) -> list[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    modules: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            modules.extend(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            module = _resolve_relative_import(path, node.module or "", node.level)
+            modules.append(module)
+            if node.level == 0 and node.module == PACKAGE_NAME:
+                modules.extend(f"{PACKAGE_NAME}.{alias.name}" for alias in node.names)
+        elif isinstance(node, ast.Call):
+            is_dynamic_import = isinstance(node.func, ast.Name) and node.func.id == "__import__"
+            is_import_module = isinstance(node.func, ast.Attribute) and node.func.attr == "import_module"
+            if is_dynamic_import or is_import_module:
+                arguments = node.args
+                if arguments and isinstance(arguments[0], ast.Constant) and isinstance(arguments[0].value, str):
+                    modules.append(arguments[0].value)
+    return modules
 
 
 def _python_files(root: Path):
@@ -91,6 +110,10 @@ def test_scripts_are_not_imported_by_features_or_core():
         lambda module: module.startswith("vision_core.scripts"),
         "scripts import boundary violated",
     )
+
+
+def test_legacy_frame_profiler_path_is_absent():
+    assert not (CORE / "inference" / "frame_profiler.py").exists()
 
 
 def test_core_layout_is_present():
@@ -152,7 +175,7 @@ def test_no_legacy_package_imports_remain(name):
     for root in roots:
         paths = (root,) if root.is_file() else _python_files(root)
         for path in paths:
-            for module in _imports(path):
+            for module in _legacy_modules(path):
                 if module == prefix or module.startswith(f"{prefix}."):
                     violations.append((path.as_posix(), module))
     assert not violations, f"legacy import boundary violated for {name}: {violations}"
@@ -163,6 +186,40 @@ def test_legacy_import_rule_detects_every_forbidden_prefix():
         assert _is_legacy_import(f"{PACKAGE_NAME}.{name}")
         assert _is_legacy_import(f"{PACKAGE_NAME}.{name}.child")
     assert not _is_legacy_import(f"{PACKAGE_NAME}.core.domain")
+
+
+def test_relative_import_beyond_root_maps_to_package():
+    legacy_name = LEGACY_PACKAGE_NAMES[-1]
+    path = CORE / "sample.py"
+
+    assert _resolve_relative_import(path, f"{legacy_name}.activation", 4) == (
+        f"{PACKAGE_NAME}.{legacy_name}.activation"
+    )
+
+
+def test_legacy_import_rule_detects_dynamic_and_alias_imports(tmp_path, monkeypatch):
+    legacy_name = LEGACY_PACKAGE_NAMES[-1]
+    legacy_prefix = f"{PACKAGE_NAME}.{legacy_name}"
+    source = tmp_path / "src" / PACKAGE_NAME / "core"
+    tests = tmp_path / "tests"
+    scripts = tmp_path / "scripts"
+    source.mkdir(parents=True)
+    tests.mkdir()
+    scripts.mkdir()
+    relative_prefix = "." * 4
+    (source / "bad.py").write_text(
+        "import importlib\n"
+        f'importlib.import_module("{legacy_prefix}.activation")\n'
+        f"from {relative_prefix}{legacy_name}.activation import resolve_active_models\n",
+        encoding="utf-8",
+    )
+    (tests / "test_bad.py").write_text(f"from {PACKAGE_NAME} import {legacy_name}\n", encoding="utf-8")
+    (tmp_path / "main.py").write_text(f"from {PACKAGE_NAME}.core.validation import validate_frame\n", encoding="utf-8")
+    monkeypatch.setitem(globals(), "PROJECT_ROOT", tmp_path)
+    monkeypatch.setitem(globals(), "SRC", tmp_path / "src" / PACKAGE_NAME)
+
+    with pytest.raises(AssertionError, match=f"legacy import boundary violated for {legacy_name}"):
+        test_no_legacy_package_imports_remain(legacy_name)
 
 
 def test_core_rule_detects_forbidden_imports(tmp_path, monkeypatch):

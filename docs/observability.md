@@ -71,9 +71,10 @@ URLs ni valores de headers: solo `code`, `attempts` y `event_id` cuando aplica
 | `vision_core_event_sink_submitted_total` | counter | Eventos enviados al despachante (incluye duplicados) |
 | `vision_core_event_sink_delivered_total` | counter | Entregas confirmadas por el destino |
 | `vision_core_event_sink_retried_total` | counter | Reintentos efectuados |
-| `vision_core_event_sink_dropped_total` | counter | Eventos descartados por cola llena |
+| `vision_core_event_sink_dropped_total` | counter | Eventos descartados por cola llena, cierre o `send()` posterior al cierre |
 | `vision_core_event_sink_duplicate_total` | counter | Claves de idempotencia suprimidas |
 | `vision_core_event_sink_dead_letter_total` | counter | Eventos agotados o rechazados de forma permanente |
+| `vision_core_event_sink_enqueue_failed_total` | counter | Fallos al encolar desde el pipeline |
 | `vision_core_event_sink_queue_depth` | gauge | Profundidad de la cola acotada del sink |
 
 Cada histograma conserva una ventana de las ultimas 1000 muestras para `min`, `max` y

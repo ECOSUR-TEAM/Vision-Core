@@ -104,4 +104,5 @@ el pipeline.
 
 | Fecha | Cambio | Motivo | ADR que la motiva |
 |---|---|---|---|
-| - | - | - | - |
+| 2026-11-23 | Best-effort explícito: la clave se marca tras 2xx, drop/DLQ/apagado liberan el id para reenvío; `close()` señala cierre, interrumpe reintentos y cierra el destino tras el worker; jitter antes del tope; 408/429 retryables. | Revisión de PR: la semántica documentada no coincidía con pérdidas, dedupe y shutdown. | ADR 0002, ADR 0003, ADR 0005 |
+| 2026-11-23 | Webhook sin redirecciones, hosts no públicos rechazados salvo opt-in, DNS validado antes de cada envío, timeout `<= 30 s` y warning al desactivar TLS. | Revisión de PR: posible filtrado de headers hacia otro host y configuración insegura. | ADR 0004, ADR 0008 |

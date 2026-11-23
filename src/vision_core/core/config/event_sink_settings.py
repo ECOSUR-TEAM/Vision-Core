@@ -1,6 +1,8 @@
 """Configuración tipada y validada de los sinks de eventos (ECM-102)."""
 
+import ipaddress
 import json
+import logging
 import os
 import re
 from collections.abc import Mapping
@@ -14,6 +16,8 @@ from vision_core.core.config.settings_helpers import parse_bool
 _HEADER_NAME = re.compile(r"^[A-Za-z0-9!#$%&'*+.^_`|~-]+$")
 _BACKENDS = frozenset({"none", "webhook", "mqtt"})
 _OVERFLOW_POLICIES = frozenset({"drop-oldest", "drop-newest"})
+_MAX_TIMEOUT_SECONDS = 30.0
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +33,7 @@ class EventSinkSettings:
     dedupe_size: int = 4096
     dead_letter_size: int = 128
     tls_verify: bool = True
+    allow_private_hosts: bool = False
     webhook_url: str = field(default="", repr=False)
     headers: Mapping[str, str] = field(default_factory=dict, repr=False)
     mqtt_host: str = ""
@@ -79,6 +84,7 @@ class EventSinkSettings:
         dedupe_size = integer("VISION_CORE_EVENT_SINK_DEDUPE_SIZE", 4096)
         dead_letter_size = integer("VISION_CORE_EVENT_SINK_DEAD_LETTER_SIZE", 128)
         tls_verify = boolean("VISION_CORE_EVENT_SINK_TLS_VERIFY", True)
+        allow_private_hosts = boolean("VISION_CORE_EVENT_SINK_ALLOW_PRIVATE_HOSTS", False)
         webhook_url = env.get("VISION_CORE_EVENT_SINK_WEBHOOK_URL", "").strip()
         headers = _headers_from_env(env.get("VISION_CORE_EVENT_SINK_HEADERS", ""), errors)
         mqtt_host = env.get("VISION_CORE_EVENT_SINK_MQTT_HOST", "").strip()
@@ -102,12 +108,17 @@ class EventSinkSettings:
             errors.append("VISION_CORE_EVENT_SINK_RETRY_JITTER: debe estar entre 0 y 1")
         if not isfinite(timeout) or timeout <= 0:
             errors.append("VISION_CORE_EVENT_SINK_TIMEOUT_SECONDS: debe ser mayor que 0")
+        if isfinite(timeout) and timeout > _MAX_TIMEOUT_SECONDS:
+            errors.append(f"VISION_CORE_EVENT_SINK_TIMEOUT_SECONDS: no puede superar {_MAX_TIMEOUT_SECONDS:g}")
         if dedupe_size < 1:
             errors.append("VISION_CORE_EVENT_SINK_DEDUPE_SIZE: debe ser mayor que 0")
         if dead_letter_size < 1:
             errors.append("VISION_CORE_EVENT_SINK_DEAD_LETTER_SIZE: debe ser mayor que 0")
-        if backend == "webhook" and not _valid_webhook_url(webhook_url):
-            errors.append("VISION_CORE_EVENT_SINK_WEBHOOK_URL: requerida y debe ser http(s):// sin credenciales")
+        if backend == "webhook" and not is_webhook_url_allowed(webhook_url, allow_private_hosts=allow_private_hosts):
+            errors.append(
+                "VISION_CORE_EVENT_SINK_WEBHOOK_URL: requerida, http(s):// sin credenciales y con host público "
+                "(ALLOW_PRIVATE_HOSTS=1 solo en desarrollo)"
+            )
         if backend == "mqtt" and (not mqtt_host or not mqtt_topic):
             errors.append("VISION_CORE_EVENT_SINK_MQTT_HOST y _TOPIC: requeridos para backend=mqtt")
         if not 1 <= mqtt_port <= 65535:
@@ -117,6 +128,11 @@ class EventSinkSettings:
 
         if errors:
             raise SettingsError("Configuración de sinks inválida:\n- " + "\n- ".join(errors))
+
+        if not tls_verify:
+            logger.warning(
+                "VISION_CORE_EVENT_SINK_TLS_VERIFY=0 desactiva la verificación TLS; usar solo en entornos controlados"
+            )
 
         return cls(
             backend=backend,
@@ -130,6 +146,7 @@ class EventSinkSettings:
             dedupe_size=dedupe_size,
             dead_letter_size=dead_letter_size,
             tls_verify=tls_verify,
+            allow_private_hosts=allow_private_hosts,
             webhook_url=webhook_url,
             headers=headers,
             mqtt_host=mqtt_host,
@@ -159,7 +176,26 @@ def _headers_from_env(raw: str, errors: list[str]) -> Mapping[str, str]:
     return headers
 
 
-def _valid_webhook_url(value: str) -> bool:
+def is_non_public_ip(value: str) -> bool:
+    """True para IPs literales que no deben ser destinos de un webhook."""
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        return False
+    return any(
+        (
+            address.is_private,
+            address.is_loopback,
+            address.is_link_local,
+            address.is_multicast,
+            address.is_unspecified,
+            address.is_reserved,
+        )
+    )
+
+
+def is_webhook_url_allowed(value: str, *, allow_private_hosts: bool = False) -> bool:
+    """Valida sintaxis y, salvo opt-in explícito, rechaza hosts IP no públicos."""
     try:
         parsed = urlsplit(value)
     except ValueError:
@@ -172,4 +208,8 @@ def _valid_webhook_url(value: str) -> bool:
         port = parsed.port
     except ValueError:
         return False
-    return port is None or 1 <= port <= 65535
+    if port is not None and not 1 <= port <= 65535:
+        return False
+    if allow_private_hosts:
+        return True
+    return not is_non_public_ip(parsed.hostname)

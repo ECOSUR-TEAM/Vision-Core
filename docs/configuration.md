@@ -150,10 +150,11 @@ y backup, con [ADR 0002](adr/0002-persistence-and-retention.md) como decisión.
 | Variable | Predeterminado | Validacion |
 |---|---|---|
 | `VISION_CORE_EVENT_SINK_BACKEND` | `none` | `none`, `webhook` o `mqtt` |
-| `VISION_CORE_EVENT_SINK_WEBHOOK_URL` | Ninguno | Obligatoria para `webhook`; `http(s)://` sin credenciales |
+| `VISION_CORE_EVENT_SINK_WEBHOOK_URL` | Ninguno | Obligatoria para `webhook`; `http(s)://` sin credenciales y con host público salvo opt-in |
 | `VISION_CORE_EVENT_SINK_HEADERS` | `{}` | Objeto JSON con nombres y valores de texto |
-| `VISION_CORE_EVENT_SINK_TLS_VERIFY` | `1` | Booleano; verificación del certificado |
-| `VISION_CORE_EVENT_SINK_TIMEOUT_SECONDS` | `2.0` | Positivo y finito |
+| `VISION_CORE_EVENT_SINK_TLS_VERIFY` | `1` | Booleano; verificación del certificado y hostname; `0` emite warning |
+| `VISION_CORE_EVENT_SINK_ALLOW_PRIVATE_HOSTS` | `0` | Permite IPs privadas/loopback/link-local solo en desarrollo o pruebas |
+| `VISION_CORE_EVENT_SINK_TIMEOUT_SECONDS` | `2.0` | Positivo, finito y `<= 30` |
 | `VISION_CORE_EVENT_SINK_QUEUE_SIZE` | `256` | Entero positivo; cola acotada |
 | `VISION_CORE_EVENT_SINK_OVERFLOW_POLICY` | `drop-oldest` | `drop-oldest` o `drop-newest` |
 | `VISION_CORE_EVENT_SINK_MAX_ATTEMPTS` | `3` | Entero positivo; incluye el primer intento |

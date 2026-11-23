@@ -1,6 +1,7 @@
 """Entrega webhook real contra servidor local: éxito, timeout, 5xx y secretos."""
 
 import logging
+import socket
 from contextlib import contextmanager
 
 import pytest
@@ -8,8 +9,9 @@ import pytest
 from tests.features.events.support import make_envelope, wait_until
 from tests.infrastructure.events.webhook_test_support import start_recording_server, stop_recording_server
 from vision_core.core.config.event_sink_settings import EventSinkSettings
-from vision_core.core.errors import PipelineError, codes
+from vision_core.core.errors import ConfigurationError, PipelineError, codes
 from vision_core.features.events.application.use_cases.dispatch_events import EventSinkDispatcher
+from vision_core.features.events.infrastructure.adapters import webhook_event_sink as webhook_module
 from vision_core.features.events.infrastructure.adapters.webhook_event_sink import WebhookEventSink
 
 
@@ -31,6 +33,7 @@ def settings_for(server, **overrides) -> EventSinkSettings:
         "retry_base_seconds": 0.001,
         "retry_max_seconds": 0.001,
         "retry_jitter": 0.0,
+        "allow_private_hosts": True,
     }
     defaults.update(overrides)
     return EventSinkSettings(**defaults)
@@ -124,3 +127,68 @@ def test_webhook_failures_never_log_secrets_or_endpoint(caplog):
             assert "/hook" not in caplog.text
         finally:
             dispatcher.close()
+
+
+def test_redirect_is_rejected_without_retrying_or_forwarding_headers():
+    with recording_server(redirect_to="http://127.0.0.2:9/steal") as server:
+        settings = settings_for(server, headers={"Authorization": "Bearer supersecret"})
+        dispatcher = EventSinkDispatcher(WebhookEventSink(settings), settings, sleep=lambda _seconds: None)
+        try:
+            dispatcher.send(make_envelope("redirect"))
+            wait_until(lambda: len(dispatcher.dead_letters()) == 1)
+            assert len(server.state["requests"]) == 1
+            assert dispatcher.dead_letters()[0][1] == codes.VALIDATION_FAILED
+        finally:
+            dispatcher.close()
+
+
+@pytest.mark.parametrize("statuses", [[429, 200], [408, 200]])
+def test_request_limiting_and_request_timeout_are_retried(statuses):
+    with recording_server(statuses=statuses) as server:
+        settings = settings_for(server)
+        dispatcher = EventSinkDispatcher(WebhookEventSink(settings), settings, sleep=lambda _seconds: None)
+        try:
+            dispatcher.send(make_envelope("retry-status"))
+            wait_until(lambda: len(server.state["requests"]) == 2)
+            assert [header(request, "Idempotency-Key") for request in server.state["requests"]] == [
+                "retry-status",
+                "retry-status",
+            ]
+            assert dispatcher.dead_letters() == ()
+        finally:
+            dispatcher.close()
+
+
+def test_tls_opt_out_emits_warning():
+    with recording_server() as server:
+        with pytest.warns(RuntimeWarning, match="TLS"):
+            WebhookEventSink(settings_for(server, tls_verify=False))
+
+
+def test_adapter_rejects_private_literal_url():
+    settings = EventSinkSettings(webhook_url="http://127.0.0.1:9/hook")
+    with pytest.raises(ConfigurationError):
+        WebhookEventSink(settings)
+
+
+def test_adapter_rejects_public_host_resolving_to_private_address(monkeypatch):
+    monkeypatch.setattr(
+        webhook_module.socket,
+        "getaddrinfo",
+        lambda *_args, **_kwargs: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.0.0.5", 443))],
+    )
+    settings = EventSinkSettings(webhook_url="https://public.example/hook")
+    sink = WebhookEventSink(settings)
+    with pytest.raises(ConfigurationError):
+        sink.send(make_envelope("dns-private"))
+
+
+def test_adapter_marks_dns_failure_retryable(monkeypatch):
+    def fail(*_args, **_kwargs):
+        raise socket.gaierror("resolution failed")
+
+    monkeypatch.setattr(webhook_module.socket, "getaddrinfo", fail)
+    sink = WebhookEventSink(EventSinkSettings(webhook_url="https://public.example/hook"))
+    with pytest.raises(PipelineError) as excinfo:
+        sink.send(make_envelope("dns-failure"))
+    assert excinfo.value.retryable is True

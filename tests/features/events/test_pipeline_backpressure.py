@@ -61,3 +61,27 @@ def test_pipeline_continues_when_sink_queue_is_full():
     finally:
         block.set()
         sink.close()
+
+
+def test_enqueue_failure_is_counted_without_stopping_pipeline():
+    class BrokenSink:
+        def send(self, envelope):
+            raise RuntimeError("sink caído")
+
+        def close(self) -> None:
+            return None
+
+    metrics = ObservabilityMetrics()
+    app = RunPipeline(
+        video=None,
+        detector=None,
+        reid=None,
+        door=None,
+        embedder=None,
+        on_event=lambda event: None,
+        event_sink=BrokenSink(),
+    )
+    app.set_observability(metrics, camera_id="camera-1")
+    app._emit_event(Event("PERSON_ENTERED", "person-1"))
+    counters = metrics.snapshot()["counters"]
+    assert counters["vision_core_event_sink_enqueue_failed_total"] == 1

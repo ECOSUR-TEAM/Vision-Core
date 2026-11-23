@@ -26,6 +26,8 @@ from vision_core.features.video.domain.ports.video_source import VideoSource
 
 logger = logging.getLogger(__name__)
 
+_ENQUEUE_FAILED = "vision_core_event_sink_enqueue_failed_total"
+
 
 class RunPipeline:
     def __init__(
@@ -106,6 +108,8 @@ class RunPipeline:
         try:
             self._event_sink.send(envelope_for(event))
         except Exception:  # noqa: BLE001 - la entrega nunca debe detener el pipeline
+            if self._metrics is not None:
+                self._metrics.increment(_ENQUEUE_FAILED, camera_id=self._metrics_camera_id)
             logger.warning("No se pudo encolar el evento para el sink (%s)", type(event).__name__)
 
     def _save_profile(self) -> None:

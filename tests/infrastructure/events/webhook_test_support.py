@@ -20,7 +20,17 @@ class RecordingHandler(BaseHTTPRequestHandler):
         )
         if state.get("delay"):
             time.sleep(state["delay"])
-        if state.get("permanent_status") is not None:
+        if state.get("redirect_to"):
+            self.send_response(302)
+            self.send_header("Location", state["redirect_to"])
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        statuses = state.get("statuses")
+        if statuses:
+            index = min(len(state["requests"]) - 1, len(statuses) - 1)
+            status = statuses[index]
+        elif state.get("permanent_status") is not None:
             status = state["permanent_status"]
         elif len(state["requests"]) <= state.get("fail_times", 0):
             status = 500

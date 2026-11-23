@@ -97,7 +97,7 @@ hecha hasta que esa persona la confirme.
 | ECM-87: licencias, privacidad y retención de video | @bchanona | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
 | ECM-95: binding seguro y exposición del monitor | @bchanona | @Ameth-Toledo, @Carlosss2 | [x] Revisado por otra persona |
 | ECM-101: matriz edge INT8/FP16 con presupuestos | @MelissaZarate08 | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
-| ECM-102: sinks de eventos webhook/MQTT con idempotencia y backpressure | Autor del PR ECM-102 | Pendiente de asignación | Pendiente de revisión |
+| ECM-102: sinks de eventos webhook/MQTT con idempotencia y backpressure | @bchanona | @Carlosss2, @FabricioPRZ, @MelissaZarate08 | Pendiente de revisión (cambios solicitados) |
 | ECM-100: calidad de cámara y deriva de calibración | @MelissaZarate08 | @Ameth-Toledo, @bchanona, @Carlosss2, @FabricioPRZ | Pendiente de revisión |
 | ECM-103: editor de zonas en el monitor | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08 | [x] Revisado por otra persona |
 | ECM-104: SLOs, simulacros y tablero | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08 | [x] Revisado por otra persona |

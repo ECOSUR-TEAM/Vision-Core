@@ -11,6 +11,7 @@ contract is required.
 ## Documentation
 
 - [Monitor guide](../../../../docs/monitor.md)
+- [Camera quality and drift guide](../../../../docs/camera-quality.md)
 - [Versioned API contracts](../../../../docs/api-contracts.md)
 - [Observability: health, ready and metrics](../../../../docs/observability.md)
 - [Runbooks index](../../../../docs/runbooks/README.md)

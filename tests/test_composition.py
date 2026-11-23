@@ -1,6 +1,7 @@
 import ast
 import threading
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -8,10 +9,16 @@ import pytest
 import main as composition_root
 from tests.fakes.fake_detector import FakeDetector
 from tests.fakes.fake_door import FakeDoor
+from tests.fakes.fake_monitor_source import FakeMonitorSource
 from tests.fakes.fake_reid import FakeReID
+from tests.fakes.fake_runtime_app import FakeRuntimeApp
 from tests.fakes.fake_video_source import FakeVideoSource
+from vision_core.core.config import Settings
+from vision_core.core.config.persistence import PersistenceSettings
 from vision_core.core.domain.event import Event
 from vision_core.core.errors import ConfigurationError, VisionCoreError
+from vision_core.core.telemetry.metrics import ObservabilityMetrics
+from vision_core.features.monitor.infrastructure.state import MonitorState
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 
 
@@ -143,3 +150,146 @@ def test_monitor_main_no_render_forces_override(monkeypatch):
 
     assert calls["kwargs"]["render_enabled"] is False
     assert Path(calls["kwargs"]["zones_file"]).as_posix().endswith("config/zones.example.json")
+
+
+def _camera_quality_settings(tmp_path, sample_every_n_frames=3, camera_id="default"):
+    return Settings.from_env(
+        {
+            "VISION_CORE_DB_PATH": str(tmp_path / "camera-quality.sqlite3"),
+            "VISION_CORE_CAMERA_ID": camera_id,
+            "VISION_CORE_CAMERA_QUALITY_ENABLED": "1",
+            "VISION_CORE_CAMERA_QUALITY_SAMPLE_EVERY_N_FRAMES": str(sample_every_n_frames),
+        },
+        validate_startup=False,
+    )
+
+
+def _patch_pipeline_dependencies(monkeypatch, tmp_path):
+    persistence = composition_root.build_persistence(
+        PersistenceSettings.from_env({"VISION_CORE_DB_PATH": str(tmp_path / "camera-quality.sqlite3")})
+    )
+    models = SimpleNamespace(as_health_metadata=lambda: {}, detection=None, embedding=None)
+    monkeypatch.setattr(composition_root, "build_persistence", lambda *args, **kwargs: persistence)
+    monkeypatch.setattr(composition_root, "resolve_active_models", lambda settings: models)
+    monkeypatch.setattr(composition_root, "build_video", lambda **kwargs: FakeMonitorSource(object()))
+    monkeypatch.setattr(composition_root, "build_door", lambda **kwargs: SimpleNamespace(analytics=FakeDoor()))
+    monkeypatch.setattr(composition_root, "build_detection", lambda **kwargs: SimpleNamespace(detector=FakeDetector()))
+    monkeypatch.setattr(
+        composition_root,
+        "build_reid",
+        lambda **kwargs: SimpleNamespace(
+            memory=kwargs.get("memory") or FakeReID(),
+            embedder=kwargs.get("embedder") or (lambda crop: np.ones(4)),
+        ),
+    )
+    monkeypatch.setattr(composition_root, "build_pipeline", lambda **kwargs: FakeRuntimeApp(**kwargs))
+    return persistence
+
+
+def test_build_monitor_pipeline_wires_sampled_quality_thread(monkeypatch, tmp_path):
+    persistence = _patch_pipeline_dependencies(monkeypatch, tmp_path)
+    threads = []
+    sampled_flags = []
+
+    class QualityMonitor:
+        def __init__(self, *args, **kwargs):
+            return None
+
+        def observe(self, _frame, *, sampled=False):
+            sampled_flags.append(sampled)
+
+    class QualityThread:
+        def __init__(self, analyze, *, sample_every_n_frames=1, on_error=None):
+            self.analyze = analyze
+            self.sample_every_n_frames = sample_every_n_frames
+            self.on_error = on_error
+            self.started = False
+            self.closed = False
+            self.submitted = []
+            threads.append(self)
+
+        def start(self):
+            self.started = True
+
+        def submit(self, frame):
+            self.submitted.append(frame.copy())
+
+        def close(self, timeout=2):
+            self.closed = True
+            return True
+
+    monkeypatch.setattr(composition_root, "CameraQualityMonitor", QualityMonitor)
+    monkeypatch.setattr(composition_root, "QualityThread", QualityThread)
+    state = MonitorState(metrics=ObservabilityMetrics())
+    pipeline = composition_root.build_monitor_pipeline(
+        state,
+        settings=_camera_quality_settings(tmp_path),
+        persistence=persistence,
+        start_retention=False,
+        render_enabled=False,
+    )
+
+    try:
+        pipeline(lambda: False)
+    finally:
+        persistence.close()
+
+    assert len(threads) == 1
+    thread = threads[0]
+    assert thread.started and thread.closed
+    assert thread.sample_every_n_frames == 3
+    assert len(thread.submitted) == 1
+    thread.analyze(np.zeros((2, 2, 3), dtype=np.uint8))
+    assert sampled_flags == [True]
+
+
+def test_build_monitor_pipeline_records_quality_analysis_errors(monkeypatch, tmp_path):
+    persistence = _patch_pipeline_dependencies(monkeypatch, tmp_path)
+
+    class FailingQualityMonitor:
+        def __init__(self, *args, **kwargs):
+            return None
+
+        def observe(self, _frame, *, sampled=False):
+            raise RuntimeError("fallo de análisis")
+
+    class ImmediateQualityThread:
+        def __init__(self, analyze, *, sample_every_n_frames=1, on_error=None):
+            self.analyze = analyze
+            self.on_error = on_error
+            self.started = False
+            self.closed = False
+
+        def start(self):
+            self.started = True
+
+        def submit(self, frame):
+            try:
+                self.analyze(frame)
+            except Exception as error:
+                if self.on_error is not None:
+                    self.on_error(error)
+
+        def close(self, timeout=2):
+            self.closed = True
+            return True
+
+    monkeypatch.setattr(composition_root, "CameraQualityMonitor", FailingQualityMonitor)
+    monkeypatch.setattr(composition_root, "QualityThread", ImmediateQualityThread)
+    metrics = ObservabilityMetrics()
+    state = MonitorState(camera_id="camera-1", metrics=metrics)
+    pipeline = composition_root.build_monitor_pipeline(
+        state,
+        settings=_camera_quality_settings(tmp_path, camera_id="camera-1"),
+        persistence=persistence,
+        start_retention=False,
+        render_enabled=False,
+    )
+
+    try:
+        pipeline(lambda: False)
+    finally:
+        persistence.close()
+
+    key = f"vision_core_camera_quality_errors_total{{camera_id={state.camera_id}}}"
+    assert metrics.snapshot()["counters"][key] == 1

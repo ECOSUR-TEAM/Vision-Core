@@ -1,6 +1,7 @@
 """Configuración tipada y validada del kernel compartido (ADR 0008)."""
 
 from .persistence import PersistenceSettings
+from .settings_camera_quality import CameraQualitySettings
 from .settings_config import Settings
 from .settings_error import SettingsError
 from .settings_helpers import (
@@ -14,6 +15,7 @@ __all__ = [
     "Settings",
     "SettingsError",
     "PersistenceSettings",
+    "CameraQualitySettings",
     "ModelRegistrySettings",
     "DEFAULT_MODEL_REGISTRY_FILE",
     "apply_ffmpeg_capture_options",

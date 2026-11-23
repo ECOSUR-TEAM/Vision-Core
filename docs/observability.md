@@ -58,6 +58,10 @@ credenciales se redactan antes de emitir texto.
 | `vision_core_inference_latency_ms` | histogram | Duracion de inferencia de deteccion |
 | `vision_core_reid_latency_ms` | histogram | Duracion de embedding y ReID |
 | `vision_core_frame_processing_duration_ms` | histogram | Duracion completa por frame |
+| `vision_core_camera_quality_degraded` | gauge | `1` cuando la calidad de camara esta degradada |
+| `vision_core_camera_quality_degraded_total` | counter | Transiciones a `degraded` (cambio de motivo) |
+| `vision_core_camera_quality_<motivo>_total` | counter | Aparicion de cada motivo de calidad |
+| `vision_core_camera_quality_errors_total` | counter | Fallos del analisis de calidad |
 
 Cada histograma conserva una ventana de las ultimas 1000 muestras para `min` y `max`,
 mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan
@@ -68,6 +72,8 @@ Cuando `VISION_CORE_CAMERA_ID` no es `default`, cada metrica se publica dos vece
 con su nombre historico (agregado) y con el sufijo `{camera_id=<id>}`. Por ejemplo,
 `vision_core_frames_discarded_total{camera_id=camera-1}` complementa a
 `vision_core_frames_discarded_total` sin romper consumidores anteriores. Los
+motivos de calidad son codigos estables documentados en
+[calidad de camara](camera-quality.md); no cambian `status` ni `/ready`. Los
 caracteres no válidos en `camera_id` se normalizan a `_` en la clave de métrica;
 el valor original se conserva en `profiling_results.json` y en logs JSON.
 

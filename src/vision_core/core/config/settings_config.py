@@ -1,10 +1,12 @@
 import os
+import re
 from dataclasses import dataclass
 from math import isfinite
 from pathlib import Path
 from typing import Mapping
 
 from .settings_camera import CameraSettings
+from .settings_camera_quality import CameraQualitySettings
 from .settings_detection import DetectionSettings
 from .settings_error import SettingsError
 from .settings_helpers import normalize_monitor_host, parse_bool, valid_rtsp_url
@@ -27,6 +29,7 @@ class Settings:
     logging: LoggingSettings
     performance: PerformanceSettings
     camera: CameraSettings
+    camera_quality: CameraQualitySettings
     models: ModelRegistrySettings
 
     @classmethod
@@ -188,6 +191,43 @@ class Settings:
             errors.append("VISION_CORE_LOG_LEVEL: use CRITICAL, ERROR, WARNING, INFO o DEBUG")
         if not camera_id or camera_id.lower() in {"none", "null"}:
             errors.append("VISION_CORE_CAMERA_ID: no puede estar vacío")
+
+        safe_camera_id = re.sub(r"[^A-Za-z0-9]+", "_", camera_id).upper().strip("_") or "DEFAULT"
+        quality_prefix = f"VISION_CORE_CAMERA_QUALITY_{safe_camera_id}_"
+
+        def quality_name(suffix: str) -> str:
+            specific = f"{quality_prefix}{suffix}"
+            return specific if specific in env else f"VISION_CORE_CAMERA_QUALITY_{suffix}"
+
+        quality_enabled = boolean(quality_name("ENABLED"), True)
+        quality_sample_frames = integer(quality_name("SAMPLE_EVERY_N_FRAMES"), 15)
+        quality_frozen_frames = integer(quality_name("FROZEN_FRAMES"), 30)
+        quality_frozen_difference = floating(quality_name("FROZEN_DIFFERENCE"), 1.0)
+        quality_min_blur = floating(quality_name("MIN_BLUR_VARIANCE"), 50.0)
+        quality_min_brightness = floating(quality_name("MIN_BRIGHTNESS"), 25.0)
+        quality_max_brightness = floating(quality_name("MAX_BRIGHTNESS"), 230.0)
+        quality_check_resolution = boolean(quality_name("CHECK_RESOLUTION"), True)
+        quality_check_frozen = boolean(quality_name("CHECK_FROZEN"), True)
+        quality_check_blur = boolean(quality_name("CHECK_BLUR"), True)
+        quality_check_exposure = boolean(quality_name("CHECK_EXPOSURE"), True)
+        quality_check_zones = boolean(quality_name("CHECK_ZONES"), True)
+        if quality_sample_frames < 1:
+            errors.append(f"{quality_name('SAMPLE_EVERY_N_FRAMES')}: debe ser mayor que 0")
+        if quality_frozen_frames < 2:
+            errors.append(f"{quality_name('FROZEN_FRAMES')}: debe ser mayor o igual que 2")
+        if not isfinite(quality_frozen_difference) or quality_frozen_difference < 0:
+            errors.append(f"{quality_name('FROZEN_DIFFERENCE')}: debe ser finito y no negativo")
+        if not isfinite(quality_min_blur) or quality_min_blur < 0:
+            errors.append(f"{quality_name('MIN_BLUR_VARIANCE')}: debe ser finito y no negativo")
+        if not isfinite(quality_min_brightness):
+            errors.append(f"{quality_name('MIN_BRIGHTNESS')}: debe ser finito")
+        if not isfinite(quality_max_brightness):
+            errors.append(f"{quality_name('MAX_BRIGHTNESS')}: debe ser finito")
+        elif isfinite(quality_min_brightness) and not 0 <= quality_min_brightness < quality_max_brightness <= 255:
+            errors.append(
+                f"{quality_name('MIN_BRIGHTNESS')} / {quality_name('MAX_BRIGHTNESS')}: requiere 0 <= min < max <= 255"
+            )
+
         minimum_free_disk_mb = integer("VISION_CORE_MINIMUM_FREE_DISK_MB", 500)
         if minimum_free_disk_mb < 0:
             errors.append("VISION_CORE_MINIMUM_FREE_DISK_MB: debe ser mayor o igual que 0")
@@ -242,6 +282,20 @@ class Settings:
             logging=LoggingSettings(log_level, log_json, camera_id),
             performance=PerformanceSettings(performance_interval),
             camera=CameraSettings(camera_url),
+            camera_quality=CameraQualitySettings(
+                enabled=quality_enabled,
+                sample_every_n_frames=quality_sample_frames,
+                frozen_frames=quality_frozen_frames,
+                frozen_difference=quality_frozen_difference,
+                min_blur_variance=quality_min_blur,
+                min_brightness=quality_min_brightness,
+                max_brightness=quality_max_brightness,
+                check_resolution=quality_check_resolution,
+                check_frozen=quality_check_frozen,
+                check_blur=quality_check_blur,
+                check_exposure=quality_check_exposure,
+                check_zones=quality_check_zones,
+            ),
             models=ModelRegistrySettings(
                 registry_file,
                 detection_model_id,

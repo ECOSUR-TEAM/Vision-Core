@@ -20,7 +20,7 @@ el `LICENSE` del wheel instalado.
 | pytest-cov | 7.1.0 | Desarrollo/test (también instalado en runtime) | MIT | `AUTHORS.rst`/`LICENSE` |
 | mypy | 1.11.2 | Solo desarrollo/typecheck | MIT | `LICENSE` |
 | types-PyYAML | 6.0.12.20261113 | Stubs de typing | Apache-2.0 | `LICENSE` |
-| setuptools | >=61 | Backend de build | MIT | `LICENSE` |
+| setuptools | >=78.1.0 | Backend de build | MIT | `LICENSE` |
 | ruff | 0.3.0 | Lint y formato en CI | MIT | `LICENSE` |
 
 `torch` y `torchvision` se instalan desde el índice CPU de PyTorch. Los pesos

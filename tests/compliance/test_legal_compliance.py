@@ -1,5 +1,6 @@
 import re
 import sqlite3
+import tomllib
 from pathlib import Path
 
 from vision_core.core.config.persistence import (
@@ -31,6 +32,14 @@ def _requirements_versions(relative):
     return versions
 
 
+def _setuptools_requirement():
+    pyproject = tomllib.loads(_read("pyproject.toml"))
+    for requirement in pyproject["build-system"]["requires"]:
+        if requirement.lower().startswith("setuptools"):
+            return requirement[len("setuptools") :]
+    raise AssertionError("setuptools no está declarado en build-system.requires")
+
+
 def test_third_party_notices_match_requirements_and_gate_agpl_publication():
     text = _read("THIRD_PARTY_NOTICES.md")
     lowered = text.lower()
@@ -51,7 +60,7 @@ def test_third_party_notices_match_requirements_and_gate_agpl_publication():
         assert name in rows, f"Falta {name} en THIRD_PARTY_NOTICES.md"
         assert rows[name] == version, f"Versión incorrecta para {name}: {rows[name]} != {version}"
 
-    for tool, version in (("setuptools", ">=61"), ("ruff", "0.3.0")):
+    for tool, version in (("setuptools", _setuptools_requirement()), ("ruff", "0.3.0")):
         assert rows.get(tool) == version, f"Falta la herramienta {tool} {version}"
 
     workflow = _read(".github/workflows/docker.yml")

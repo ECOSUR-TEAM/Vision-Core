@@ -31,6 +31,7 @@ def _state():
         "fps": 15.0,
         "dropped_frames": 0,
         "persistence": {"enabled": True, "migrations": ["001"], "failures": 0},
+        "camera_quality": {"status": "ok", "reason": None, "signals": {}},
     }
 
 

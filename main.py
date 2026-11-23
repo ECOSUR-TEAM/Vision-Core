@@ -13,6 +13,8 @@ from vision_core.core.infrastructure.persistence.retention_job import RetentionJ
 from vision_core.core.infrastructure.persistence.retention_worker import RetentionWorker
 from vision_core.core.telemetry.health import HealthStatus
 from vision_core.core.telemetry.metrics import get_observability_metrics
+from vision_core.features.camera_health.application.camera_quality_monitor import CameraQualityMonitor
+from vision_core.features.camera_health.application.quality_thread import QualityThread
 from vision_core.features.detection.infrastructure.dependencies import build_detection
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
@@ -107,6 +109,7 @@ def build_monitor_pipeline(
         retention_worker = None
         renderer = None
         renderer_error = None
+        quality_thread: QualityThread | None = None
         session_id = str(uuid.uuid4())
         try:
             persistence.start_session(session_id, time.time())
@@ -123,6 +126,22 @@ def build_monitor_pipeline(
                     zones.door,
                     confirmation_frames=settings.zones.confirmation_frames,
                 )
+
+            def on_camera_quality(observation):
+                publish_quality = getattr(state, "set_camera_quality", None)
+                if publish_quality is not None:
+                    publish_quality(observation.status, observation.reason, observation.signals)
+
+            def on_quality_error(_error):
+                state.metrics.increment("vision_core_camera_quality_errors_total", camera_id=camera_id)
+
+            quality_monitor = CameraQualityMonitor(
+                settings.camera_quality,
+                expected_frame_size=(zones.width, zones.height) if zones else None,
+                zones=zones,
+                on_observation=on_camera_quality,
+                on_error=on_quality_error,
+            )
             door = build_door(analytics=analytics)
             detection = build_detection(
                 model_path=str(settings.detection.model_path),
@@ -139,9 +158,17 @@ def build_monitor_pipeline(
                 reid = build_reid(memory=memory, embedder=reid.embedder)
             source = build_video(latest=True, metrics=state.metrics)
             buffer: LatestFrameBuffer | None = LatestFrameBuffer() if config.render_enabled else None
+            if buffer is None and settings.camera_quality.enabled:
+                quality_thread = QualityThread(
+                    lambda frame: quality_monitor.observe(frame, sampled=True),
+                    sample_every_n_frames=settings.camera_quality.sample_every_n_frames,
+                    on_error=on_quality_error,
+                )
+                quality_thread.start()
             if buffer is not None:
 
                 def render_job(job):
+                    quality_monitor.observe(job.frame)
                     jpeg, people = render_frame(
                         job.frame,
                         job.tracks,
@@ -186,6 +213,8 @@ def build_monitor_pipeline(
                         time.time(),
                     )
                 if renderer is None or buffer is None:
+                    if quality_thread is not None:
+                        quality_thread.submit(frame)
                     return
                 zone_by_person = {}
                 for track in tracks:
@@ -232,6 +261,8 @@ def build_monitor_pipeline(
             if renderer is not None:
                 renderer.close(timeout=2)
                 renderer_error = renderer.error
+            if quality_thread is not None:
+                quality_thread.close(timeout=2)
             if retention_worker is not None:
                 retention_worker.stop()
             persistence.finish_session(session_id, time.time())

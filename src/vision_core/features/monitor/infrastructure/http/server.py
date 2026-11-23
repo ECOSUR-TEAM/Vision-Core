@@ -95,7 +95,13 @@ class MonitorHTTPServer(ThreadingHTTPServer):
             pass
         finally:
             try:
-                request.shutdown(socket.SHUT_RDWR)
+                request.shutdown(socket.SHUT_WR)
+            except OSError:
+                pass
+            try:
+                request.settimeout(0.2)
+                while request.recv(4096):
+                    pass
             except OSError:
                 pass
             request.close()

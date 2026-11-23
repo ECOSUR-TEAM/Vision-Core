@@ -26,6 +26,8 @@ def resolve_active_models(settings: Settings, *, registry: ModelRegistry | None 
     )
     _validate_detection_config(detection, settings)
     _validate_embedding_config(embedding, settings)
+    _validate_precision(detection, settings.detection.precision, "VISION_CORE_DETECTION_PRECISION")
+    _validate_precision(embedding, settings.reid.precision, "VISION_CORE_EMBEDDING_PRECISION")
     detection_verified = False
     embedding_verified = False
     if settings.models.verify_checksums:
@@ -72,6 +74,15 @@ def _validate_embedding_config(model: ModelDescriptor, settings: Settings) -> No
         raise ConfigurationError(
             f"VISION_CORE_EMBEDDING_WEIGHTS debe ser '{expected_weights}' para el modelo '{model.id}'.",
             context={"variable": "VISION_CORE_EMBEDDING_WEIGHTS"},
+        )
+
+
+def _validate_precision(model: ModelDescriptor, configured: str, variable: str) -> None:
+    expected = cast(str, model.expected_config["precision"])
+    if configured != expected:
+        raise ConfigurationError(
+            f"{variable} debe ser '{expected}' para el modelo '{model.id}'.",
+            context={"variable": variable},
         )
 
 

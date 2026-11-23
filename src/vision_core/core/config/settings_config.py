@@ -12,6 +12,7 @@ from .settings_logging import LoggingSettings
 from .settings_model_registry import DEFAULT_MODEL_REGISTRY_FILE, ModelRegistrySettings
 from .settings_monitor import MonitorSettings
 from .settings_performance import PerformanceSettings
+from .settings_precision import is_supported_precision
 from .settings_reid import ReIDSettings
 from .settings_video import VideoSettings
 from .settings_zones import ZonesSettings
@@ -101,6 +102,7 @@ class Settings:
         configured_model_path = env.get("VISION_CORE_MODEL_PATH")
         model_path = Path(configured_model_path or "yolov8n.pt").expanduser()
         detection_device = env.get("VISION_CORE_DETECTION_DEVICE", "").strip() or None
+        detection_precision = env.get("VISION_CORE_DETECTION_PRECISION", "fp32").strip().lower()
         confidence = floating("VISION_CORE_DETECTION_CONFIDENCE", 0.5)
         classes_raw = env.get("VISION_CORE_DETECTION_CLASSES", "0").strip()
         classes: tuple[int, ...] = ()
@@ -119,6 +121,12 @@ class Settings:
             and not detection_device.startswith("cuda:")
         ):
             errors.append("VISION_CORE_DETECTION_DEVICE: use cpu, cuda o cuda:<indice>")
+        if not is_supported_precision(detection_precision):
+            errors.append("VISION_CORE_DETECTION_PRECISION: use fp32, fp16 o int8")
+        if detection_precision == "fp16" and (detection_device is None or detection_device == "cpu"):
+            errors.append(
+                "VISION_CORE_DETECTION_PRECISION: fp16 requiere VISION_CORE_DETECTION_DEVICE=cuda o cuda:<indice>"
+            )
         if not isfinite(confidence) or not 0 < confidence <= 1:
             errors.append("VISION_CORE_DETECTION_CONFIDENCE: debe estar entre 0 y 1")
         if not classes or any(item < 0 for item in classes):
@@ -129,12 +137,27 @@ class Settings:
         reid_model = env.get("VISION_CORE_EMBEDDING_MODEL", "mobilenet_v3_small").strip()
         reid_weights = env.get("VISION_CORE_EMBEDDING_WEIGHTS", "DEFAULT").strip().upper()
         reid_device = env.get("VISION_CORE_EMBEDDING_DEVICE", "").strip() or None
+        reid_precision = env.get("VISION_CORE_EMBEDDING_PRECISION", "fp32").strip().lower()
         reid_threshold = floating("VISION_CORE_REID_THRESHOLD", 0.85)
         ambiguity_margin = floating("VISION_CORE_REID_AMBIGUITY_MARGIN", 0.03)
         reid_ttl = floating("VISION_CORE_REID_TTL_SECONDS", 0.0)
         gallery_size = integer("VISION_CORE_REID_GALLERY_SIZE", 8)
-        if reid_model not in {"mobilenet_v3_small", "resnet50"}:
-            errors.append("VISION_CORE_EMBEDDING_MODEL: use mobilenet_v3_small o resnet50")
+        if reid_model not in {
+            "mobilenet_v3_small",
+            "mobilenet_v3_small-int8",
+            "mobilenet_v3_small-fp16",
+            "resnet50",
+        }:
+            errors.append(
+                "VISION_CORE_EMBEDDING_MODEL: use mobilenet_v3_small, "
+                "mobilenet_v3_small-int8, mobilenet_v3_small-fp16 o resnet50"
+            )
+        if not is_supported_precision(reid_precision):
+            errors.append("VISION_CORE_EMBEDDING_PRECISION: use fp32, fp16 o int8")
+        if reid_precision == "fp16" and (reid_device is None or reid_device == "cpu"):
+            errors.append(
+                "VISION_CORE_EMBEDDING_PRECISION: fp16 requiere VISION_CORE_EMBEDDING_DEVICE=cuda o cuda:<indice>"
+            )
         if reid_weights != "DEFAULT":
             errors.append("VISION_CORE_EMBEDDING_WEIGHTS: use DEFAULT")
         if reid_device is not None and reid_device not in {"cpu", "cuda"} and not reid_device.startswith("cuda:"):
@@ -227,11 +250,20 @@ class Settings:
                 decoder_threads,
                 ffmpeg_options,
             ),
-            detection=DetectionSettings(model_path, detection_device, confidence, classes, tracking, max_missed),
+            detection=DetectionSettings(
+                model_path,
+                detection_device,
+                detection_precision,
+                confidence,
+                classes,
+                tracking,
+                max_missed,
+            ),
             reid=ReIDSettings(
                 reid_model,
                 reid_weights,
                 reid_device,
+                reid_precision,
                 reid_threshold,
                 ambiguity_margin,
                 reid_ttl,

@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "hardware_targets": {
+    "cpu-laptop": {
+      "description": "CPU laptop x86 sin CUDA; referencia local y presupuesto synthetic-cpu-320x240 del ticket 36.",
+      "budget_scenario": "synthetic-cpu-320x240",
+      "external": false
+    },
+    "jetson-nano-int8": {
+      "description": "Jetson Nano/Orin equivalente a CPU ARM; requiere ejecución manual en el dispositivo y artefacto ONNX INT8.",
+      "budget_scenario": "synthetic-cpu-320x240",
+      "external": true
+    },
+    "gpu-fp16": {
+      "description": "Hardware edge con CUDA; perfil opcional, no exigido por la suite.",
+      "budget_scenario": "synthetic-gpu-640x480",
+      "external": true
+    }
+  },
+  "validation_set": {
+    "name": "synthetic-cpu-320x240",
+    "video": "benchmark-data/synthetic-cpu-320x240/benchmark.avi",
+    "scene": "benchmark-data/synthetic-cpu-320x240/scene.json",
+    "seed": 20261120,
+    "frames": 60,
+    "description": "Marcadores deterministas del generador 1.0.0; apto para comparar latencias y calidad relativa, no para precisión absoluta."
+  },
+  "quality_gates": {
+    "min_detection_map50": 0.9,
+    "min_identity_recall_at_1": 0.9,
+    "max_relative_drop_pct": 5.0,
+    "baseline_profile": "cpu-fp32"
+  },
+  "profiles": [
+    {
+      "id": "cpu-fp32",
+      "target": "cpu-laptop",
+      "device": "cpu",
+      "detection": {
+        "model_id": "detection.person.yolov8n",
+        "selector": "yolov8n.pt",
+        "precision": "fp32"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small",
+        "selector": "mobilenet_v3_small",
+        "precision": "fp32"
+      }
+    },
+    {
+      "id": "cpu-int8",
+      "target": "cpu-laptop",
+      "device": "cpu",
+      "detection": {
+        "model_id": "detection.person.yolov8n.int8",
+        "selector": "yolov8n-int8.onnx",
+        "precision": "int8"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small.int8",
+        "selector": "mobilenet_v3_small-int8",
+        "precision": "int8"
+      }
+    },
+    {
+      "id": "jetson-fp32",
+      "target": "jetson-nano-int8",
+      "device": "cpu",
+      "detection": {
+        "model_id": "detection.person.yolov8n",
+        "selector": "yolov8n.pt",
+        "precision": "fp32"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small",
+        "selector": "mobilenet_v3_small",
+        "precision": "fp32"
+      }
+    },
+    {
+      "id": "jetson-int8",
+      "target": "jetson-nano-int8",
+      "device": "cpu",
+      "detection": {
+        "model_id": "detection.person.yolov8n.int8",
+        "selector": "yolov8n-int8.onnx",
+        "precision": "int8"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small.int8",
+        "selector": "mobilenet_v3_small-int8",
+        "precision": "int8"
+      }
+    },
+    {
+      "id": "gpu-fp16",
+      "target": "gpu-fp16",
+      "device": "cuda",
+      "detection": {
+        "model_id": "detection.person.yolov8n.fp16",
+        "selector": "yolov8n-fp16.pt",
+        "precision": "fp16"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small.fp16",
+        "selector": "mobilenet_v3_small-fp16",
+        "precision": "fp16"
+      }
+    }
+  ]
+}

@@ -68,6 +68,21 @@ Ultralytics. No se descarga nada y no se necesita RTSP, GPU ni internet.
 Los contadores de `ObservabilityMetrics` se guardan como telemetría de apoyo; el
 gate usa las mediciones del profiler para no depender del singleton global.
 
+## Matriz edge / INT8
+
+`vision_core.scripts.benchmark_edge` es una suite manual separada del nightly. Compara
+`cpu-fp32` (rollback), `cpu-int8`, `jetson-fp32`, `jetson-int8` y `gpu-fp16` con la
+misma semilla del video sintético. La configuración viva está en
+[`benchmarks/edge-config.json`](../benchmarks/edge-config.json) y la matriz versionada en
+[`benchmarks/edge-matrix.json`](../benchmarks/edge-matrix.json) (CSV y Markdown junto a
+ella). La metodología, artefactos externos y criterios de promoción están en
+[`docs/benchmark-edge.md`](benchmark-edge.md).
+
+A diferencia del nightly, esta suite no exige CUDA ni descarga pesos: los perfiles sin
+artefactos quedan `not_measured` y los de CUDA `unsupported` salvo `--allow-cuda`. La
+calidad se evalúa antes que el rendimiento; si no pasa los umbrales, el perfil no es
+candidato a recomendación aunque tenga más FPS.
+
 ## Regresiones
 
 `compare_baseline` compara el resultado contra
@@ -107,6 +122,9 @@ python -m vision_core.scripts.benchmark_nightly \
 # Regenerar un baseline después de un cambio intencional de hardware/modelo
 python -m vision_core.scripts.benchmark_nightly ... \
   --write-baseline benchmarks/baseline-synthetic-cpu-320x240.json
+
+# Matriz edge/INT8 (suite manual; sin CUDA ni descargas por defecto)
+make benchmark-edge
 
 # Humo de PR y suite pesada
 make smoke

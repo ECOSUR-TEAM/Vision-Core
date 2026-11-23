@@ -58,6 +58,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Property testing](property-testing.md) | Geometría de zonas, invariantes y fuzz determinista |
 | [Replay determinista](replay.md) | Golden videos, fixtures y comparación de eventos |
 | [Presupuestos de rendimiento](performance.md) | Baselines, hotspots, smoke y benchmark nocturno |
+| [Matriz edge / INT8](benchmark-edge.md) | Perfiles FP32/INT8/FP16, calidad antes que FPS y promoción |
 | [Plan G0](g0-baseline-plan.md) | Instrumentación del pipeline de una cámara |
 | [Model cards](model-cards/TEMPLATE.md) | Plantilla y fichas de procedencia, licencia y límites |
 | [Evaluación de la sala](../reports/room-evaluation.md) | Resultados y pendientes reales |

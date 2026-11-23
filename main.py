@@ -127,6 +127,7 @@ def build_monitor_pipeline(
             detection = build_detection(
                 model_path=str(settings.detection.model_path),
                 device=settings.detection.device,
+                precision=settings.detection.precision,
                 confidence=settings.detection.confidence,
                 classes=settings.detection.classes,
                 tracking_enabled=settings.detection.tracking_enabled,

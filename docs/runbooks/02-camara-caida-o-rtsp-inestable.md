@@ -68,12 +68,13 @@ permanente sin una causa documentada.
 
 ## Evidencia ECM-104
 
-- `rtsp_disconnected`: detección en 1.00 s y recuperación en 12.00 s, dentro
-  del objetivo de 12.00 s. `/ready` cayó, el monitor pasó a `stale` y la
-  reconexión restauró el stream sin reiniciar el proceso.
-- `frozen_frame`: detección en 0.50 s y recuperación en 1.50 s, dentro del
-  objetivo de 1.50 s. La calidad degradó con aviso textual y el conteo continuó.
+- `rtsp_disconnected`: latencia inyectada de detección 1.00 s y recuperación
+  12.00 s, dentro del objetivo de 12.00 s. `/ready` cayó, el monitor pasó a
+  `stale` y la reconexión restauró el stream sin reiniciar el proceso.
+- `frozen_frame`: latencia inyectada de detección 0.50 s y recuperación 1.50 s,
+  dentro del objetivo de 1.50 s. La calidad degradó con reason `FROZEN_FRAME`,
+  aviso textual y el conteo continuó.
 
 Evidencia completa en [resultados de simulacros](../../reports/incident-drills.md).
-El SLO `camera_recovery` usa la mediana de recuperación de este runbook y
-`vision_core_reconnections_total`.
+El SLO `camera_recovery` usa el gauge opcional `vision_core_camera_recovery_seconds`;
+los simulacros sólo validan el plan de respuesta y no alimentan ese SLO.

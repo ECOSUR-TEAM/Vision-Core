@@ -55,6 +55,7 @@ credenciales se redactan antes de emitir texto.
 | `vision_core_events_emitted_total` | counter | Eventos de puerta emitidos |
 | `vision_core_errors_total` | counter | Errores de pipeline (se cuentan una sola vez) |
 | `vision_core_reconnections_total` | counter | Reconexiones exitosas del stream |
+| `vision_core_camera_recovery_seconds` | gauge | Segundos de recuperación tras pérdida de cámara; lo publica el recolector externo; si falta, el SLO queda `sin_datos` |
 | `vision_core_fps` | gauge | FPS suavizado del monitor |
 | `vision_core_active_people` | gauge | Personas actualmente resueltas |
 | `vision_core_queue_size` | gauge | Frames pendientes en la cola de captura |
@@ -68,8 +69,10 @@ credenciales se redactan antes de emitir texto.
 
 Cada histograma conserva una ventana de las ultimas 1000 muestras para `min`, `max` y
 `p95`, mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan
-`person_id`, rutas o URLs como labels. `vision_core_frames_discarded_total` suma el
-delta del acumulado de la captura, no el total en cada frame.
+`person_id`, rutas o URLs como labels. Los SLOs consumen la clave base agregada;
+las claves con `{camera_id=<id>}` complementan ese total sin sumarse dos veces.
+`vision_core_frames_discarded_total` suma el delta del acumulado de la captura,
+no el total en cada frame.
 
 Cuando `VISION_CORE_CAMERA_ID` no es `default`, cada metrica se publica dos veces:
 con su nombre historico (agregado) y con el sufijo `{camera_id=<id>}`. Por ejemplo,
@@ -104,7 +107,7 @@ el valor original se conserva en `profiling_results.json` y en logs JSON.
 
 El benchmark nocturno guarda un snapshot de estos contadores e histogramas como
 telemetría de apoyo y usa `FrameProfiler` para el gate de presupuestos. El e2e
- con `ObservabilityMetrics` fresco comprueba `vision_core_events_emitted_total` y
+con `ObservabilityMetrics` fresco comprueba `vision_core_events_emitted_total` y
 `vision_core_inference_latency_ms` a través de `/metrics`. Consulta
 [performance.md](performance.md) para las cifras y los hotspots.
 

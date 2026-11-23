@@ -12,9 +12,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=ROOT / "config" / "slo.json")
     parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument("--metrics-json", type=Path, default=None)
     args = parser.parse_args()
 
-    errors = validate_slo_config(load_json(args.config), root=args.root)
+    try:
+        config = load_json(args.config)
+        metrics = load_json(args.metrics_json) if args.metrics_json else None
+    except (OSError, ValueError) as exc:
+        print(f"ERROR: no se puede leer la configuración: {exc}")
+        return 1
+
+    errors = validate_slo_config(
+        config,
+        root=args.root,
+        budgets_path=args.root / "benchmarks" / "budgets.json",
+        metrics_snapshot=metrics,
+    )
     if errors:
         for error in errors:
             print(f"ERROR: {error}")

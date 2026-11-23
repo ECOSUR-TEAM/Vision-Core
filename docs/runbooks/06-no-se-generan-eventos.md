@@ -72,8 +72,8 @@ términos en [glossary.md](../glossary.md).
 
 ## Evidencia ECM-104
 
-Simulacro `event_sink_down`: detección en 2.00 s y recuperación en 18.00 s,
-dentro del objetivo de 18.00 s. La persistencia falló en modo fail-open, el
+Simulacro `event_sink_down`: latencia inyectada de detección 2.00 s y
+recuperación 18.00 s, dentro del objetivo de 18.00 s. La persistencia falló en modo fail-open, el
 pipeline siguió y `persistence.failures` contabilizó los fallos; el SLO
 `event_delivery` usa ese contador junto a `vision_core_events_emitted_total`.
 Evidencia completa en [resultados de simulacros](../../reports/incident-drills.md).

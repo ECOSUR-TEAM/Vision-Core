@@ -8,11 +8,16 @@ cámara.
 
 ```bash
 make slo-check
-make slo-dashboard
+make incident-drills
+PYTHONPATH=src python -m vision_core.scripts.generate_slo_dashboard \
+  --snapshot-json reports/slo-live-snapshot.json
 cat reports/slo-dashboard.md
 ```
 
-Comprueba en el tablero el valor actual, el umbral, la tendencia, la severidad
+Genera `slo-live-snapshot.json` sólo con `metrics`, `health` y `state`, sin
+`people`, `events`, `person_id`, URLs RTSP ni rutas del filesystem; no lo
+versiones. No uses `make slo-dashboard` para validar un incidente real: usa el
+snapshot de smoke y ocultaría la desviación. Comprueba en el tablero el valor actual, el umbral, la tendencia, la severidad
 y el runbook enlazado. Confirma la señal directa en `/ready`, `/metrics` o
 `/api/v1/state` según el mapeo de [slo.md](../slo.md).
 
@@ -41,4 +46,4 @@ sigue en `503` tras la acción correctiva, aplica
 Registra hora, SLO, valor, umbral, tendencia y runbook ejecutado en el
 [registro de ejecución](README.md#registro-de-ejecución). Escala al responsable
 del área según el runbook destino. No hay pager real ni on-call en este alcance;
-la notificación se hace por el canal definido en el release del ticket 37.
+la notificación se hace por el canal definido en el [proceso de releases](../releases.md).

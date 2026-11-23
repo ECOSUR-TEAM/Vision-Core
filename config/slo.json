@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "kind": "slo-dashboard",
-  "window": "24h",
+  "window": "snapshot",
   "slos": [
     {
       "id": "monitor_availability",
-      "title": "Disponibilidad del monitor",
+      "title": "Disponibilidad instantánea del monitor",
       "objective": 0.99,
       "comparison": "gte",
       "unit": "ratio",
@@ -76,13 +76,13 @@
     },
     {
       "id": "event_delivery",
-      "title": "Tasa de entrega de eventos",
+      "title": "Entrega observada de eventos (proxy desde arranque)",
       "objective": 0.99,
       "comparison": "gte",
       "unit": "ratio",
       "signals": [
-        "vision_core_events_emitted_total",
-        "/api/v1/state.persistence.failures"
+        "vision_core_events_emitted_total (base, desde arranque)",
+        "/api/v1/state.persistence.failures (desde arranque)"
       ],
       "metrics": [
         "vision_core_events_emitted_total"
@@ -104,12 +104,12 @@
       "comparison": "lte",
       "unit": "seconds",
       "signals": [
-        "vision_core_reconnections_total",
-        "incident-drills.recovery_seconds"
+        "vision_core_camera_recovery_seconds",
+        "vision_core_reconnections_total"
       ],
       "metrics": [
-        "vision_core_reconnections_total",
-        "vision_core_errors_total"
+        "vision_core_camera_recovery_seconds",
+        "vision_core_reconnections_total"
       ],
       "error_codes": [
         "VIDEO_SOURCE_UNAVAILABLE",
@@ -145,7 +145,7 @@
       "title": "Frame congelado",
       "slo_id": "frame_freshness",
       "error_codes": [
-        "VIDEO_FRAME_INVALID"
+        "FROZEN_FRAME"
       ],
       "signals": [
         "vision_core_camera_quality_degraded_total",
@@ -195,7 +195,7 @@
       "title": "Disco lleno",
       "slo_id": "monitor_availability",
       "error_codes": [
-        "CONFIGURATION_INVALID"
+        "PIPELINE_FAILED"
       ],
       "signals": [
         "/ready.checks.disk",

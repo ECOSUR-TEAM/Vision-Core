@@ -70,7 +70,7 @@ actualizar la configuración y la documentación. Guías relacionadas:
 
 ## Evidencia ECM-104
 
-Simulacro `weights_missing`: detección en 0.50 s y recuperación en 4.00 s,
-dentro del objetivo de 4.00 s. `/ready` pasó a `503` antes de abrir el stream y
+Simulacro `weights_missing`: latencia inyectada de detección 0.50 s y
+recuperación 4.00 s, dentro del objetivo de 4.00 s. `/ready` pasó a `503` antes de abrir el stream y
 el error se reportó con `MODEL_UNAVAILABLE` / `CONFIGURATION_INVALID`. Evidencia
 completa en [resultados de simulacros](../../reports/incident-drills.md).

@@ -87,8 +87,8 @@ chequeos sin medir antes. Detalle en [startup.md](../startup.md) y
 
 ## Evidencia ECM-104
 
-Simulacro `container_restart`: detección en 0.50 s y recuperación en 15.00 s,
-dentro del objetivo de 15.00 s. `/health` volvió a `alive` y el `uptime` se
+Simulacro `container_restart`: latencia inyectada de detección 0.50 s y
+recuperación 15.00 s, dentro del objetivo de 15.00 s. `/health` volvió a `alive` y el `uptime` se
 reinició con el proceso; los IDs de sesión y el historial volátil no se
 conservan. Evidencia completa en
 [resultados de simulacros](../../reports/incident-drills.md).

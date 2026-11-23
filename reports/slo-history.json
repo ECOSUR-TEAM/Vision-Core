@@ -1,12 +1,13 @@
 {
   "schema_version": 1,
   "kind": "slo-dashboard",
-  "generated_at": "2026-11-23T18:56:52Z",
-  "window": "24h",
+  "generated_at": "2026-11-23T19:53:53Z",
+  "source": "smoke",
+  "window": "snapshot",
   "slos": [
     {
       "id": "monitor_availability",
-      "title": "Disponibilidad del monitor",
+      "title": "Disponibilidad instantánea del monitor",
       "objective": 0.99,
       "comparison": "gte",
       "unit": "ratio",
@@ -76,16 +77,16 @@
     },
     {
       "id": "event_delivery",
-      "title": "Tasa de entrega de eventos",
+      "title": "Entrega observada de eventos (proxy desde arranque)",
       "objective": 0.99,
       "comparison": "gte",
       "unit": "ratio",
-      "current": 0.9917355371900827,
+      "current": 0.9916666666666667,
       "status": "ok",
       "trend": "estable",
       "signals": [
-        "vision_core_events_emitted_total",
-        "/api/v1/state.persistence.failures"
+        "vision_core_events_emitted_total (base, desde arranque)",
+        "/api/v1/state.persistence.failures (desde arranque)"
       ],
       "error_codes": [
         "PIPELINE_FAILED",
@@ -103,12 +104,12 @@
       "objective": 30.0,
       "comparison": "lte",
       "unit": "seconds",
-      "current": 12.0,
-      "status": "ok",
-      "trend": "estable",
+      "current": null,
+      "status": "sin_datos",
+      "trend": "sin_datos_previos",
       "signals": [
-        "vision_core_reconnections_total",
-        "incident-drills.recovery_seconds"
+        "vision_core_camera_recovery_seconds",
+        "vision_core_reconnections_total"
       ],
       "error_codes": [
         "VIDEO_SOURCE_UNAVAILABLE",
@@ -123,8 +124,8 @@
   ],
   "summary": {
     "total": 5,
-    "ok": 5,
+    "ok": 4,
     "breach": 0,
-    "no_data": 0
+    "no_data": 1
   }
 }

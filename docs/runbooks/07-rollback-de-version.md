@@ -88,7 +88,7 @@ digests y su procedimiento están en [releases.md](../releases.md#rollback).
 ## Evidencia ECM-104
 
 Los resultados de simulacros y el tablero de SLO se adjuntan al artefacto de
-release del ticket 37 antes de publicar. Si una alerta `critical` persiste tras
+release vigente, según [releases.md](../releases.md), antes de publicar. Si una alerta `critical` persiste tras
 seguir este runbook, registra el `error_code`, la versión restaurada y el
 resultado de los simulacros en el incidente. Evidencia:
 [resultados de simulacros](../../reports/incident-drills.md) y

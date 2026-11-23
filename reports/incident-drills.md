@@ -1,6 +1,6 @@
 # Resultados de simulacros — ECM-104
 
-Generado: 2026-11-23T18:56:43Z
+Generado: 2026-11-23T19:53:53Z · Modo: synthetic · Latencias inyectadas, no medidas en producción
 
 | Simulacro | SLO | Detección | Recuperación | Resultado | Runbook |
 | --- | --- | --- | --- | --- | --- |
@@ -11,41 +11,41 @@ Generado: 2026-11-23T18:56:43Z
 | Disco lleno | monitor_availability | 1.00s / 1.00s | 9.00s / 9.00s | passed | [docs/runbooks/04-disco-lleno-y-retencion.md](../docs/runbooks/04-disco-lleno-y-retencion.md) |
 | Reinicio del contenedor | monitor_availability | 0.50s / 0.50s | 15.00s / 15.00s | passed | [docs/runbooks/01-arranque-y-parada.md](../docs/runbooks/01-arranque-y-parada.md) |
 
-## Evidencia
+## Evidencia simulada
 
 ### RTSP desconectado
 
-- RTSP desconectado: detectado en 1.00s y recuperado en 12.00s; El monitor marca stale y /ready cae; la reconexión restaura /ready sin reiniciar el proceso.
+- RTSP desconectado: latencia simulada de detección 1.00s (objetivo 1.00s) y recuperación 12.00s (objetivo 12.00s); El monitor marca stale y /ready cae; la reconexión restaura /ready sin reiniciar el proceso.
 - Señales: vision_core_reconnections_total, vision_core_errors_total
 - Códigos: VIDEO_SOURCE_UNAVAILABLE, VIDEO_FRAME_PENDING
 
 ### Frame congelado
 
-- Frame congelado: detectado en 0.50s y recuperado en 1.50s; La calidad degrada sin cortar el video; el aviso es textual y no bloquea el conteo.
+- Frame congelado: latencia simulada de detección 0.50s (objetivo 0.50s) y recuperación 1.50s (objetivo 1.50s); La calidad degrada sin cortar el video; el aviso es textual y no bloquea el conteo.
 - Señales: vision_core_camera_quality_degraded_total, /api/v1/state.age_seconds
-- Códigos: VIDEO_FRAME_INVALID
+- Códigos: FROZEN_FRAME
 
 ### Pesos de modelo ausentes o corruptos
 
-- Pesos de modelo ausentes o corruptos: detectado en 0.50s y recuperado en 4.00s; /ready pasa a 503 antes de abrir stream; el arranque falla temprano con código estable.
+- Pesos de modelo ausentes o corruptos: latencia simulada de detección 0.50s (objetivo 0.50s) y recuperación 4.00s (objetivo 4.00s); /ready pasa a 503 antes de abrir stream; el arranque falla temprano con código estable.
 - Señales: /ready.checks.model, vision_core_errors_total
 - Códigos: MODEL_UNAVAILABLE, CONFIGURATION_INVALID
 
 ### Sink de eventos caído
 
-- Sink de eventos caído: detectado en 2.00s y recuperado en 18.00s; La persistencia falla en modo fail-open; el pipeline sigue y contabiliza fallos.
+- Sink de eventos caído: latencia simulada de detección 2.00s (objetivo 2.00s) y recuperación 18.00s (objetivo 18.00s); La persistencia falla en modo fail-open; el pipeline sigue y contabiliza fallos.
 - Señales: vision_core_events_emitted_total, /api/v1/state.persistence.failures
 - Códigos: PIPELINE_FAILED, VALIDATION_FAILED
 
 ### Disco lleno
 
-- Disco lleno: detectado en 1.00s y recuperado en 9.00s; /ready marca disk=false y la retención deja de escribir sin tumbar el monitor.
+- Disco lleno: latencia simulada de detección 1.00s (objetivo 1.00s) y recuperación 9.00s (objetivo 9.00s); /ready marca disk=false y la retención deja de escribir sin tumbar el monitor.
 - Señales: /ready.checks.disk, /api/v1/state.persistence.failures
-- Códigos: CONFIGURATION_INVALID
+- Códigos: PIPELINE_FAILED
 
 ### Reinicio del contenedor
 
-- Reinicio del contenedor: detectado en 0.50s y recuperado en 15.00s; El contenedor vuelve a /health alive; los IDs de sesión y el historial volátil se reinician.
+- Reinicio del contenedor: latencia simulada de detección 0.50s (objetivo 0.50s) y recuperación 15.00s (objetivo 15.00s); El contenedor vuelve a /health alive; los IDs de sesión y el historial volátil se reinician.
 - Señales: /health.status, /metrics.uptime_seconds
 - Códigos: VIDEO_SOURCE_UNAVAILABLE
 

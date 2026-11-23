@@ -130,6 +130,16 @@ def test_legacy_top_level_packages_are_absent():
     assert (SRC / "model_registry").is_dir()
 
 
+def test_monitor_static_asset_owners_are_current():
+    codeowners = (PROJECT_ROOT / ".github" / "CODEOWNERS").read_text(encoding="utf-8")
+    static_asset = "/src/vision_core/features/monitor/infrastructure/http/static/index.html"
+    legacy_asset = "/src/vision_core/features/monitor/infrastructure/http/index.html"
+
+    assert static_asset in codeowners
+    assert legacy_asset not in codeowners
+    assert (SRC / "features" / "monitor" / "infrastructure" / "http" / "static" / "index.html").is_file()
+
+
 def test_no_shared_imports_remain():
     roots = (SRC, PROJECT_ROOT / "tests", PROJECT_ROOT / "main.py")
     violations = []

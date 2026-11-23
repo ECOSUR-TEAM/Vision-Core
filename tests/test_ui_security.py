@@ -17,7 +17,7 @@ from vision_core.features.monitor.infrastructure.state import MonitorState
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_ROOTS = (PROJECT_ROOT / "src" / "vision_core" / "features" / "monitor" / "infrastructure" / "http",)
-INDEX = FRONTEND_ROOTS[0] / "index.html"
+INDEX = FRONTEND_ROOTS[0] / "static" / "index.html"
 
 FORBIDDEN_SINKS = (
     "innerHTML",

@@ -98,4 +98,5 @@ hecha hasta que esa persona la confirme.
 | ECM-100: calidad de cámara y deriva de calibración | @MelissaZarate08 | @Ameth-Toledo, @bchanona, @Carlosss2, @FabricioPRZ | Pendiente de revisión |
 | ECM-109: persistencia en core y serialización de eventos | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08, @FabricioPRZ | [x] Revisado por otra persona |
 | ECM-103: editor de zonas en el monitor | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08 | [x] Revisado por otra persona |
+| ECM-110: infraestructura feature-specific y fin del paquete horizontal | @bchanona | @Carlosss2, @Ameth-Toledo | [x] Revisado por otra persona |
 | ECM-104: SLOs, simulacros y tablero | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08 | [x] Revisado por otra persona |

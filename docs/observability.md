@@ -9,6 +9,8 @@
 | `/metrics` | Telemetria JSON equivalente a metricas | Contadores, gauges e histogramas |
 | `/api/v1/state` | Estado operativo del monitor | Estado, FPS, persistencia y eventos existentes |
 | `/api/v1/frame?after=N` | Frame JPEG para el visor | `200` JPEG nuevo · `204` sin imagen nueva · `400` `VALIDATION_FAILED` · `503` `VIDEO_FRAME_PENDING` |
+| `/api/v1/zones` | Editor de zonas (`GET`/`PUT`, opcional) | `200` · `403` `ZONE_EDITOR_FORBIDDEN` · `404` `REQUEST_NOT_FOUND` · `413` `VALIDATION_FAILED` · `422` |
+| `/api/v1/zones/validate` | Validación sin escritura (opcional) | `200` · `404` · `422` |
 
 Las rutas `/api/state` y `/api/frame` siguen disponibles como alias deprecados;
 los clientes nuevos deben usar `/api/v1/*`. Ver [contratos](api-contracts.md).
@@ -36,6 +38,7 @@ Cuando `VISION_CORE_LOG_JSON=1`, los logs son JSON con estos campos:
 - `model_id`, `model_version`, `model_hash`
 - `embedding_model_id`, `embedding_model_version`, `embedding_model_hash`
 - `message`
+- `zone_editor_audit` y `zone_editor_access_denied` (sin token, URL ni payload)
 
 `VISION_CORE_LOG_LEVEL` controla el nivel y `VISION_CORE_CAMERA_ID` identifica la camara.
 Los frames, imagenes, embeddings y rutas sensibles no se registran. Las URLs RTSP con

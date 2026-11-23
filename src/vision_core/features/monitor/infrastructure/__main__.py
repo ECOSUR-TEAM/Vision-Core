@@ -9,6 +9,8 @@ from vision_core.core.config import Settings
 from vision_core.core.config.settings_helpers import is_exposed_monitor_host, normalize_monitor_host
 from vision_core.core.telemetry.structured_logging import configure_structured_logging
 from vision_core.features.monitor.infrastructure.http.server import make_server
+from vision_core.features.monitor.infrastructure.zone_editor.config import ZoneEditorConfig
+from vision_core.features.monitor.infrastructure.zone_editor.service import ZoneEditorService
 from vision_core.model_registry.activation import resolve_active_models
 
 
@@ -44,6 +46,12 @@ def main(*, state=None, build_state=None, build_runtime=None, config=None):
         action="store_true",
         default=False,
         help="Omitir render/JPEG por completo (sin visor conectado)",
+    )
+    parser.add_argument(
+        "--zone-editor",
+        action="store_true",
+        default=settings.zones.editor_enabled,
+        help="Habilita el editor de zonas (requiere VISION_CORE_ZONE_EDITOR_TOKEN)",
     )
     args = parser.parse_args()
     try:
@@ -89,7 +97,31 @@ def main(*, state=None, build_state=None, build_runtime=None, config=None):
             config=config,
             models=active_models,
         )
-        server = make_server(args.host, args.port, state)
+        editor_config = ZoneEditorConfig(
+            enabled=args.zone_editor,
+            zones_file=None if args.uncalibrated or args.demo_zones else Path(args.zones) if args.zones else None,
+            editor_token=settings.zones.editor_token,
+            audit_file=settings.zones.editor_audit_file,
+        )
+        if args.zone_editor and (
+            editor_config.zones_file is None or editor_config.editor_token is None or editor_config.audit_file is None
+        ):
+            parser.error(
+                "El editor de zonas requiere --zones, VISION_CORE_ZONE_EDITOR_TOKEN "
+                "y VISION_CORE_ZONE_EDITOR_AUDIT_FILE"
+            )
+        if args.zone_editor:
+            server = make_server(
+                args.host,
+                args.port,
+                state,
+                None,
+                None,
+                None,
+                ZoneEditorService(editor_config),
+            )
+        else:
+            server = make_server(args.host, args.port, state)
 
         def terminate(*_):
             raise KeyboardInterrupt

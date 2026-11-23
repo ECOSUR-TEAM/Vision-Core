@@ -96,8 +96,8 @@ class EventSinkDispatcher:
         self._worker.join(timeout=max(0.0, deadline - time.monotonic()))
         if self._worker.is_alive():
             logger.warning("event sink dispatcher shutdown timed out")
-            return
         self._drain_pending()
+        self._close_destination()
 
     def dead_letters(self) -> tuple[tuple[EventEnvelope, str], ...]:
         return tuple(self._dead_letters)
@@ -187,10 +187,10 @@ class EventSinkDispatcher:
             if not retryable or attempt >= self._settings.max_attempts:
                 self._record_dead_letter(envelope, code, attempt)
                 return
-            self._increment(_RETRIED)
             if self._wait_for_retry(self._retry_delay(attempt)):
                 self._abandon(envelope)
                 return
+            self._increment(_RETRIED)
 
     def _wait_for_retry(self, delay: float) -> bool:
         if self._sleep is time.sleep:

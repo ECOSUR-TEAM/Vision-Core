@@ -18,7 +18,8 @@ All notable changes to this project are documented here using
 - SLO dashboard, alert runbooks and synthetic incident drill harness with snapshot-scoped signals, p95 export and generated evidence artifacts.
 
 ### Changed
-- Event sink dedupe and shutdown semantics: the key is marked only after a 2xx, drops/dead-letter/shutdown release it for producer retries, `close()` signals the worker before closing the destination, and jitter is applied before the backoff cap.
+- Event sink dedupe and shutdown semantics: the key is marked only after a 2xx, drops/dead-letter/shutdown release it for producer retries, `close()` signals the worker and still closes the destination and drains the queue when the timeout expires, and jitter is applied before the backoff cap.
+- Webhook DNS validation pins the resolved IP for the connection while preserving `Host`/SNI; `retried_total` counts only retries actually executed.
 - Frame buffer mantiene capacidad 1 con política drop-old explícita.
 - Rechazo HTTP del monitor drena la petición antes de cerrar para evitar RST en Windows.
 - Docker and CI workflows publish and validate versioned artifacts.
@@ -32,7 +33,7 @@ All notable changes to this project are documented here using
 - Tests duplicados de cámara y detección; la cobertura válida queda en los tests de los slices correspondientes.
 
 ### Security
-- Webhook event sink rejects HTTP redirects, non-public destinations and slow timeouts, validates DNS before each send and warns when TLS verification is disabled.
+- Webhook event sink rejects HTTP redirects, non-public and CGNAT destinations and slow timeouts, pins the DNS-validated IP without a second resolution, and warns when TLS verification is disabled.
 - Trivy image scanning and SARIF upload for fixable high and critical findings.
 
 ## [0.1.0] - 2026-11-19

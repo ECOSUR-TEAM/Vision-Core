@@ -4,18 +4,42 @@ import ipaddress
 import socket
 import ssl
 import warnings
+from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlsplit
-from urllib.request import HTTPSHandler, Request, build_opener
+from urllib.parse import SplitResult, urlsplit
+from urllib.request import HTTPHandler, HTTPSHandler, Request, build_opener
 
 from vision_core.core.config.event_sink_settings import EventSinkSettings, is_non_public_ip, is_webhook_url_allowed
 from vision_core.core.dto.event_envelope import EventEnvelope
 from vision_core.core.errors import ConfigurationError, PipelineError, ValidationError
 from vision_core.core.serialization.serialization import dumps_json
 from vision_core.features.events.infrastructure.adapters.no_redirect_handler import NoRedirectHandler
+from vision_core.features.events.infrastructure.adapters.pinned_http_connection import PinnedHTTPConnection
+from vision_core.features.events.infrastructure.adapters.pinned_https_connection import PinnedHTTPSConnection
 
 _CLIENT = "vision-core/0.1.0"
 _RETRYABLE_STATUSES = frozenset({408, 429})
+
+
+def _pinned_http_connection(pinned_ip: str, port: int, host_header: str) -> type[PinnedHTTPConnection]:
+    class _Connection(PinnedHTTPConnection):
+        pass
+
+    _Connection.pinned_ip = pinned_ip
+    _Connection.port = port
+    _Connection.host_header = host_header
+    return _Connection
+
+
+def _pinned_https_connection(pinned_ip: str, port: int, host_header: str, sni_host: str) -> type[PinnedHTTPSConnection]:
+    class _Connection(PinnedHTTPSConnection):
+        pass
+
+    _Connection.pinned_ip = pinned_ip
+    _Connection.port = port
+    _Connection.host_header = host_header
+    _Connection.sni_host = sni_host
+    return _Connection
 
 
 class WebhookEventSink:
@@ -41,10 +65,11 @@ class WebhookEventSink:
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
         self._context = context
-        self._opener = build_opener(NoRedirectHandler(), HTTPSHandler(context=context))
 
     def send(self, envelope: EventEnvelope) -> None:
-        self._validate_resolved_host()
+        parsed = urlsplit(self._url)
+        pinned_ip = self._resolve_pinned_ip(parsed)
+        opener = self._build_opener(parsed, pinned_ip)
         body = dumps_json(envelope.payload).encode("utf-8")
         headers = {
             "Content-Type": "application/json",
@@ -55,7 +80,7 @@ class WebhookEventSink:
         }
         request = Request(self._url, data=body, headers=headers, method="POST")
         try:
-            with self._opener.open(request, timeout=self._timeout) as response:
+            with opener.open(request, timeout=self._timeout) as response:
                 status = int(getattr(response, "status", 200))
         except HTTPError as error:
             status = int(error.code)
@@ -81,10 +106,7 @@ class WebhookEventSink:
             context={"status": status},
         ) from None
 
-    def _validate_resolved_host(self) -> None:
-        if self._allow_private_hosts:
-            return
-        parsed = urlsplit(self._url)
+    def _resolve_pinned_ip(self, parsed: SplitResult) -> str:
         host = parsed.hostname or ""
         port = parsed.port or (443 if parsed.scheme == "https" else 80)
         try:
@@ -95,13 +117,44 @@ class WebhookEventSink:
                 retryable=True,
                 context={"transport": "webhook"},
             ) from None
+        if not resolved:
+            raise PipelineError(
+                "No se pudo resolver el destino del webhook",
+                retryable=True,
+                context={"transport": "webhook"},
+            ) from None
+        addresses: list[str] = []
         for info in resolved:
             try:
                 address = ipaddress.ip_address(info[4][0])
             except ValueError:
                 raise ConfigurationError("El destino del webhook resuelve a una dirección no válida") from None
-            if is_non_public_ip(str(address)):
+            if not self._allow_private_hosts and is_non_public_ip(str(address)):
                 raise ConfigurationError("El destino del webhook resuelve a una dirección no pública")
+            addresses.append(str(address))
+        return addresses[0]
+
+    def _build_opener(self, parsed: SplitResult, pinned_ip: str) -> Any:
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        host_header = parsed.netloc
+        handlers: list[Any] = [NoRedirectHandler()]
+        if parsed.scheme == "https":
+            https_connection = _pinned_https_connection(pinned_ip, port, host_header, parsed.hostname or "")
+
+            class _PinnedHTTPSHandler(HTTPSHandler):
+                https_connection: type[PinnedHTTPSConnection]
+
+            _PinnedHTTPSHandler.https_connection = https_connection
+            handlers.append(_PinnedHTTPSHandler(context=self._context))
+        else:
+            http_connection = _pinned_http_connection(pinned_ip, port, host_header)
+
+            class _PinnedHTTPHandler(HTTPHandler):
+                http_connection: type[PinnedHTTPConnection]
+
+            _PinnedHTTPHandler.http_connection = http_connection
+            handlers.append(_PinnedHTTPHandler())
+        return build_opener(*handlers)
 
     def close(self) -> None:
         return None

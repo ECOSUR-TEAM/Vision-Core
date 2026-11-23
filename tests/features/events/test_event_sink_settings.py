@@ -180,7 +180,17 @@ def test_non_public_ip_returns_false_for_public_or_hostname(host):
 
 @pytest.mark.parametrize(
     "host",
-    ["10.0.0.1", "127.0.0.1", "169.254.169.254", "192.168.1.1", "::1", "fe80::1", "224.0.0.1", "0.0.0.0"],
+    [
+        "10.0.0.1",
+        "100.64.0.1",
+        "127.0.0.1",
+        "169.254.169.254",
+        "192.168.1.1",
+        "::1",
+        "fe80::1",
+        "224.0.0.1",
+        "0.0.0.0",
+    ],
 )
 def test_non_public_ip_detects_private_ranges(host):
     assert is_non_public_ip(host) is True
@@ -190,4 +200,5 @@ def test_webhook_url_helper_supports_private_opt_in():
     url = "http://127.0.0.1:9000/hook"
     assert is_webhook_url_allowed(url) is False
     assert is_webhook_url_allowed(url, allow_private_hosts=True) is True
+    assert is_webhook_url_allowed("http://100.64.0.1/hook") is False
     assert is_webhook_url_allowed("https://hooks.example.com/hook") is True

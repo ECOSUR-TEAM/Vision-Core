@@ -300,3 +300,61 @@ def test_close_counts_undelivered_events_and_closes_destination_after_worker():
         block.set()
         if closer.is_alive():
             closer.join(timeout=3)
+
+
+def test_close_timeout_still_drains_queue_and_closes_destination():
+    class StuckSink:
+        def __init__(self, block: threading.Event, entered: threading.Event) -> None:
+            self._block = block
+            self._entered = entered
+            self.closed = False
+            self.envelopes: list = []
+
+        def send(self, envelope) -> None:
+            self._entered.set()
+            self._block.wait(timeout=5)
+            self.envelopes.append(envelope)
+
+        def close(self) -> None:
+            self.closed = True
+
+    block = threading.Event()
+    entered = threading.Event()
+    destination = StuckSink(block, entered)
+    metrics = ObservabilityMetrics()
+    dispatcher = EventSinkDispatcher(destination, _settings(queue_size=4, max_attempts=1), metrics=metrics)
+    try:
+        dispatcher.send(make_envelope("stuck"))
+        wait_until(entered.is_set)
+        dispatcher.send(make_envelope("queued"))
+        dispatcher.close()
+        assert destination.closed is True
+        assert dispatcher.queue_depth() == 0
+        assert metrics.snapshot()["counters"].get("vision_core_event_sink_dropped_total", 0) >= 1
+    finally:
+        block.set()
+
+
+def test_close_during_retry_backoff_does_not_count_retried_metric():
+    entered = threading.Event()
+    state: dict[str, threading.Event] = {}
+
+    def blocking_sleep(_seconds: float) -> None:
+        entered.set()
+        state["interrupt"].wait(timeout=2)
+
+    metrics = ObservabilityMetrics()
+    dispatcher = EventSinkDispatcher(
+        FakeEventSink(fail_times=99),
+        _settings(max_attempts=3),
+        metrics=metrics,
+        sleep=blocking_sleep,
+    )
+    state["interrupt"] = dispatcher._interrupt
+    try:
+        dispatcher.send(make_envelope("close-backoff"))
+        wait_until(entered.is_set)
+        dispatcher.close()
+        assert metrics.snapshot()["counters"].get("vision_core_event_sink_retried_total", 0) == 0
+    finally:
+        dispatcher.close()

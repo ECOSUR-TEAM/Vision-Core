@@ -9,8 +9,8 @@ concretos viven en `features/events/infrastructure/adapters`.
 
 - `EventSink.send(EventEnvelope)` encola un sobre y devuelve de inmediato.
 - `EventSink.close()` señala el cierre, espera hasta 2 s al worker, cuenta lo que
-  no se entregó como descartado y cierra el destino solo cuando el worker ya
-  terminó; se llama desde el `finally` del pipeline.
+  no se entregó como descartado y cierra el destino y drena la cola incluso si
+  el worker no terminó en ese plazo; se llama desde el `finally` del pipeline.
 - `send()` posterior al cierre se contabiliza como descarte y no encola.
 - `EventEnvelope` (`core/dto/event_envelope.py`) tiene `event_id` (clave de
   idempotencia) y `payload` (el JSON del ticket 31: `event`, `person_id`,
@@ -32,7 +32,7 @@ concretos viven en `features/events/infrastructure/adapters`.
 | Errores permanentes | `ValidationError` con `retryable=False` (otros 4xx y redirecciones): van directo a dead-letter. |
 | Dead-letter | Cola en memoria de `dead_letter_size` entradas `(EventEnvelope, code)`, consultable en tests y diagnóstico. No marca la clave como vista; no se registran payloads. |
 | Cola | Acotada (`queue_size`). `send` usa `put_nowait`; con `drop-oldest` (default, ADR 0003) descarta el evento más viejo; con `drop-newest` descarta el entrante. El evento descartado libera su clave. Nunca bloquea el pipeline. |
-| Apagado | `close()` señala el cierre, interrumpe reintentos/sleeps, espera hasta 2 s al worker, cuenta lo no entregado como descartado y cierra el destino solo después de que el worker terminó. |
+| Apagado | `close()` señala el cierre, interrumpe reintentos/sleeps, espera hasta 2 s al worker, cuenta lo no entregado como descartado y cierra el destino y drena la cola aunque el worker siga en `send()`. |
 
 La entrega se ejecuta en un hilo daemon distinto del pipeline. Un fallo del
 destino, del callback de dead-letter o del encolado se aisla y se contabiliza;
@@ -92,10 +92,12 @@ VISION_CORE_EVENT_SINK_QUEUE_SIZE=128
   `status`, `transport`, `code` y número de intentos.
 - Se rechazan URLs con `user:password@`; los mensajes de validación nombran la
   variable, nunca su valor.
-- Se rechazan destinos literales privados, loopback, link-local, multicast o
-  no especificados salvo `ALLOW_PRIVATE_HOSTS=1`, y se valida la resolución DNS
-  antes de cada envío. Las redirecciones HTTP se rechazan: nunca se reenvían
-  headers como `Authorization` a otro host.
+- Se rechazan destinos literales privados, CGNAT, loopback, link-local,
+  multicast o no especificados salvo `ALLOW_PRIVATE_HOSTS=1`. La resolución DNS
+  se valida antes de cada envío y la IP validada se fija para la conexión, sin
+  una segunda resolución. El hostname original se conserva en `Host` y en SNI.
+  Las redirecciones HTTP se rechazan: nunca se reenvían headers como
+  `Authorization` a otro host.
 - Los mensajes pasan por la taxonomía `VisionCoreError` → `sanitize_context()`,
   que descarta claves como `authorization`, `token`, `url` o `password`.
 - Para rotar credenciales, inyecta el secreto por entorno en

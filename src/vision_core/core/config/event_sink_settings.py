@@ -184,6 +184,7 @@ def is_non_public_ip(value: str) -> bool:
         return False
     return any(
         (
+            not address.is_global,
             address.is_private,
             address.is_loopback,
             address.is_link_local,

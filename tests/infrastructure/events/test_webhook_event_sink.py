@@ -1,7 +1,9 @@
 """Entrega webhook real contra servidor local: éxito, timeout, 5xx y secretos."""
 
+import http.client
 import logging
 import socket
+import ssl
 from contextlib import contextmanager
 
 import pytest
@@ -192,3 +194,69 @@ def test_adapter_marks_dns_failure_retryable(monkeypatch):
     with pytest.raises(PipelineError) as excinfo:
         sink.send(make_envelope("dns-failure"))
     assert excinfo.value.retryable is True
+
+
+def test_adapter_pins_the_single_validated_dns_answer(monkeypatch):
+    responses = [
+        [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 443))],
+        [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443))],
+    ]
+    calls = []
+
+    def resolve(*_args, **_kwargs):
+        calls.append(True)
+        return responses.pop(0)
+
+    monkeypatch.setattr(webhook_module.socket, "getaddrinfo", resolve)
+    sink = WebhookEventSink(EventSinkSettings(webhook_url="https://public.example/hook"))
+    assert sink._resolve_pinned_ip(webhook_module.urlsplit(sink._url)) == "8.8.8.8"
+    assert len(calls) == 1
+
+
+def test_adapter_send_uses_pinned_ip(monkeypatch):
+    captured = {}
+
+    def fake_build_opener(_self, _parsed, pinned_ip):
+        captured["pinned_ip"] = pinned_ip
+        raise RuntimeError("opener detenido")
+
+    monkeypatch.setattr(WebhookEventSink, "_build_opener", fake_build_opener)
+    monkeypatch.setattr(
+        webhook_module.socket,
+        "getaddrinfo",
+        lambda *_args, **_kwargs: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 443))],
+    )
+    sink = WebhookEventSink(EventSinkSettings(webhook_url="https://public.example/hook"))
+    with pytest.raises(RuntimeError):
+        sink.send(make_envelope("pinned"))
+    assert captured["pinned_ip"] == "8.8.8.8"
+
+
+def test_adapter_rejects_cgnat_dns_answer(monkeypatch):
+    monkeypatch.setattr(
+        webhook_module.socket,
+        "getaddrinfo",
+        lambda *_args, **_kwargs: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("100.64.0.1", 443))],
+    )
+    sink = WebhookEventSink(EventSinkSettings(webhook_url="https://public.example/hook"))
+    with pytest.raises(ConfigurationError):
+        sink.send(make_envelope("cgnat"))
+
+
+def test_pinned_https_connection_keeps_original_sni(monkeypatch):
+    captured = {}
+
+    def fake_wrap_socket(_self, sock, **kwargs):
+        captured["sni"] = kwargs["server_hostname"]
+        return sock
+
+    monkeypatch.setattr(http.client.HTTPConnection, "connect", lambda _self: None)
+    monkeypatch.setattr(ssl.SSLContext, "wrap_socket", fake_wrap_socket)
+    connection_class = webhook_module._pinned_https_connection("8.8.8.8", 443, "public.example:443", "public.example")
+    connection = connection_class("ignored", timeout=0.1)
+    connection.sock = socket.socket()
+    try:
+        connection.connect()
+    finally:
+        connection.close()
+    assert captured["sni"] == "public.example"

@@ -87,8 +87,9 @@ Las implementaciones `Sqlite*` viven en
 `vision_core.core.infrastructure.persistence`. El dominio y los features no importan
 este paquete: la inyección se hace en `main.py`. Se respeta una clase por
 archivo. La serialización canónica de eventos vive en
-`vision_core.core.serialization.events`; persistencia y monitor consumen esa misma
-función para calcular `event_id` y escribir JSONL con idéntico contenido.
+`vision_core.core.serialization.events`; `event_id_for`, el monitor y los scripts
+consumen el payload versionado para calcular `event_id`, construir snapshots y
+exportar JSONL con idéntico contenido.
 
 ### Esquema y migraciones
 

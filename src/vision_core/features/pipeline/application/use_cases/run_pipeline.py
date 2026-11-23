@@ -183,6 +183,7 @@ class RunPipeline:
                         person_id=payload.person_id,
                         timestamp=payload.timestamp,
                         metadata=payload.metadata,
+                        schema_version=payload.schema_version,
                     )
                 )
                 self._on_event(event)

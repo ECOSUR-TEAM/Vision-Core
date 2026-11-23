@@ -3,9 +3,10 @@
 Vision Core puede conservar eventos, historial de zonas, tracks, identidades,
 sesiones y métricas en una base SQLite local. La decisión y sus límites están en
 el [ADR-0002](adr/0002-persistence-and-retention.md). El código vive en
-`src/vision_core/core/infrastructure/persistence/`; la serialización canónica de
-eventos que usan `event_id_for` y el repositorio SQLite vive en
-`src/vision_core/core/serialization/events.py`.
+`src/vision_core/core/infrastructure/persistence/`; allí vive `event_id_for`, que
+consume la serialización canónica de
+`src/vision_core/core/serialization/events.py`, también usada por el monitor y
+los scripts de exportación.
 
 ## Habilitación
 

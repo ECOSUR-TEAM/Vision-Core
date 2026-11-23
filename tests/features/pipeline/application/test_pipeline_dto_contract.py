@@ -6,6 +6,10 @@ from typing import get_type_hints
 import numpy as np
 import pytest
 
+from tests.fakes.fake_detector import FakeDetector
+from tests.fakes.fake_door import FakeDoor
+from tests.fakes.fake_reid import FakeReID
+from tests.fakes.fake_video_source import FakeVideoSource
 from vision_core.core.domain.bbox import BBox
 from vision_core.core.domain.event import Event
 from vision_core.core.domain.event_type import EventType
@@ -17,6 +21,7 @@ from vision_core.features.pipeline.application.dto.request.request_run_pipeline 
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
 from vision_core.features.pipeline.application.dto.response.response_process_frame import ResponseProcessFrame
 from vision_core.features.pipeline.application.mappers.pipeline_mapper import resolved_track_to_dto
+from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 
 DTO_CLASSES = (
@@ -38,6 +43,7 @@ def _response_event(event: Event) -> ResponsePipelineEvent:
         person_id=payload.person_id,
         timestamp=payload.timestamp,
         metadata=payload.metadata,
+        schema_version=payload.schema_version,
     )
 
 
@@ -165,3 +171,29 @@ def test_event_metadata_is_immutable():
         response.metadata["zone"] = "exterior"
     with pytest.raises(TypeError):
         response.metadata["zone"]["name"] = "exterior"
+
+
+def test_run_pipeline_adapter_preserves_serialized_event_fields():
+    recorded: list[Event] = []
+    frame = np.zeros((20, 20, 3), dtype=np.uint8)
+    pipeline = RunPipeline(
+        video=FakeVideoSource([frame]),
+        detector=FakeDetector(),
+        reid=FakeReID(),
+        door=FakeDoor(),
+        embedder=lambda crop: np.zeros(4),
+        on_event=recorded.append,
+    )
+
+    response = pipeline.process_frame(RequestProcessFrame(frame))
+    event = response.events[0]
+    payload = event_to_dto(recorded[0])
+
+    assert event == ResponsePipelineEvent(
+        event=payload.event,
+        person_id=payload.person_id,
+        timestamp=payload.timestamp,
+        metadata=payload.metadata,
+        schema_version=payload.schema_version,
+    )
+    assert event.schema_version == EVENT_SCHEMA_VERSION

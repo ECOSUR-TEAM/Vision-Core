@@ -20,6 +20,14 @@ def _read(relative):
     return (ROOT / relative).read_text(encoding="utf-8")
 
 
+def _setuptools_requirement():
+    document = tomllib.loads(_read("pyproject.toml"))
+    for requirement in document["build-system"]["requires"]:
+        if requirement.startswith("setuptools"):
+            return requirement.removeprefix("setuptools")
+    raise AssertionError("setuptools no está declarado en build-system.requires")
+
+
 def _requirements_versions(relative):
     versions = {}
     for line in _read(relative).splitlines():

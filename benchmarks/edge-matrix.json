@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "kind": "edge-benchmark-matrix",
+  "generated_at": "2026-11-23T08:05:31.763107+00:00",
+  "config": {
+    "path": "benchmarks/edge-config.json",
+    "sha256": "b9758b702cb24b88829c5dbd0cc52fb57e624b021e5a78bfef2f1f08dce4aea1"
+  },
+  "environment": {
+    "python": "3.14.4",
+    "platform": "Linux-7.0.0-43-generic-x86_64-desconocido-with-glibc2.43",
+    "processor": "desconocido",
+    "device_declared": "cpu",
+    "devices_in_matrix": [
+      "cpu",
+      "cuda"
+    ],
+    "config_sha256": "b9758b702cb24b88829c5dbd0cc52fb57e624b021e5a78bfef2f1f08dce4aea1",
+    "cuda_available": true,
+    "torch": "2.14.0",
+    "torchvision": "0.29.0",
+    "ultralytics": "8.4.159",
+    "numpy": "2.5.3"
+  },
+  "hardware_targets": {
+    "cpu-laptop": {
+      "description": "CPU laptop x86 sin CUDA; referencia local y presupuesto synthetic-cpu-320x240 del ticket 36.",
+      "budget_scenario": "synthetic-cpu-320x240",
+      "external": false
+    },
+    "jetson-nano-int8": {
+      "description": "Jetson Nano/Orin equivalente a CPU ARM; requiere ejecuci\u00f3n manual en el dispositivo y artefacto ONNX INT8.",
+      "budget_scenario": "synthetic-cpu-320x240",
+      "external": true
+    },
+    "gpu-fp16": {
+      "description": "Hardware edge con CUDA; perfil opcional, no exigido por la suite.",
+      "budget_scenario": "synthetic-gpu-640x480",
+      "external": true
+    }
+  },
+  "validation_set": {
+    "name": "synthetic-cpu-320x240",
+    "video": "benchmark-data/synthetic-cpu-320x240/benchmark.avi",
+    "scene": "benchmark-data/synthetic-cpu-320x240/scene.json",
+    "seed": 20261120,
+    "frames": 60,
+    "identity_gallery": null,
+    "description": "Marcadores deterministas del generador 1.0.0; apto para comparar latencias y calidad relativa, no para precisi\u00f3n absoluta."
+  },
+  "quality_gates": {
+    "min_detection_map50": 0.9,
+    "min_identity_recall_at_1": 0.9,
+    "max_relative_drop_pct": 5.0,
+    "baseline_profile": "cpu-fp32"
+  },
+  "results": [
+    {
+      "id": "cpu-fp32",
+      "target": "cpu-laptop",
+      "device": "cpu",
+      "status": "not_measured",
+      "reason": "Artefacto de detecci\u00f3n ausente: models/yolov8n.pt. Los pesos no se versionan en el repositorio.",
+      "detection": {
+        "model_id": "detection.person.yolov8n",
+        "selector": "yolov8n.pt",
+        "precision": "fp32"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small",
+        "selector": "mobilenet_v3_small",
+        "precision": "fp32"
+      },
+      "model_identity": {},
+      "metrics": {},
+      "quality_metrics": {},
+      "quality": {
+        "passed": false,
+        "evaluated_before_performance": true,
+        "checks": {}
+      },
+      "budget": {
+        "passed": null,
+        "violations": []
+      },
+      "recommended": false
+    },
+    {
+      "id": "cpu-int8",
+      "target": "cpu-laptop",
+      "device": "cpu",
+      "status": "not_measured",
+      "reason": "Artefacto de detecci\u00f3n ausente: models/yolov8n-int8.onnx. Los pesos no se versionan en el repositorio.",
+      "detection": {
+        "model_id": "detection.person.yolov8n.int8",
+        "selector": "yolov8n-int8.onnx",
+        "precision": "int8"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small.int8",
+        "selector": "mobilenet_v3_small-int8",
+        "precision": "int8"
+      },
+      "model_identity": {},
+      "metrics": {},
+      "quality_metrics": {},
+      "quality": {
+        "passed": false,
+        "evaluated_before_performance": true,
+        "checks": {}
+      },
+      "budget": {
+        "passed": null,
+        "violations": []
+      },
+      "recommended": false
+    },
+    {
+      "id": "jetson-fp32",
+      "target": "jetson-nano-int8",
+      "device": "cpu",
+      "status": "not_measured",
+      "reason": "Artefacto de detecci\u00f3n ausente: models/yolov8n.pt. Los pesos no se versionan en el repositorio.",
+      "detection": {
+        "model_id": "detection.person.yolov8n",
+        "selector": "yolov8n.pt",
+        "precision": "fp32"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small",
+        "selector": "mobilenet_v3_small",
+        "precision": "fp32"
+      },
+      "model_identity": {},
+      "metrics": {},
+      "quality_metrics": {},
+      "quality": {
+        "passed": false,
+        "evaluated_before_performance": true,
+        "checks": {}
+      },
+      "budget": {
+        "passed": null,
+        "violations": []
+      },
+      "recommended": false
+    },
+    {
+      "id": "jetson-int8",
+      "target": "jetson-nano-int8",
+      "device": "cpu",
+      "status": "not_measured",
+      "reason": "Artefacto de detecci\u00f3n ausente: models/yolov8n-int8.onnx. Los pesos no se versionan en el repositorio.",
+      "detection": {
+        "model_id": "detection.person.yolov8n.int8",
+        "selector": "yolov8n-int8.onnx",
+        "precision": "int8"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small.int8",
+        "selector": "mobilenet_v3_small-int8",
+        "precision": "int8"
+      },
+      "model_identity": {},
+      "metrics": {},
+      "quality_metrics": {},
+      "quality": {
+        "passed": false,
+        "evaluated_before_performance": true,
+        "checks": {}
+      },
+      "budget": {
+        "passed": null,
+        "violations": []
+      },
+      "recommended": false
+    },
+    {
+      "id": "gpu-fp16",
+      "target": "gpu-fp16",
+      "device": "cuda",
+      "status": "unsupported",
+      "reason": "Perfil CUDA omitido: la suite no requiere CUDA; use --allow-cuda en hardware compatible.",
+      "detection": {
+        "model_id": "detection.person.yolov8n.fp16",
+        "selector": "yolov8n-fp16.pt",
+        "precision": "fp16"
+      },
+      "embedding": {
+        "model_id": "embedding.person.mobilenet_v3_small.fp16",
+        "selector": "mobilenet_v3_small-fp16",
+        "precision": "fp16"
+      },
+      "model_identity": {},
+      "metrics": {},
+      "quality_metrics": {},
+      "quality": {
+        "passed": false,
+        "evaluated_before_performance": true,
+        "checks": {}
+      },
+      "budget": {
+        "passed": null,
+        "violations": []
+      },
+      "recommended": false
+    }
+  ],
+  "recommendations": {
+    "cpu-laptop": {
+      "profile": null,
+      "reason": "Sin medici\u00f3n en este target; no se recomienda variante."
+    },
+    "jetson-nano-int8": {
+      "profile": null,
+      "reason": "Sin medici\u00f3n en este target; no se recomienda variante."
+    },
+    "gpu-fp16": {
+      "profile": null,
+      "reason": "Sin medici\u00f3n en este target; no se recomienda variante."
+    }
+  }
+}

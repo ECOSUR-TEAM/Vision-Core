@@ -94,19 +94,22 @@ class MonitorHTTPServer(ThreadingHTTPServer):
             # Keep the accept loop responsive even if the peer is not reading.
             request.settimeout(1.0)
             request.sendall(response)
-            deadline = time.monotonic() + _DRAIN_TIMEOUT_SECONDS
-            request.settimeout(_DRAIN_TIMEOUT_SECONDS)
-            drained = 0
-            while drained < _MAX_DRAIN_BYTES and time.monotonic() < deadline:
-                chunk = request.recv(min(4096, _MAX_DRAIN_BYTES - drained))
-                if not chunk:
-                    break
-                drained += len(chunk)
         except OSError:
             pass
         finally:
             try:
-                request.shutdown(socket.SHUT_RDWR)
+                request.shutdown(socket.SHUT_WR)
+            except OSError:
+                pass
+            try:
+                request.settimeout(_DRAIN_TIMEOUT_SECONDS)
+                deadline = time.monotonic() + _DRAIN_TIMEOUT_SECONDS
+                drained = 0
+                while drained < _MAX_DRAIN_BYTES and time.monotonic() < deadline:
+                    chunk = request.recv(min(4096, _MAX_DRAIN_BYTES - drained))
+                    if not chunk:
+                        break
+                    drained += len(chunk)
             except OSError:
                 pass
             request.close()

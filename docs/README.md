@@ -59,6 +59,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Property testing](property-testing.md) | Geometría de zonas, invariantes y fuzz determinista |
 | [Replay determinista](replay.md) | Golden videos, fixtures y comparación de eventos |
 | [Presupuestos de rendimiento](performance.md) | Baselines, hotspots, smoke y benchmark nocturno |
+| [Matriz edge / INT8](benchmark-edge.md) | Perfiles FP32/INT8/FP16, calidad antes que FPS y promoción |
 | [Plan G0](g0-baseline-plan.md) | Instrumentación del pipeline de una cámara |
 | [Model cards](model-cards/TEMPLATE.md) | Plantilla y fichas de procedencia, licencia y límites |
 | [Evaluación de la sala](../reports/room-evaluation.md) | Resultados y pendientes reales |
@@ -90,4 +91,5 @@ hecha hasta que esa persona la confirme.
 | ECM-111: eliminación de los paquetes legacy y documentación viva | @bchanona | @Carlosss2 | [x] Revisado por otra persona |
 | ECM-87: licencias, privacidad y retención de video | @bchanona | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
 | ECM-95: binding seguro y exposición del monitor | @bchanona | @Ameth-Toledo, @Carlosss2 | [x] Revisado por otra persona |
+| ECM-101: matriz edge INT8/FP16 con presupuestos | @MelissaZarate08 | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
 | ECM-100: calidad de cámara y deriva de calibración | @MelissaZarate08 | @Ameth-Toledo, @bchanona, @Carlosss2, @FabricioPRZ | Pendiente de revisión |

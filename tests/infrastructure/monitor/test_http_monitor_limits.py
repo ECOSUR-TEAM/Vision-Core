@@ -11,8 +11,9 @@ from urllib.request import urlopen
 import pytest
 
 from vision_core.core.errors import codes
+from vision_core.features.monitor.infrastructure.http import server as server_module
 from vision_core.features.monitor.infrastructure.http.handler import MAX_HEADER_COUNT, MAX_REQUEST_LINE
-from vision_core.features.monitor.infrastructure.http.server import _MAX_DRAIN_BYTES, MonitorHTTPServer, make_server
+from vision_core.features.monitor.infrastructure.http.server import MonitorHTTPServer, make_server
 from vision_core.features.monitor.infrastructure.state import MonitorState
 
 
@@ -149,33 +150,31 @@ def test_rejection_counters_do_not_replace_observability_metrics(monitor_server)
     assert set(server.limits_metrics.snapshot()) == {"concurrency", "long_poll_concurrency", "timeout", "oversized"}
 
 
-def test_rejected_socket_drain_is_bounded():
-    class Request:
-        def __init__(self):
-            self.recv_calls = 0
-            self.timeouts = []
-            self.closed = False
+def test_rejected_socket_drain_is_bounded(monkeypatch):
+    received = []
 
+    class FakeSocket:
         def settimeout(self, timeout):
-            self.timeouts.append(timeout)
+            received.append(("timeout", timeout))
 
-        def sendall(self, _body):
-            return None
+        def sendall(self, payload):
+            del payload
+
+        def shutdown(self, how):
+            del how
 
         def recv(self, size):
-            self.recv_calls += 1
+            received.append(("recv", size))
             return b"x" * size
 
-        def shutdown(self, _how):
-            return None
-
         def close(self):
-            self.closed = True
+            received.append(("close", None))
 
-    request = Request()
+    monkeypatch.setattr(server_module.time, "monotonic", lambda: 0.0)
+    MonitorHTTPServer._reject_immediately(FakeSocket(), HTTPStatus.SERVICE_UNAVAILABLE)
 
-    MonitorHTTPServer._reject_immediately(request, HTTPStatus.SERVICE_UNAVAILABLE)
-
-    assert request.recv_calls <= _MAX_DRAIN_BYTES // 4096
-    assert 0.05 in request.timeouts
-    assert request.closed
+    timeouts = [value for kind, value in received if kind == "timeout"]
+    drained = [size for kind, size in received if kind == "recv"]
+    assert server_module._DRAIN_TIMEOUT_SECONDS in timeouts
+    assert drained and sum(drained) == server_module._MAX_DRAIN_BYTES
+    assert max(drained) <= 4096

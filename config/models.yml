@@ -66,3 +66,97 @@ models:
       weights: DEFAULT
     model_card: docs/model-cards/embedding-resnet50.md
     status: active
+
+  - id: detection.person.yolov8n.fp16
+    name: yolov8n-fp16
+    task: detection
+    version: "1.0.0"
+    artifact_version: fp16-cuda
+    selector: yolov8n-fp16.pt
+    source: Ultralytics YOLOv8n exportado a FP16 (artefacto externo, no versionado)
+    source_url: https://docs.ultralytics.com/modes/export/
+    license: AGPL-3.0
+    license_url: https://www.gnu.org/licenses/agpl-3.0.html
+    license_notes: "Mismo modelo base que detection.person.yolov8n; requiere CUDA y artefacto externo."
+    registered_at: "2026-11-22"
+    checksum:
+      algorithm: sha256
+      value: null
+    expected_config:
+      confidence: 0.5
+      classes: [0]
+      input: BGR uint8 HxWx3
+      output_classes: 80
+      precision: fp16
+    model_card: docs/model-cards/detection-yolov8n-fp16.md
+    status: active
+
+  - id: detection.person.yolov8n.int8
+    name: yolov8n-int8
+    task: detection
+    version: "1.0.0"
+    artifact_version: int8-onnx
+    selector: yolov8n-int8.onnx
+    source: Ultralytics YOLOv8n exportado a ONNX INT8 (artefacto externo, no versionado)
+    source_url: https://docs.ultralytics.com/modes/export/
+    license: AGPL-3.0
+    license_url: https://www.gnu.org/licenses/agpl-3.0.html
+    license_notes: "Mismo modelo base que detection.person.yolov8n; requiere backend ONNX en CPU."
+    registered_at: "2026-11-22"
+    checksum:
+      algorithm: sha256
+      value: null
+    expected_config:
+      confidence: 0.5
+      classes: [0]
+      input: BGR uint8 HxWx3
+      output_classes: 80
+      precision: int8
+    model_card: docs/model-cards/detection-yolov8n-int8.md
+    status: active
+
+  - id: embedding.person.mobilenet_v3_small.int8
+    name: mobilenet_v3_small-int8
+    task: embedding
+    version: "1.0.0"
+    artifact_version: IMAGENET1K_V1+PTQ-X86
+    selector: mobilenet_v3_small-int8
+    source: torchvision MobileNet_V3_Small con cuantización post-entrenamiento FX en CPU
+    source_url: https://docs.pytorch.org/vision/stable/models/generated/torchvision.models.mobilenet_v3_small.html
+    license: BSD-3-Clause
+    license_url: null
+    license_notes: "Derivado de IMAGENET1K_V1; sin reentrenamiento. Calibración determinista con semilla 20261120."
+    registered_at: "2026-11-22"
+    checksum:
+      algorithm: sha256
+      value: null
+    expected_config:
+      embedding_dim: 576
+      input: BGR uint8 recorte de persona
+      weights: DEFAULT
+      precision: int8
+    model_card: docs/model-cards/embedding-mobilenet-v3-small-int8.md
+    status: active
+
+  - id: embedding.person.mobilenet_v3_small.fp16
+    name: mobilenet_v3_small-fp16
+    task: embedding
+    version: "1.0.0"
+    artifact_version: IMAGENET1K_V1+FP16
+    selector: mobilenet_v3_small-fp16
+    source: torchvision MobileNet_V3_Small convertido a FP16 (solo CUDA)
+    source_url: https://docs.pytorch.org/vision/stable/models/generated/torchvision.models.mobilenet_v3_small.html
+    license: BSD-3-Clause
+    license_url: null
+    license_notes: "Derivado de IMAGENET1K_V1; requiere CUDA. No soportado en CPU."
+    registered_at: "2026-11-22"
+    checksum:
+      algorithm: sha256
+      value: null
+    expected_config:
+      embedding_dim: 576
+      input: BGR uint8 recorte de persona
+      weights: DEFAULT
+      precision: fp16
+    model_card: docs/model-cards/embedding-mobilenet-v3-small-fp16.md
+    status: active

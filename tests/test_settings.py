@@ -32,6 +32,25 @@ def test_settings_defaults(monkeypatch):
     assert settings.reid.ttl_seconds == 0
     assert settings.monitor.port == 8080
     assert settings.zones.confirmation_frames == 3
+    assert settings.camera_quality.enabled is True
+    assert settings.camera_quality.sample_every_n_frames == 15
+    assert settings.camera_quality.frozen_frames == 30
+    assert settings.camera_quality.check_zones is True
+
+
+def test_camera_quality_settings_overrides_and_camera_specific_precedence():
+    settings = Settings.from_env(
+        complete_env(
+            VISION_CORE_CAMERA_ID="camera-1",
+            VISION_CORE_CAMERA_QUALITY_MIN_BLUR_VARIANCE="120",
+            VISION_CORE_CAMERA_QUALITY_CAMERA_1_MIN_BLUR_VARIANCE="75",
+            VISION_CORE_CAMERA_QUALITY_CAMERA_1_CHECK_BLUR="0",
+            VISION_CORE_CAMERA_QUALITY_CHECK_ZONES="0",
+        )
+    )
+    assert settings.camera_quality.min_blur_variance == 75
+    assert settings.camera_quality.check_blur is False
+    assert settings.camera_quality.check_zones is False
 
 
 def test_settings_overrides():
@@ -62,6 +81,12 @@ def test_settings_overrides():
         ("VISION_CORE_MONITOR_HOST", ""),
         ("VISION_CORE_MONITOR_HOST", "bad host"),
         ("VISION_CORE_MODEL_PATH", "/missing/yolov8n.pt"),
+        ("VISION_CORE_CAMERA_QUALITY_SAMPLE_EVERY_N_FRAMES", "0"),
+        ("VISION_CORE_CAMERA_QUALITY_FROZEN_FRAMES", "1"),
+        ("VISION_CORE_CAMERA_QUALITY_MIN_BLUR_VARIANCE", "-1"),
+        ("VISION_CORE_CAMERA_QUALITY_MIN_BRIGHTNESS", "240"),
+        ("VISION_CORE_CAMERA_QUALITY_MAX_BRIGHTNESS", "300"),
+        ("VISION_CORE_CAMERA_QUALITY_CHECK_BLUR", "quizas"),
     ],
 )
 def test_settings_reports_invalid_values(variable, value):

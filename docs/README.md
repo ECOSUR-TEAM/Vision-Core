@@ -34,6 +34,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Requisitos y problemas conocidos](operations.md) | Límites funcionales y diagnóstico |
 | [Configuración tipada](configuration.md) | Variables, defaults y validación |
 | [Observabilidad](observability.md) | `/health`, `/ready`, `/metrics`, logs y métricas |
+| [Calidad de cámara](camera-quality.md) | Señales de calidad, deriva, umbrales y acciones |
 | [Persistencia y retención](persistence.md) | SQLite, TTLs, backup y degradación |
 | [Monitor](monitor.md) | Interfaz web, API y render |
 | [Exposición del monitor y binding](monitor-exposure.md) | Binding seguro, advertencias y verificación de puertos |

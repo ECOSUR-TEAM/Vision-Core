@@ -51,11 +51,37 @@ class MonitorState:
         self.camera_id = camera_id or "default"
         self.event_sequence = 0
         self._last_dropped = 0
+        self.camera_quality: dict[str, object] = {"status": "ok", "reason": None, "signals": {}}
+        self._quality_reason: str | None = None
 
     def set_status(self, status, error=None):
         with self.lock:
             self.status, self.error = status, error
         self.health.set_ready(source_connected=status == "running")
+
+    def set_camera_quality(self, status, reason=None, signals=None):
+        active_signals = dict(signals or {})
+        with self.lock:
+            reason_changed = reason != self._quality_reason
+            self.camera_quality = {"status": status, "reason": reason, "signals": active_signals}
+            self._quality_reason = reason
+        degraded = status == "degraded"
+        self.metrics.set_gauge(
+            "vision_core_camera_quality_degraded",
+            1.0 if degraded else 0.0,
+            camera_id=self.camera_id,
+        )
+        if not degraded or not reason_changed:
+            return
+        self.metrics.increment("vision_core_camera_quality_degraded_total", camera_id=self.camera_id)
+        for signal, active in active_signals.items():
+            if active:
+                self.metrics.increment(f"vision_core_camera_quality_{signal.lower()}_total", camera_id=self.camera_id)
+        logger.warning(
+            "Calidad de cámara degradada: %s",
+            reason,
+            extra={"camera_id": self.camera_id, "reason": reason},
+        )
 
     def set_persistence(self, health):
         with self.lock:
@@ -150,4 +176,5 @@ class MonitorState:
                 "fps": self.fps,
                 "dropped_frames": self.dropped,
                 "persistence": persistence,
+                "camera_quality": dict(self.camera_quality),
             }

@@ -20,6 +20,31 @@ from vision_core.features.pipeline.domain.entities.resolved_track import Resolve
 from vision_core.features.video.infrastructure.adapters.latest_frame_source import LatestFrameSource
 
 
+def test_camera_quality_degraded_is_published_without_changing_readiness():
+    state = MonitorState(camera_id="camera-1")
+    state.set_status("running")
+    signals = {"BLURRY_FRAME": True, "EXPOSURE_OUT_OF_RANGE": False}
+    state.set_camera_quality("degraded", "BLURRY_FRAME", signals)
+
+    snapshot = state.snapshot()
+    metrics = state.metrics.snapshot()
+    assert snapshot["status"] == "running"
+    assert snapshot["camera_quality"] == {
+        "status": "degraded",
+        "reason": "BLURRY_FRAME",
+        "signals": signals,
+    }
+    assert metrics["gauges"]["vision_core_camera_quality_degraded{camera_id=camera-1}"] == 1.0
+    assert metrics["counters"]["vision_core_camera_quality_degraded_total{camera_id=camera-1}"] == 1
+    assert metrics["counters"]["vision_core_camera_quality_blurry_frame_total{camera_id=camera-1}"] == 1
+    assert state.health.snapshot()["checks"]["video_source"] is True
+
+    state.set_camera_quality("degraded", "BLURRY_FRAME", signals)
+    state.set_camera_quality("ok", None, {})
+    assert state.metrics.snapshot()["counters"]["vision_core_camera_quality_degraded_total{camera_id=camera-1}"] == 1
+    assert state.metrics.snapshot()["gauges"]["vision_core_camera_quality_degraded{camera_id=camera-1}"] == 0.0
+
+
 def test_observer_receives_current_resolved_detections_and_empty_frames():
     snapshots = []
     detector = FakeDetector(lost_ids_per_call=[[], []])

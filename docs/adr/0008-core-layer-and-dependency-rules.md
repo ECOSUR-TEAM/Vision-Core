@@ -127,10 +127,9 @@ from vision_core.scripts.check_zones import main  # no
 
 No se crean facades ni shims de compatibilidad. Cada ticket de la serie mueve el
 código y actualiza imports, tests y documentación en el mismo cambio, dejando la
-suite en verde. Tras ECM-111, los paths antiguos (`vision_core.application`,
-`vision_core.domain`, `vision_core.infrastructure` y `vision_core.settings`) ya
-no existen: sus contenidos están en `core/config/`, `core/contracts/`,
-`core/telemetry/` (profiling), `core/inference/`,
+suite en verde. Tras ECM-111, los paquetes horizontales antiguos de aplicación,
+dominio, infraestructura y configuración ya no existen: sus contenidos están en
+`core/config/`, `core/contracts/`, `core/telemetry/` (profiling), `core/inference/`,
 `core/infrastructure/persistence/` y en los adaptadores de
 `features/<slice>/infrastructure/`. `vision_core.model_registry` sigue existiendo
 como excepción transitoria (ADR 0007); el ticket 67 activará la regla que prohíbe
@@ -213,3 +212,4 @@ incremental.
 | 2026-11-23 | El path `vision_core.core.inference.frame_profiler` queda eliminado sin shim; el import público canónico es `from vision_core.core.telemetry import FrameProfiler, STAGES` | Romper el path legacy de forma explícita tras la migración | ADR 0008 |
 | 2026-11-23 | ECM-108 consolida `ReIDMemory` como `Protocol` canónico en `core/contracts`, elimina el `Protocol` duplicado del slice y actualiza todos los imports | Contrato único compartido entre slices sin identidades de clase duplicadas | ADR 0008 |
 | 2026-11-23 | El path `vision_core.features.reid.domain.ports.reid_memory` queda eliminado sin shim; el import público canónico es `from vision_core.core.contracts import ReIDMemory` | Cumplir la política de migración sin facades ni re-exports | ADR 0008 |
+| 2026-11-23 | ECM-110 confirma el fin del paquete horizontal de infraestructura: el HTML del monitor vive en `features/monitor/infrastructure/http/static/`, `package-data` apunta a ese paquete y los adaptadores/CLI permanecen en sus slices o en `scripts/` | Infraestructura feature-specific, sin shims de compatibilidad | ADR 0008 |

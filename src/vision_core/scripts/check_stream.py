@@ -10,8 +10,8 @@ import numpy as np
 
 from vision_core.core.config import Settings, apply_ffmpeg_capture_options
 from vision_core.core.errors import codes
+from vision_core.core.validation import validate_frame
 from vision_core.features.video.infrastructure.adapters.rtsp_video_source import RtspVideoSource
-from vision_core.features.video.infrastructure.frame_validation import validate_frame
 
 
 def probe(url, transport):

@@ -73,6 +73,7 @@ flowchart TB
         Door["door<br/>zonas y eventos"]
         Pipeline["pipeline<br/>RunPipeline"]
         Monitor["monitor<br/>estado, render y HTTP"]
+        CameraQuality["camera_health<br/>calidad y deriva"]
     end
 
     subgraph Shared["core / infraestructura compartida"]
@@ -90,12 +91,15 @@ flowchart TB
     Main --> Persist
     Main --> Obs
     Main --> Monitor
+    Main --> CameraQuality
     Pipeline --> Video
     Pipeline --> Detection
     Pipeline --> ReID
     Pipeline --> Door
     Pipeline --> Monitor
     Pipeline --> Obs
+    Pipeline --> CameraQuality
+    CameraQuality --> Monitor
     Monitor --> Errors
 ```
 
@@ -122,8 +126,11 @@ flowchart LR
     Event --> Obs["logs JSON y métricas"]
     Run --> FrameBuf["LatestFrameBuffer<br/>1 frame, descarta viejo"]
     FrameBuf --> Renderer["RendererThread"]
+    FrameBuf --> Quality["CameraQualityMonitor<br/>muestreo, sin bloquear"]
+    Quality --> State
     Renderer --> FrameAPI["/api/v1/frame?after=N"]
     FrameAPI --> Browser["Monitor en el navegador"]
+    State --> Browser
 ```
 
 Código de referencia: `src/vision_core/features/pipeline/application/use_cases/run_pipeline.py`,
@@ -131,7 +138,8 @@ Código de referencia: `src/vision_core/features/pipeline/application/use_cases/
 `src/vision_core/features/monitor/infrastructure/` y
 [main.py](../main.py). Con `VISION_CORE_MONITOR_UNCALIBRATED=1` se omite la
 analítica de zonas y no se generan cruces; con
-`VISION_CORE_RENDER_ENABLED=0` se omite la rama de render/JPEG.
+`VISION_CORE_RENDER_ENABLED=0` se omite la rama de render/JPEG y el monitor de
+calidad usa un `QualityThread` con buffer de un frame.
 
 ## Cómo mantener estos diagramas
 

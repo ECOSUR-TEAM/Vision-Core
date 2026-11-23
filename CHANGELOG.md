@@ -15,6 +15,7 @@ All notable changes to this project are documented here using
 
 ### Changed
 - Frame buffer mantiene capacidad 1 con política drop-old explícita.
+- Rechazo HTTP del monitor drena la petición antes de cerrar para evitar RST en Windows.
 - Docker and CI workflows publish and validate versioned artifacts.
 
 ### Security

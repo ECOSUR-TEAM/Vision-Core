@@ -15,6 +15,7 @@ alternativas y verificación. Para crear uno, copia la
 | [0006](0006-versionado-y-releases.md) | Versionado semántico, releases y rollback | Aceptada | 2026-11-20 |
 | [0007](0007-registro-de-modelos-y-model-cards.md) | Registro de modelos y model cards | Aceptada | 2026-11-21 |
 | [0008](0008-core-layer-and-dependency-rules.md) | Capa `core` y reglas de dependencia entre `features/`, `core/` y `scripts/` | Aceptada | 2026-11-21 |
+| [0009](0009-calidad-de-camara-no-intrusiva.md) | Calidad de cámara no intrusiva y deriva de calibración | Propuesta | 2026-11-22 |
 
 El prerrequisito G0 se instrumenta sin autorizar multi-cámara; su plan operativo está
 en [docs/g0-baseline-plan.md](../g0-baseline-plan.md).

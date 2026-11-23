@@ -89,3 +89,6 @@ cubre imágenes buena, borrosa, oscura, congelada y con resolución incorrecta:
 python -m pytest -q tests/features/camera_health
 python -m pytest -q
 ```
+
+La decisión estructural está registrada en
+[ADR 0009](adr/0009-calidad-de-camara-no-intrusiva.md).

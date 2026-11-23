@@ -91,6 +91,9 @@ class MonitorHTTPServer(ThreadingHTTPServer):
             # Keep the accept loop responsive even if the peer is not reading.
             request.settimeout(1.0)
             request.sendall(response)
+            request.settimeout(0.05)
+            while request.recv(4096):
+                pass
         except OSError:
             pass
         finally:

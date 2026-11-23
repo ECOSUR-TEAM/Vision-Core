@@ -507,6 +507,32 @@
     "slots": true
   },
   {
+    "class": "ResponseCameraQuality",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "status",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "reason",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "signals",
+        "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]]"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.monitor.application.dto.response.response_camera_quality",
+    "slots": true
+  },
+  {
     "class": "ResponseFrame",
     "fields": [
       {
@@ -609,6 +635,32 @@
     "slots": true
   },
   {
+    "class": "ResponseCameraQuality",
+    "fields": [
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "status",
+        "type": "<class 'str'>"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "reason",
+        "type": "str | None"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "signals",
+        "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]]"
+      }
+    ],
+    "frozen": true,
+    "module": "vision_core.features.monitor.application.dto.response.response_snapshot",
+    "slots": true
+  },
+  {
     "class": "ResponseSnapshot",
     "fields": [
       {
@@ -688,6 +740,12 @@
         "default_factory": false,
         "name": "persistence",
         "type": "collections.abc.Mapping[str, None | bool | int | float | str | tuple[JSONValue, ...] | collections.abc.Mapping[str, JSONValue]] | None"
+      },
+      {
+        "default": null,
+        "default_factory": false,
+        "name": "camera_quality",
+        "type": "<class 'vision_core.features.monitor.application.dto.response.response_camera_quality.ResponseCameraQuality'>"
       }
     ],
     "frozen": true,

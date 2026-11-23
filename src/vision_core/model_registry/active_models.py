@@ -32,4 +32,5 @@ def _descriptor_identity(model: ModelDescriptor, checksum_verified: bool) -> dic
         "model_id": model.id,
         "model_version": model.version,
         "model_hash": model.model_hash if checksum_verified else "unverified",
+        "precision": str(model.expected_config["precision"]),
     }

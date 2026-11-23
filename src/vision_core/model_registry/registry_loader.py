@@ -6,6 +6,7 @@ from typing import Any
 
 import yaml
 
+from vision_core.core.config.settings_precision import is_supported_precision
 from vision_core.core.errors import ConfigurationError
 from vision_core.model_registry.model_descriptor import ModelDescriptor
 from vision_core.model_registry.model_registry import ModelRegistry
@@ -35,8 +36,9 @@ MODEL_KEYS = frozenset(
     }
 )
 CHECKSUM_KEYS = frozenset({"algorithm", "value"})
-DETECTION_CONFIG_KEYS = frozenset({"confidence", "classes", "input", "output_classes"})
-EMBEDDING_CONFIG_KEYS = frozenset({"embedding_dim", "input", "weights"})
+DETECTION_CONFIG_KEYS = frozenset({"confidence", "classes", "input", "output_classes", "precision"})
+EMBEDDING_CONFIG_KEYS = frozenset({"embedding_dim", "input", "weights", "precision"})
+OPTIONAL_CONFIG_KEYS = frozenset({"precision"})
 TASKS = frozenset({"detection", "embedding"})
 STATUSES = frozenset({"active", "deprecated", "experimental"})
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -126,8 +128,14 @@ def _require_mapping(value: object, field: str) -> dict[Any, Any]:
     return value
 
 
-def _validate_keys(data: dict[Any, Any], expected: frozenset[str], field: str) -> None:
-    missing = sorted(str(key) for key in expected if key not in data)
+def _validate_keys(
+    data: dict[Any, Any],
+    expected: frozenset[str],
+    field: str,
+    *,
+    optional: frozenset[str] = frozenset(),
+) -> None:
+    missing = sorted(str(key) for key in expected - optional if key not in data)
     if missing:
         raise ConfigurationError(f"{field}: faltan claves requeridas: {', '.join(missing)}")
     unknown = sorted(str(key) for key in data if key not in expected)
@@ -173,8 +181,12 @@ def _validate_checksum(value: object, field: str) -> tuple[str, str | None]:
 def _validate_expected_config(value: object, task: str, field: str) -> dict[str, object]:
     expected = _require_mapping(value, field)
     keys = DETECTION_CONFIG_KEYS if task == "detection" else EMBEDDING_CONFIG_KEYS
-    _validate_keys(expected, keys, field)
+    _validate_keys(expected, keys, field, optional=OPTIONAL_CONFIG_KEYS)
     config: dict[str, object] = {"input": _text(expected["input"], f"{field}.input")}
+    precision = _optional_text(expected.get("precision"), f"{field}.precision") or "fp32"
+    if not is_supported_precision(precision):
+        raise ConfigurationError(f"{field}.precision: use fp32, fp16 o int8")
+    config["precision"] = precision
     if task == "detection":
         confidence = _finite_number(expected["confidence"], f"{field}.confidence")
         if not 0 < confidence <= 1:

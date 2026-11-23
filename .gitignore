@@ -30,6 +30,7 @@ benchmark-data/
 benchmark-*.json
 benchmark-*.csv
 benchmark-*.md
+!docs/benchmark-edge.md
 benchmark-*.log
 profiling_results.json
 profiling.json

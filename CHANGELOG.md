@@ -11,9 +11,12 @@ All notable changes to this project are documented here using
 - Synthetic integration and 30-second e2e baseline tests with coverage artifacts.
 - Performance budgets, deterministic synthetic-video benchmark, baseline comparison and nightly workflow.
 - PR performance smoke test with wide thresholds and per-module coverage thresholds.
+- Manual edge benchmark matrix for FP32/INT8/FP16 profiles with quality gates and registered precision variants.
+- Camera quality and calibration drift monitor with configurable signals, `degraded` status, metrics and non-intrusive monitor warning.
 
 ### Changed
 - Frame buffer mantiene capacidad 1 con política drop-old explícita.
+- Rechazo HTTP del monitor drena la petición antes de cerrar para evitar RST en Windows.
 - Docker and CI workflows publish and validate versioned artifacts.
 
 ### Security

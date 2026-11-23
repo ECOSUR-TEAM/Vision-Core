@@ -64,6 +64,26 @@ def test_invalid_embeddings_rejected(extractor, value):
         extractor(np.zeros((30, 20, 3), dtype=np.uint8))
 
 
+def test_fp16_precision_uses_half_input_tensor():
+    seen = {}
+
+    class HalfAware(nn.Module):
+        def forward(self, tensor):
+            seen["dtype"] = tensor.dtype
+            return tensor.flatten(start_dim=1)
+
+    extractor = object.__new__(module.TorchvisionEmbeddingExtractor)
+    extractor.device = torch.device("cpu")
+    extractor.precision = "fp16"
+    extractor._model = HalfAware()
+    extractor._transform = lambda image: torch.ones(3, 8, 8)
+
+    output = extractor(np.zeros((8, 8, 3), dtype=np.uint8))
+
+    assert seen["dtype"] is torch.float16
+    assert output.dtype == np.float32
+
+
 def test_unavailable_cuda_fails_before_loading(monkeypatch):
     monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
     with pytest.raises(RuntimeError, match="CUDA"):

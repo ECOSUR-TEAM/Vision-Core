@@ -87,6 +87,28 @@ La precisión configurada debe coincidir con `expected_config.precision` del des
 | `VISION_CORE_DISK_CHECK_PATH` | `.` | Ruta existente para el check de disco |
 | `VISION_CORE_PERFORMANCE_INTERVAL_SECONDS` | `1.0` | Numero positivo |
 
+### Calidad de cámara y deriva
+
+Cada variable admite una variante específica por cámara con el prefijo
+`VISION_CORE_CAMERA_QUALITY_<CAMERA_ID>_` (por ejemplo,
+`VISION_CORE_CAMERA_QUALITY_CAMERA_1_CHECK_BLUR=0`). La variante específica gana
+sobre la global. Detalles y acciones en [calidad de cámara](camera-quality.md).
+
+| Variable | Predeterminado | Validacion |
+|---|---|---|
+| `VISION_CORE_CAMERA_QUALITY_ENABLED` | `1` | Booleano; `0` desactiva el monitor completo |
+| `VISION_CORE_CAMERA_QUALITY_SAMPLE_EVERY_N_FRAMES` | `15` | Entero ≥ 1 |
+| `VISION_CORE_CAMERA_QUALITY_FROZEN_FRAMES` | `30` | Entero ≥ 2 (muestras consecutivas) |
+| `VISION_CORE_CAMERA_QUALITY_FROZEN_DIFFERENCE` | `1.0` | Numero finito no negativo |
+| `VISION_CORE_CAMERA_QUALITY_MIN_BLUR_VARIANCE` | `50.0` | Numero finito no negativo |
+| `VISION_CORE_CAMERA_QUALITY_MIN_BRIGHTNESS` | `25.0` | `0 <= min < max <= 255` |
+| `VISION_CORE_CAMERA_QUALITY_MAX_BRIGHTNESS` | `230.0` | `0 <= min < max <= 255` |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_RESOLUTION` | `1` | Booleano |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_FROZEN` | `1` | Booleano |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_BLUR` | `1` | Booleano |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_EXPOSURE` | `1` | Booleano |
+| `VISION_CORE_CAMERA_QUALITY_CHECK_ZONES` | `1` | Booleano |
+
 ### Render y pipeline
 
 | Variable | Predeterminado | Validacion |

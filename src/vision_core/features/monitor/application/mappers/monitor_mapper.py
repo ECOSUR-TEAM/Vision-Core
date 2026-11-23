@@ -15,6 +15,7 @@ from vision_core.core.validation import (
     json_metadata,
     required_str,
 )
+from vision_core.features.monitor.application.dto.response.response_camera_quality import ResponseCameraQuality
 from vision_core.features.monitor.application.dto.response.response_frame import ResponseFrame
 from vision_core.features.monitor.application.dto.response.response_snapshot import ResponseSnapshot
 
@@ -67,6 +68,20 @@ def _counts(value: Any) -> Mapping[str, int]:
     return MappingProxyType(dict(value))
 
 
+def _camera_quality(value: object) -> ResponseCameraQuality:
+    if isinstance(value, ResponseCameraQuality):
+        return value
+    if not isinstance(value, Mapping):
+        raise ValueError("camera_quality must be a mapping")
+    status = required_str(value.get("status"), "camera_quality.status")
+    reason = value.get("reason")
+    return ResponseCameraQuality(
+        status=status,
+        reason=None if reason is None else required_str(reason, "camera_quality.reason"),
+        signals=json_metadata(value.get("signals"), "camera_quality.signals"),
+    )
+
+
 def snapshot_to_response(snapshot: Mapping[str, object]) -> ResponseSnapshot:
     updated_at = snapshot["updated_at"]
     age_seconds = snapshot["age_seconds"]
@@ -86,6 +101,7 @@ def snapshot_to_response(snapshot: Mapping[str, object]) -> ResponseSnapshot:
         fps=finite_float(snapshot["fps"], "fps"),
         dropped_frames=bounded_int(snapshot["dropped_frames"], "dropped_frames"),
         persistence=None if persistence_data is None else json_metadata(persistence_data, "persistence"),
+        camera_quality=_camera_quality(snapshot.get("camera_quality", {"status": "ok", "reason": None, "signals": {}})),
     )
 
 

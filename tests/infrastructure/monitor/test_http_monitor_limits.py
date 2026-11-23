@@ -13,7 +13,7 @@ import pytest
 from vision_core.core.errors import codes
 from vision_core.features.monitor.infrastructure.http import server as server_module
 from vision_core.features.monitor.infrastructure.http.handler import MAX_HEADER_COUNT, MAX_REQUEST_LINE
-from vision_core.features.monitor.infrastructure.http.server import make_server
+from vision_core.features.monitor.infrastructure.http.server import MonitorHTTPServer, make_server
 from vision_core.features.monitor.infrastructure.state import MonitorState
 
 
@@ -171,8 +171,10 @@ def test_rejected_socket_drain_is_bounded(monkeypatch):
             received.append(("close", None))
 
     monkeypatch.setattr(server_module.time, "monotonic", lambda: 0.0)
-    server_module.MonitorHTTPServer._reject_immediately(FakeSocket(), HTTPStatus.SERVICE_UNAVAILABLE)
+    MonitorHTTPServer._reject_immediately(FakeSocket(), HTTPStatus.SERVICE_UNAVAILABLE)
 
+    timeouts = [value for kind, value in received if kind == "timeout"]
     drained = [size for kind, size in received if kind == "recv"]
+    assert server_module._DRAIN_TIMEOUT_SECONDS in timeouts
     assert drained and sum(drained) == server_module._MAX_DRAIN_BYTES
     assert max(drained) <= 4096

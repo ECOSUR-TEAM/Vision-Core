@@ -24,10 +24,10 @@ from vision_core.features.monitor.infrastructure.http.limits_metrics import Moni
 
 MAX_CONNECTIONS = 4
 MAX_LONG_POLLS = 2
-_DRAIN_TIMEOUT_SECONDS = 0.2
-_MAX_DRAIN_BYTES = 64 * 1024
 _CSP_PLACEHOLDER = b"__CSP_NONCE__"
 _REQUIRED_PLACEHOLDERS = 2
+_DRAIN_TIMEOUT_SECONDS = 0.05
+_MAX_DRAIN_BYTES = 64 * 1024
 
 
 class MonitorHTTPServer(ThreadingHTTPServer):

@@ -40,6 +40,14 @@ def _requirements_versions(relative):
     return versions
 
 
+def _setuptools_requirement():
+    pyproject = tomllib.loads(_read("pyproject.toml"))
+    for requirement in pyproject["build-system"]["requires"]:
+        if requirement.lower().startswith("setuptools"):
+            return requirement[len("setuptools") :]
+    raise AssertionError("setuptools no está declarado en build-system.requires")
+
+
 def test_third_party_notices_match_requirements_and_gate_agpl_publication():
     text = _read("THIRD_PARTY_NOTICES.md")
     lowered = text.lower()

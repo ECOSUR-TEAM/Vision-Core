@@ -342,6 +342,7 @@
                 </div>
                 <p id="notice" class="note" hidden><strong>Calibración pendiente.</strong> Más adelante marcaremos la
                     entrada, el interior y la puerta.</p>
+                <p id="qualityNotice" class="note" role="status" hidden></p>
             </section>
             <aside class="panel">
                 <h2>Personas visibles</h2><span class="count" id="visible">—</span>
@@ -365,6 +366,13 @@
             interior: 'En el interior',
             exterior: 'En el exterior',
             fuera: 'Fuera de las zonas marcadas',
+        };
+        const qualityMessages = {
+            RESOLUTION_MISMATCH: 'La resolución de la cámara cambió. Revisa la calibración.',
+            ZONES_STALE: 'Las zonas marcadas ya no coinciden con la imagen. Revisa la calibración.',
+            FROZEN_FRAME: 'La imagen lleva rato sin cambiar. Revisa la cámara.',
+            BLURRY_FRAME: 'La imagen está borrosa. Revisa el enfoque de la cámara.',
+            EXPOSURE_OUT_OF_RANGE: 'La imagen está demasiado oscura o clara. Revisa la iluminación.',
         };
 
         function setImageSource(image, url) {
@@ -391,6 +399,14 @@
             el('viewer').classList.toggle('offline', !live); el('overlay').hidden = live;
             el('overlay').textContent = status === 'starting' ? 'Estamos preparando la cámara y la detección de personas.' : !state ? 'Se perdió la conexión. Intentaremos conectarnos de nuevo automáticamente.' : 'La imagen no se está actualizando. Estamos esperando que vuelva la cámara.';
             el('notice').hidden = !state?.demo_zones;
+            const quality = state?.camera_quality;
+            const degraded = quality?.status === 'degraded';
+            el('qualityNotice').hidden = !degraded;
+            if (degraded) {
+                el('qualityNotice').textContent = 'Aviso de cámara: ' + (Object.hasOwn(qualityMessages, quality.reason) ? qualityMessages[quality.reason] : 'La calidad de la imagen no es habitual. Revisa la cámara.');
+            } else {
+                el('qualityNotice').textContent = '';
+            }
             el('visible').textContent = live ? state.people.length : '—';
             el('people').replaceChildren();
             if (live) {

@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any
 
 from vision_core.core.config.pipeline_config import PipelineConfig
+from vision_core.core.contracts import ReIDMemory
 from vision_core.core.errors import PipelineError, ValidationError, codes
 from vision_core.core.telemetry import FrameProfiler
 from vision_core.core.validation import validate_frame
@@ -19,7 +20,6 @@ from vision_core.features.pipeline.domain.attendance import SessionAttendance
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 from vision_core.features.pipeline.domain.ports.event_consumer import EventConsumer
 from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
-from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 from vision_core.features.video.domain.ports.video_source import VideoSource
 
 logger = logging.getLogger(__name__)

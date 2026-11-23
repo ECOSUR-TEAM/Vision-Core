@@ -19,6 +19,7 @@ All notable changes to this project are documented here using
 - Rechazo HTTP del monitor drena la petición antes de cerrar para evitar RST en Windows.
 - Docker and CI workflows publish and validate versioned artifacts.
 - `FrameProfiler` y `STAGES` se importan desde `vision_core.core.telemetry`; el path legacy `vision_core.core.inference.frame_profiler` fue eliminado.
+- El contrato canónico `ReIDMemory` vive en `vision_core.core.contracts` y conserva compatibilidad estructural; el puerto duplicado del slice ReID y su re-export fueron eliminados sin shim.
 
 ### Security
 - Trivy image scanning and SARIF upload for fixable high and critical findings.

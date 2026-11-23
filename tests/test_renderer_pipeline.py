@@ -170,6 +170,14 @@ def test_pipeline_config_rejects_invalid_environment_values(monkeypatch, name):
         PipelineConfig.from_env()
 
 
+def test_telemetry_exports_frame_profiler():
+    from vision_core.core.telemetry import STAGES as PUBLIC_STAGES
+    from vision_core.core.telemetry import FrameProfiler as PublicFrameProfiler
+
+    assert PublicFrameProfiler is FrameProfiler
+    assert PUBLIC_STAGES == STAGES
+
+
 def test_frame_profiler_writes_percentiles_and_fps(tmp_path):
     profiler = FrameProfiler()
     for seconds in (0.01, 0.02, 0.03):

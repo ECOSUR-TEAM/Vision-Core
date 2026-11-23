@@ -6,7 +6,7 @@ from typing import Any
 
 from vision_core.core.config.pipeline_config import PipelineConfig
 from vision_core.core.errors import PipelineError, ValidationError, codes
-from vision_core.core.telemetry.frame_profiler import FrameProfiler
+from vision_core.core.telemetry import FrameProfiler
 from vision_core.core.validation import validate_frame
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics

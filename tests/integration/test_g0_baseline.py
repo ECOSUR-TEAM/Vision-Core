@@ -4,7 +4,7 @@ import numpy as np
 
 from tests.fakes.fake_detector import FakeDetector
 from vision_core.core.config.pipeline_config import PipelineConfig
-from vision_core.core.telemetry.frame_profiler import STAGES
+from vision_core.core.telemetry import STAGES
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID

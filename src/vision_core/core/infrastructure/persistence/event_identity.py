@@ -1,13 +1,8 @@
-import hashlib
-import json
+"""Compatibilidad de la persistencia con la clave de idempotencia compartida."""
 
 from vision_core.core.domain.event import Event
-from vision_core.core.serialization.events import event_to_json_dict
+from vision_core.core.domain.event_identity import idempotency_key_for
 
 
 def event_id_for(event: Event) -> str:
-    explicit = getattr(event, "event_id", None)
-    if explicit:
-        return str(explicit)
-    payload = json.dumps(event_to_json_dict(event), sort_keys=True, ensure_ascii=False)
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return idempotency_key_for(event)

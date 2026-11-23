@@ -2,6 +2,7 @@
 
 from vision_core.core.dto.bbox_payload import BBoxPayload
 from vision_core.core.dto.detection_payload import DetectionPayload
+from vision_core.core.dto.event_envelope import EventEnvelope
 from vision_core.core.dto.event_payload import EventPayload
 from vision_core.core.dto.frame_like import FrameLike
 from vision_core.core.dto.monitor_person_payload import MonitorPersonPayload
@@ -14,6 +15,7 @@ __all__ = [
     "EVENT_SCHEMA_VERSION",
     "BBoxPayload",
     "DetectionPayload",
+    "EventEnvelope",
     "EventPayload",
     "FrameLike",
     "JSONValue",

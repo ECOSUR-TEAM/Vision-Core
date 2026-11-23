@@ -12,6 +12,8 @@ from vision_core.core.telemetry import FrameProfiler
 from vision_core.core.validation import validate_frame
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
+from vision_core.features.events.domain.event_envelope_factory import envelope_for
+from vision_core.features.events.domain.ports.event_sink import EventSink
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.dto.request.request_run_pipeline import RequestRunPipeline
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
@@ -25,6 +27,8 @@ from vision_core.features.video.domain.ports.video_source import VideoSource
 
 logger = logging.getLogger(__name__)
 
+_ENQUEUE_FAILED = "vision_core_event_sink_enqueue_failed_total"
+
 
 class RunPipeline:
     def __init__(
@@ -35,6 +39,7 @@ class RunPipeline:
         door: DoorAnalytics,
         embedder: EmbeddingExtractor,
         on_event: EventConsumer,
+        event_sink: EventSink | None = None,
         expected_frame_size: tuple[int, int] | None = None,
         on_frame: Callable[[Any, tuple[ResolvedTrack, ...], float], None] | None = None,
         config: PipelineConfig | None = None,
@@ -48,6 +53,7 @@ class RunPipeline:
         self._door = door
         self._embed = embedder
         self._on_event = on_event
+        self._event_sink = event_sink
         self._attendance = SessionAttendance()
         self._person_by_track: dict[int, str] = {}
         self._last_embedding_by_track: dict[int, Any] = {}
@@ -96,6 +102,16 @@ class RunPipeline:
                     raise
             finally:
                 self._save_profile()
+
+    def _emit_event(self, event) -> None:
+        if self._event_sink is None:
+            return
+        try:
+            self._event_sink.send(envelope_for(event))
+        except Exception:  # noqa: BLE001 - la entrega nunca debe detener el pipeline
+            if self._metrics is not None:
+                self._metrics.increment(_ENQUEUE_FAILED, camera_id=self._metrics_camera_id)
+            logger.warning("No se pudo encolar el evento para el sink (%s)", type(event).__name__)
 
     def _save_profile(self) -> None:
         if not self.profiler.enabled or not self._profiling_output:
@@ -187,6 +203,7 @@ class RunPipeline:
                     )
                 )
                 self._on_event(event)
+                self._emit_event(event)
         if self._metrics is not None:
             self._metrics.increment("vision_core_tracks_created_total", new_tracks, camera_id=self._metrics_camera_id)
             self._metrics.set_gauge(

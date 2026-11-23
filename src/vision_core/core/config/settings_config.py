@@ -1,10 +1,11 @@
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import isfinite
 from pathlib import Path
 from typing import Mapping
 
+from .event_sink_settings import EventSinkSettings
 from .settings_camera import CameraSettings
 from .settings_camera_quality import CameraQualitySettings
 from .settings_detection import DetectionSettings
@@ -32,6 +33,7 @@ class Settings:
     camera: CameraSettings
     camera_quality: CameraQualitySettings
     models: ModelRegistrySettings
+    events: EventSinkSettings = field(default_factory=EventSinkSettings)
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None, *, validate_startup: bool = True) -> "Settings":
@@ -282,6 +284,12 @@ class Settings:
         if not embedding_model_id:
             errors.append("VISION_CORE_EMBEDDING_MODEL_ID: no puede estar vacío")
 
+        try:
+            event_sink_settings = EventSinkSettings.from_env(env)
+        except SettingsError as error:
+            errors.append(str(error).replace("\n", " "))
+            event_sink_settings = EventSinkSettings()
+
         if errors:
             raise SettingsError("Configuración inválida:\n- " + "\n- ".join(errors))
 
@@ -350,4 +358,5 @@ class Settings:
                 embedding_model_id,
                 verify_checksums,
             ),
+            events=event_sink_settings,
         )

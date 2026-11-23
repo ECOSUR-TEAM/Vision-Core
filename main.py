@@ -23,6 +23,7 @@ from vision_core.features.door.infrastructure.adapters.polygon_door_analytics im
 from vision_core.features.door.infrastructure.adapters.uncalibrated_analytics import UncalibratedAnalytics
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
 from vision_core.features.door.infrastructure.dependencies import build_door
+from vision_core.features.events.infrastructure.dependencies import build_event_sink
 from vision_core.features.monitor.infrastructure import __main__ as monitor_cli
 from vision_core.features.monitor.infrastructure.dependencies import build_monitor
 from vision_core.features.monitor.infrastructure.latest_frame_buffer import LatestFrameBuffer
@@ -110,9 +111,11 @@ def build_monitor_pipeline(
         renderer = None
         renderer_error = None
         quality_thread: QualityThread | None = None
+        event_sink = None
         session_id = str(uuid.uuid4())
         try:
             persistence.start_session(session_id, time.time())
+            event_sink = build_event_sink(settings.events, metrics=state.metrics)
             zones = load_zones(zones_file) if zones_file else None
             if zones is not None:
                 persistence.save_zones((zones.door, zones.exterior, zones.interior))
@@ -242,6 +245,7 @@ def build_monitor_pipeline(
                 door=door.analytics,
                 embedder=reid.embedder,
                 on_event=on_event,
+                event_sink=event_sink,
                 expected_frame_size=(zones.width, zones.height) if zones else None,
                 on_frame=on_frame,
                 config=config,
@@ -259,6 +263,8 @@ def build_monitor_pipeline(
             if renderer is not None and renderer.failed.is_set():
                 raise renderer.error or RuntimeError("Fallo en el hilo de renderizado")
         finally:
+            if event_sink is not None:
+                event_sink.close()
             if renderer is not None:
                 renderer.close(timeout=2)
                 renderer_error = renderer.error

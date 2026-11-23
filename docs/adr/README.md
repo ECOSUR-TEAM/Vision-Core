@@ -16,6 +16,7 @@ alternativas y verificación. Para crear uno, copia la
 | [0007](0007-registro-de-modelos-y-model-cards.md) | Registro de modelos y model cards | Aceptada | 2026-11-21 |
 | [0008](0008-core-layer-and-dependency-rules.md) | Capa `core` y reglas de dependencia entre `features/`, `core/` y `scripts/` | Aceptada | 2026-11-21 |
 | [0009](0009-calidad-de-camara-no-intrusiva.md) | Calidad de cámara no intrusiva y deriva de calibración | Aceptada | 2026-11-22 |
+| [0010](0010-sinks-de-eventos-y-entrega-idempotente.md) | Sinks de eventos con entrega idempotente y backpressure | Aceptada | 2026-11-23 |
 | [0011](0011-editor-de-zonas-del-monitor.md) | Editor de zonas del monitor con contrato versionado y auditoría | Aceptada | 2026-11-23 |
 
 El prerrequisito G0 se instrumenta sin autorizar multi-cámara; su plan operativo está

@@ -64,6 +64,14 @@ de modo que los clientes existentes siguen capturando el tipo previo.
 | `REQUEST_NOT_FOUND` | no | 404 | Ruta HTTP desconocida o editor de zonas desactivado. |
 | `INTERNAL_ERROR` | no | 500 | Excepción inesperada en un límite; se sustituye por un mensaje genérico. |
 
+Los sinks de eventos reutilizan esta taxonomía sin códigos nuevos: un 5xx, 408,
+429, timeout, DNS o fallo de red del webhook es `PipelineError` con
+`code=PIPELINE_FAILED` y `retryable=True`; otros 4xx y las redirecciones son
+`ValidationError` con `code=VALIDATION_FAILED` y `retryable=False`. El array `retryable` de la tabla
+es el valor por defecto de la clase; una instancia puede refinarlo. El adaptador
+MQTT no adopta códigos propios: con el flag activo falla con
+`CONFIGURATION_INVALID`. Ver [sinks de eventos](event-sinks.md).
+
 ### Motivos de calidad (no errores HTTP)
 
 La detección de calidad de cámara no produce excepciones ni envelopes de error.

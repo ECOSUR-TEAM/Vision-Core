@@ -67,3 +67,10 @@ torch/torchvision, nombre del modelo y `error_code`, y escala al responsable
 del modelo. No sustituyas pesos por otros de arquitectura distinta sin
 actualizar la configuración y la documentación. Guías relacionadas:
 [observabilidad](../observability.md) y [validación](../validation.md).
+
+## Evidencia ECM-104
+
+Simulacro `weights_missing`: detección en 0.50 s y recuperación en 4.00 s,
+dentro del objetivo de 4.00 s. `/ready` pasó a `503` antes de abrir el stream y
+el error se reportó con `MODEL_UNAVAILABLE` / `CONFIGURATION_INVALID`. Evidencia
+completa en [resultados de simulacros](../../reports/incident-drills.md).

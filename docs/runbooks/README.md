@@ -14,6 +14,7 @@ final.
 | [05. FPS bajo o latencia alta](05-fps-bajo-o-latencia-alta.md) | Monitor lento, frames descartados o p95 alto |
 | [06. No se generan eventos](06-no-se-generan-eventos.md) | Hay video y detecciones, pero `vision_core_events_emitted_total` no crece |
 | [07. Rollback de versión](07-rollback-de-version.md) | Una versión nueva degrada el servicio y hay que volver atrás |
+| [08. Alerta de SLO](08-alerta-de-slo.md) | Una alerta de `config/slo.json` supera su umbral |
 
 ## Antes de empezar
 

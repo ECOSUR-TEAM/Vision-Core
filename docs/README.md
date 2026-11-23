@@ -34,6 +34,7 @@ existe, corrígelo en el mismo PR que lo detecta.
 | [Requisitos y problemas conocidos](operations.md) | Límites funcionales y diagnóstico |
 | [Configuración tipada](configuration.md) | Variables, defaults y validación |
 | [Observabilidad](observability.md) | `/health`, `/ready`, `/metrics`, logs y métricas |
+| [SLOs y tablero](slo.md) | Objetivos, alertas, simulacros y evidencia de confiabilidad |
 | [Calidad de cámara](camera-quality.md) | Señales de calidad, deriva, umbrales y acciones |
 | [Persistencia y retención](persistence.md) | SQLite, TTLs, backup y degradación |
 | [Monitor](monitor.md) | Interfaz web, API y render |
@@ -95,3 +96,4 @@ hecha hasta que esa persona la confirme.
 | ECM-95: binding seguro y exposición del monitor | @bchanona | @Ameth-Toledo, @Carlosss2 | [x] Revisado por otra persona |
 | ECM-101: matriz edge INT8/FP16 con presupuestos | @MelissaZarate08 | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |
 | ECM-100: calidad de cámara y deriva de calibración | @MelissaZarate08 | @Ameth-Toledo, @bchanona, @Carlosss2, @FabricioPRZ | Pendiente de revisión |
+| ECM-104: SLOs, simulacros y tablero | @bchanona | @Ameth-Toledo, @Carlosss2 | Pendiente de revisión |

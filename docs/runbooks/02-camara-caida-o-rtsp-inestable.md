@@ -65,3 +65,15 @@ Si el stream entra en Frigate pero Vision Core no lo lee, registra los
 contadores y el `error_code`, y escala al responsable de red/cámara. No
 desactives `restart: unless-stopped` ni aumentes reintentos de forma
 permanente sin una causa documentada.
+
+## Evidencia ECM-104
+
+- `rtsp_disconnected`: detección en 1.00 s y recuperación en 12.00 s, dentro
+  del objetivo de 12.00 s. `/ready` cayó, el monitor pasó a `stale` y la
+  reconexión restauró el stream sin reiniciar el proceso.
+- `frozen_frame`: detección en 0.50 s y recuperación en 1.50 s, dentro del
+  objetivo de 1.50 s. La calidad degradó con aviso textual y el conteo continuó.
+
+Evidencia completa en [resultados de simulacros](../../reports/incident-drills.md).
+El SLO `camera_recovery` usa la mediana de recuperación de este runbook y
+`vision_core_reconnections_total`.

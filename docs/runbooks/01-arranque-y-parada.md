@@ -84,3 +84,11 @@ Si `/ready` sigue en `503` tras corregir la causa, registra el `error_code` y
 escala con el responsable del servicio. No aumentes timeouts ni desactives
 chequeos sin medir antes. Detalle en [startup.md](../startup.md) y
 [development.md](../development.md).
+
+## Evidencia ECM-104
+
+Simulacro `container_restart`: detección en 0.50 s y recuperación en 15.00 s,
+dentro del objetivo de 15.00 s. `/health` volvió a `alive` y el `uptime` se
+reinició con el proceso; los IDs de sesión y el historial volátil no se
+conservan. Evidencia completa en
+[resultados de simulacros](../../reports/incident-drills.md).

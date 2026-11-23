@@ -63,8 +63,8 @@ credenciales se redactan antes de emitir texto.
 | `vision_core_camera_quality_<motivo>_total` | counter | Aparicion de cada motivo de calidad |
 | `vision_core_camera_quality_errors_total` | counter | Fallos del analisis de calidad |
 
-Cada histograma conserva una ventana de las ultimas 1000 muestras para `min` y `max`,
-mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan
+Cada histograma conserva una ventana de las ultimas 1000 muestras para `min`, `max` y
+`p95`, mientras que `count`, `sum` y `avg` son acumulativos desde el arranque. No usan
 `person_id`, rutas o URLs como labels. `vision_core_frames_discarded_total` suma el
 delta del acumulado de la captura, no el total en cada frame.
 
@@ -101,9 +101,12 @@ el valor original se conserva en `profiling_results.json` y en logs JSON.
 
 El benchmark nocturno guarda un snapshot de estos contadores e histogramas como
 telemetría de apoyo y usa `FrameProfiler` para el gate de presupuestos. El e2e
-con `ObservabilityMetrics` fresco comprueba `vision_core_events_emitted_total` y
+ con `ObservabilityMetrics` fresco comprueba `vision_core_events_emitted_total` y
 `vision_core_inference_latency_ms` a través de `/metrics`. Consulta
 [performance.md](performance.md) para las cifras y los hotspots.
+
+Los objetivos operativos se consumen desde estos mismos payloads; consulta
+[SLOs y tablero](slo.md) para el mapeo de métricas, errores, alertas y runbooks.
 
 ## Variables
 

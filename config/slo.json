@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "kind": "slo-dashboard",
+  "window": "24h",
+  "slos": [
+    {
+      "id": "monitor_availability",
+      "title": "Disponibilidad del monitor",
+      "objective": 0.99,
+      "comparison": "gte",
+      "unit": "ratio",
+      "signals": [
+        "/ready.ready",
+        "vision_core_errors_total"
+      ],
+      "metrics": [
+        "vision_core_errors_total"
+      ],
+      "error_codes": [
+        "VIDEO_SOURCE_UNAVAILABLE",
+        "CONFIGURATION_INVALID",
+        "INTERNAL_ERROR"
+      ],
+      "alert": {
+        "id": "alert_monitor_availability",
+        "severity": "critical",
+        "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md"
+      }
+    },
+    {
+      "id": "frame_freshness",
+      "title": "Frescura del frame",
+      "objective": 2.0,
+      "comparison": "lte",
+      "unit": "seconds",
+      "signals": [
+        "/api/v1/state.age_seconds",
+        "vision_core_fps",
+        "vision_core_frames_discarded_total"
+      ],
+      "metrics": [
+        "vision_core_fps",
+        "vision_core_frames_discarded_total"
+      ],
+      "error_codes": [
+        "VIDEO_FRAME_PENDING",
+        "VIDEO_FRAME_INVALID"
+      ],
+      "alert": {
+        "id": "alert_frame_freshness",
+        "severity": "warning",
+        "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md"
+      }
+    },
+    {
+      "id": "processing_p95",
+      "title": "Latencia p95 de procesamiento",
+      "objective": 60.0,
+      "comparison": "lte",
+      "unit": "ms",
+      "signals": [
+        "/metrics.histograms.vision_core_frame_processing_duration_ms.p95",
+        "benchmarks/budgets.json"
+      ],
+      "metrics": [
+        "vision_core_frame_processing_duration_ms"
+      ],
+      "error_codes": [
+        "PIPELINE_FAILED"
+      ],
+      "alert": {
+        "id": "alert_processing_p95",
+        "severity": "warning",
+        "runbook": "docs/runbooks/05-fps-bajo-o-latencia-alta.md"
+      }
+    },
+    {
+      "id": "event_delivery",
+      "title": "Tasa de entrega de eventos",
+      "objective": 0.99,
+      "comparison": "gte",
+      "unit": "ratio",
+      "signals": [
+        "vision_core_events_emitted_total",
+        "/api/v1/state.persistence.failures"
+      ],
+      "metrics": [
+        "vision_core_events_emitted_total"
+      ],
+      "error_codes": [
+        "PIPELINE_FAILED",
+        "VALIDATION_FAILED"
+      ],
+      "alert": {
+        "id": "alert_event_delivery",
+        "severity": "warning",
+        "runbook": "docs/runbooks/06-no-se-generan-eventos.md"
+      }
+    },
+    {
+      "id": "camera_recovery",
+      "title": "Recuperación tras fallo de cámara",
+      "objective": 30.0,
+      "comparison": "lte",
+      "unit": "seconds",
+      "signals": [
+        "vision_core_reconnections_total",
+        "incident-drills.recovery_seconds"
+      ],
+      "metrics": [
+        "vision_core_reconnections_total",
+        "vision_core_errors_total"
+      ],
+      "error_codes": [
+        "VIDEO_SOURCE_UNAVAILABLE",
+        "VIDEO_FRAME_PENDING"
+      ],
+      "alert": {
+        "id": "alert_camera_recovery",
+        "severity": "critical",
+        "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md"
+      }
+    }
+  ],
+  "drills": [
+    {
+      "id": "rtsp_disconnected",
+      "title": "RTSP desconectado",
+      "slo_id": "camera_recovery",
+      "error_codes": [
+        "VIDEO_SOURCE_UNAVAILABLE",
+        "VIDEO_FRAME_PENDING"
+      ],
+      "signals": [
+        "vision_core_reconnections_total",
+        "vision_core_errors_total"
+      ],
+      "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md",
+      "finding": "El monitor marca stale y /ready cae; la reconexión restaura /ready sin reiniciar el proceso.",
+      "detection_objective_seconds": 1.0,
+      "recovery_objective_seconds": 12.0
+    },
+    {
+      "id": "frozen_frame",
+      "title": "Frame congelado",
+      "slo_id": "frame_freshness",
+      "error_codes": [
+        "VIDEO_FRAME_INVALID"
+      ],
+      "signals": [
+        "vision_core_camera_quality_degraded_total",
+        "/api/v1/state.age_seconds"
+      ],
+      "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md",
+      "finding": "La calidad degrada sin cortar el video; el aviso es textual y no bloquea el conteo.",
+      "detection_objective_seconds": 0.5,
+      "recovery_objective_seconds": 1.5
+    },
+    {
+      "id": "weights_missing",
+      "title": "Pesos de modelo ausentes o corruptos",
+      "slo_id": "monitor_availability",
+      "error_codes": [
+        "MODEL_UNAVAILABLE",
+        "CONFIGURATION_INVALID"
+      ],
+      "signals": [
+        "/ready.checks.model",
+        "vision_core_errors_total"
+      ],
+      "runbook": "docs/runbooks/03-modelo-no-encontrado-o-error-de-inferencia.md",
+      "finding": "/ready pasa a 503 antes de abrir stream; el arranque falla temprano con código estable.",
+      "detection_objective_seconds": 0.5,
+      "recovery_objective_seconds": 4.0
+    },
+    {
+      "id": "event_sink_down",
+      "title": "Sink de eventos caído",
+      "slo_id": "event_delivery",
+      "error_codes": [
+        "PIPELINE_FAILED",
+        "VALIDATION_FAILED"
+      ],
+      "signals": [
+        "vision_core_events_emitted_total",
+        "/api/v1/state.persistence.failures"
+      ],
+      "runbook": "docs/runbooks/06-no-se-generan-eventos.md",
+      "finding": "La persistencia falla en modo fail-open; el pipeline sigue y contabiliza fallos.",
+      "detection_objective_seconds": 2.0,
+      "recovery_objective_seconds": 18.0
+    },
+    {
+      "id": "disk_full",
+      "title": "Disco lleno",
+      "slo_id": "monitor_availability",
+      "error_codes": [
+        "CONFIGURATION_INVALID"
+      ],
+      "signals": [
+        "/ready.checks.disk",
+        "/api/v1/state.persistence.failures"
+      ],
+      "runbook": "docs/runbooks/04-disco-lleno-y-retencion.md",
+      "finding": "/ready marca disk=false y la retención deja de escribir sin tumbar el monitor.",
+      "detection_objective_seconds": 1.0,
+      "recovery_objective_seconds": 9.0
+    },
+    {
+      "id": "container_restart",
+      "title": "Reinicio del contenedor",
+      "slo_id": "monitor_availability",
+      "error_codes": [
+        "VIDEO_SOURCE_UNAVAILABLE"
+      ],
+      "signals": [
+        "/health.status",
+        "/metrics.uptime_seconds"
+      ],
+      "runbook": "docs/runbooks/01-arranque-y-parada.md",
+      "finding": "El contenedor vuelve a /health alive; los IDs de sesión y el historial volátil se reinician.",
+      "detection_objective_seconds": 0.5,
+      "recovery_objective_seconds": 15.0
+    }
+  ]
+}

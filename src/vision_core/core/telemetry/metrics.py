@@ -21,6 +21,12 @@ class ObservabilityMetrics:
         safe_id = re.sub(r"[^A-Za-z0-9_.:-]+", "_", camera_id)
         return (name, f"{name}{{camera_id={safe_id}}}")
 
+    @staticmethod
+    def _percentile(values: list[float], quantile: float) -> float:
+        ordered = sorted(values)
+        index = max(0, min(len(ordered) - 1, int(quantile * (len(ordered) - 1) + 0.5)))
+        return ordered[index]
+
     def increment(self, name: str, value: float = 1.0, *, camera_id: str | None = None) -> None:
         with self._lock:
             for key in self._keys(name, camera_id):
@@ -55,9 +61,10 @@ class ObservabilityMetrics:
                         "min": min(values),
                         "max": max(values),
                         "avg": total_sum / total_count if total_count else 0,
+                        "p95": self._percentile(values, 0.95),
                     }
                 else:
-                    histograms[name] = {"count": 0, "sum": 0, "min": 0, "max": 0, "avg": 0}
+                    histograms[name] = {"count": 0, "sum": 0, "min": 0, "max": 0, "avg": 0, "p95": 0}
             return {
                 "counters": counters,
                 "gauges": gauges,

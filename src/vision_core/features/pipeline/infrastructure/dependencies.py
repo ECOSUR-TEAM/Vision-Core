@@ -1,10 +1,10 @@
 from vision_core.core.config.pipeline_config import PipelineConfig
+from vision_core.core.contracts import ReIDMemory
 from vision_core.features.detection.domain.ports.detector_manager import DetectorManager
 from vision_core.features.door.domain.ports.door_analytics import DoorAnalytics
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.features.pipeline.domain.ports.event_consumer import EventConsumer
 from vision_core.features.reid.domain.ports.embedding_extractor import EmbeddingExtractor
-from vision_core.features.reid.domain.ports.reid_memory import ReIDMemory
 from vision_core.features.video.domain.ports.video_source import VideoSource
 
 

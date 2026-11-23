@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from tests.fakes.fake_reid import FakeReID
+from vision_core.core.contracts import ReIDMemory
 from vision_core.core.domain.bbox import BBox
 from vision_core.core.errors import ReIDError, codes
 from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
@@ -19,11 +20,15 @@ def _assert_reid_contract(memory):
 
 
 def test_fake_reid_honours_port_contract():
-    _assert_reid_contract(FakeReID())
+    memory = FakeReID()
+    assert isinstance(memory, ReIDMemory)
+    _assert_reid_contract(memory)
 
 
 def test_real_reid_honours_port_contract():
-    _assert_reid_contract(InMemoryReID())
+    memory = InMemoryReID()
+    assert isinstance(memory, ReIDMemory)
+    _assert_reid_contract(memory)
 
 
 def test_real_reid_rejects_invalid_embedding_with_stable_code():

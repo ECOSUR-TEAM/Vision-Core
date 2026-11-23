@@ -66,6 +66,7 @@ def test_dto_type_hints_contain_no_infrastructure_or_domain_types():
                     root = module_name.split(".", 1)[0]
                     forbidden = (
                         root in FORBIDDEN_ROOTS
+                        or module_name == "vision_core.domain"
                         or module_name.startswith("vision_core.domain.")
                         or ".domain." in module_name
                         or ".infrastructure." in module_name

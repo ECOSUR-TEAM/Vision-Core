@@ -13,6 +13,7 @@ All notable changes to this project are documented here using
 - PR performance smoke test with wide thresholds and per-module coverage thresholds.
 - Manual edge benchmark matrix for FP32/INT8/FP16 profiles with quality gates and registered precision variants.
 - Camera quality and calibration drift monitor with configurable signals, `degraded` status, metrics and non-intrusive monitor warning.
+- Optional zone editor in the monitor with versioned HTTP contract, shared schema validation, token gate, atomic writes, mandatory JSONL audit and explicit restart-required response.
 
 ### Changed
 - Frame buffer mantiene capacidad 1 con política drop-old explícita.

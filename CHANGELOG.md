@@ -22,10 +22,12 @@ All notable changes to this project are documented here using
 - Docker and CI workflows publish and validate versioned artifacts.
 - `FrameProfiler` y `STAGES` se importan desde `vision_core.core.telemetry`; el path legacy `vision_core.core.inference.frame_profiler` fue eliminado.
 - El contrato canónico `ReIDMemory` vive en `vision_core.core.contracts` y conserva compatibilidad estructural; el puerto duplicado del slice ReID y su re-export fueron eliminados sin shim.
+- El registro de modelos vive en `vision_core.core.model_registry`; imports, empaquetado, documentación y guardrails de arquitectura apuntan a la nueva ruta.
 - El HTML del monitor se sirve desde `vision_core.features.monitor.infrastructure.http.static`; `package-data` y CODEOWNERS apuntan a la nueva ruta.
 
 ### Removed
-- Shim `vision_core.features.video.infrastructure.frame_validation` y tests duplicados de cámara y detección; los imports canónicos usan `vision_core.core.validation`.
+- Shim `vision_core.features.video.infrastructure.frame_validation`, directorios legacy huérfanos y rutas antiguas del registro de modelos; los imports canónicos son `vision_core.core.validation` y `vision_core.core.model_registry`.
+- Tests duplicados de cámara y detección; la cobertura válida queda en los tests de los slices correspondientes.
 
 ### Security
 - Trivy image scanning and SARIF upload for fixable high and critical findings.

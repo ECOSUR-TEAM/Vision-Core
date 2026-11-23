@@ -9,8 +9,8 @@ import cv2
 import numpy as np
 
 from vision_core.core.config import Settings
+from vision_core.core.model_registry.activation import resolve_active_models
 from vision_core.features.reid.infrastructure.adapters.embedder import TorchvisionEmbeddingExtractor
-from vision_core.model_registry.activation import resolve_active_models
 from vision_core.scripts.benchmark_nightly import evaluate_budgets, load_budgets
 from vision_core.scripts.create_benchmark_video import _frame
 from vision_core.scripts.edge_benchmark_config import config_digest, load_config, select_profiles

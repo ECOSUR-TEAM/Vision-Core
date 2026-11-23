@@ -21,6 +21,8 @@ from vision_core.core.telemetry.metrics import ObservabilityMetrics
 from vision_core.features.monitor.infrastructure.state import MonitorState
 from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 
+PACKAGE_NAME = "vision_core"
+
 
 def test_infrastructure_does_not_import_application():
     project_root = Path(__file__).resolve().parents[1]
@@ -28,7 +30,7 @@ def test_infrastructure_does_not_import_application():
         project_root / "src/vision_core/features",
         project_root / "src/vision_core/core/infrastructure/persistence",
     )
-    legacy_application = ("application", "vision_core.application")
+    legacy_application = ("application", f"{PACKAGE_NAME}.application")
     for root in roots:
         for path in root.rglob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"))

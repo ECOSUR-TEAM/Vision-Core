@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DTO_ROOT = ROOT / "src" / "vision_core" / "features"
 CORE_DTO_ROOT = ROOT / "src" / "vision_core" / "core" / "dto"
 FORBIDDEN_ROOTS = {"numpy", "cv2", "torch", "torchvision", "ultralytics"}
+LEGACY_DOMAIN_PREFIX = "vision_core" + ".domain"
 
 
 def _dto_paths():
@@ -66,8 +67,8 @@ def test_dto_type_hints_contain_no_infrastructure_or_domain_types():
                     root = module_name.split(".", 1)[0]
                     forbidden = (
                         root in FORBIDDEN_ROOTS
-                        or module_name == "vision_core.domain"
-                        or module_name.startswith("vision_core.domain.")
+                        or module_name == LEGACY_DOMAIN_PREFIX
+                        or module_name.startswith(f"{LEGACY_DOMAIN_PREFIX}.")
                         or ".domain." in module_name
                         or ".infrastructure." in module_name
                     )

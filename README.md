@@ -391,9 +391,9 @@ actualización de dependencias y regeneración del lockfile están en
 
 | Componente | Responsabilidad |
 |---|---|
-| `src/vision_core/features/` | Features de detección, puerta, monitor, pipeline, ReID y video |
+| `src/vision_core/features/` | Features de cámara (health), detección, eventos, puerta, monitor, pipeline, ReID y video |
 | `src/vision_core/features/pipeline/` | `RunPipeline`, DTOs, mappers y fábrica del pipeline |
-| `src/vision_core/core/` | Kernel compartido: configuración, contratos, dominio, DTOs, errores, inferencia, persistencia, serialización, telemetría y validación |
+| `src/vision_core/core/` | Kernel compartido: configuración, contratos, dominio, DTOs, errores, inferencia, persistencia, registro de modelos, serialización, telemetría y validación |
 | `src/vision_core/scripts/` | Demostración, diagnóstico, ejecución medida y evaluación |
 | `main.py` | Composition root único y entrypoint raíz de Docker y ejecución local |
 

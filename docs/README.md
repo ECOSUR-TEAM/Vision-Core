@@ -99,4 +99,5 @@ hecha hasta que esa persona la confirme.
 | ECM-109: persistencia en core y serialización de eventos | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08, @FabricioPRZ | [x] Revisado por otra persona |
 | ECM-103: editor de zonas en el monitor | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08 | [x] Revisado por otra persona |
 | ECM-110: infraestructura feature-specific y fin del paquete horizontal | @bchanona | @Carlosss2, @Ameth-Toledo | [x] Revisado por otra persona |
+| ECM-112: limpieza final y guardrails del Sprint 10 | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08, @FabricioPRZ | [x] Revisado por otra persona |
 | ECM-104: SLOs, simulacros y tablero | @bchanona | @Carlosss2, @Ameth-Toledo, @MelissaZarate08 | [x] Revisado por otra persona |

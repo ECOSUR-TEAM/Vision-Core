@@ -6,20 +6,22 @@ from typing import get_type_hints
 import numpy as np
 import pytest
 
+from tests.fakes.fake_detector import FakeDetector
+from tests.fakes.fake_door import FakeDoor
+from tests.fakes.fake_reid import FakeReID
+from tests.fakes.fake_video_source import FakeVideoSource
 from vision_core.core.domain.bbox import BBox
 from vision_core.core.domain.event import Event
 from vision_core.core.domain.event_type import EventType
 from vision_core.core.dto import BBoxPayload, FrameLike, JSONValue, ResolvedTrackPayload
 from vision_core.core.serialization import EVENT_SCHEMA_VERSION, dumps_json
+from vision_core.core.serialization.events import event_to_dto, event_to_json
 from vision_core.features.pipeline.application.dto.request.request_process_frame import RequestProcessFrame
 from vision_core.features.pipeline.application.dto.request.request_run_pipeline import RequestRunPipeline
 from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
 from vision_core.features.pipeline.application.dto.response.response_process_frame import ResponseProcessFrame
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import (
-    event_to_dto,
-    event_to_json,
-    resolved_track_to_dto,
-)
+from vision_core.features.pipeline.application.mappers.pipeline_mapper import resolved_track_to_dto
+from vision_core.features.pipeline.application.use_cases.run_pipeline import RunPipeline
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 
 DTO_CLASSES = (
@@ -32,6 +34,17 @@ DTO_CLASSES = (
 
 def _metadata_hint(value: Mapping[str, JSONValue]) -> None:
     return None
+
+
+def _response_event(event: Event) -> ResponsePipelineEvent:
+    payload = event_to_dto(event)
+    return ResponsePipelineEvent(
+        event=payload.event,
+        person_id=payload.person_id,
+        timestamp=payload.timestamp,
+        metadata=payload.metadata,
+        schema_version=payload.schema_version,
+    )
 
 
 def test_request_fields_and_types():
@@ -121,7 +134,7 @@ def test_response_process_frame_contains_people_and_processing_metrics():
     event = Event(EventType.PERSON_ENTERED, "person-1", timestamp=12.5, metadata={"zone": "interior"})
     response = ResponseProcessFrame(
         people=(resolved_track_to_dto(track),),
-        events=(event_to_dto(event),),
+        events=(_response_event(event),),
         processing_ms=1.25,
     )
 
@@ -152,9 +165,35 @@ def test_nested_payloads_are_immutable():
 def test_event_metadata_is_immutable():
     event = Event(EventType.PERSON_ENTERED, "person-1", timestamp=12.5, metadata={"zone": {"name": "interior"}})
 
-    response = event_to_dto(event)
+    response = _response_event(event)
 
     with pytest.raises(TypeError):
         response.metadata["zone"] = "exterior"
     with pytest.raises(TypeError):
         response.metadata["zone"]["name"] = "exterior"
+
+
+def test_run_pipeline_adapter_preserves_serialized_event_fields():
+    recorded: list[Event] = []
+    frame = np.zeros((20, 20, 3), dtype=np.uint8)
+    pipeline = RunPipeline(
+        video=FakeVideoSource([frame]),
+        detector=FakeDetector(),
+        reid=FakeReID(),
+        door=FakeDoor(),
+        embedder=lambda crop: np.zeros(4),
+        on_event=recorded.append,
+    )
+
+    response = pipeline.process_frame(RequestProcessFrame(frame))
+    event = response.events[0]
+    payload = event_to_dto(recorded[0])
+
+    assert event == ResponsePipelineEvent(
+        event=payload.event,
+        person_id=payload.person_id,
+        timestamp=payload.timestamp,
+        metadata=payload.metadata,
+        schema_version=payload.schema_version,
+    )
+    assert event.schema_version == EVENT_SCHEMA_VERSION

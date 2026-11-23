@@ -3,7 +3,7 @@
 from vision_core.core.domain.event import Event
 from vision_core.core.domain.event_identity import idempotency_key_for
 from vision_core.core.dto.event_envelope import EventEnvelope
-from vision_core.core.serialization.event_serializer import event_to_json_dict
+from vision_core.core.serialization.events import event_to_json_dict
 
 
 def envelope_for(event: Event) -> EventEnvelope:

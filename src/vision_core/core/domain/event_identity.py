@@ -4,7 +4,7 @@ import hashlib
 import json
 
 from vision_core.core.domain.event import Event
-from vision_core.core.serialization.event_serializer import event_to_json_dict
+from vision_core.core.serialization.events import event_to_json_dict
 
 
 def idempotency_key_for(event: Event) -> str:

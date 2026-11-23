@@ -9,6 +9,7 @@ JSONValue: TypeAlias = Union[
     int,
     float,
     str,
+    list["JSONValue"],
     tuple["JSONValue", ...],
     Mapping[str, "JSONValue"],
 ]

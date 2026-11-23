@@ -128,6 +128,43 @@ for (const url of globalThis.__URLS__) {
 console.log(JSON.stringify(results));
 """
 
+ZONE_VALIDATION_DRIVER = r"""
+const valid = {
+  version: '1.0', frame_size: [640, 480],
+  exterior: [[0, 0], [320, 0], [320, 479], [0, 479]],
+  interior: [[320, 0], [639, 0], [639, 479], [320, 479]],
+  door: [[290, 120], [350, 120], [350, 420], [290, 420]]
+};
+const short = JSON.parse(JSON.stringify(valid));
+short.door = [[1, 1], [2, 2]];
+const selfCrossing = JSON.parse(JSON.stringify(valid));
+selfCrossing.door = [[300, 100], [500, 400], [350, 120], [350, 420]];
+const oversized = JSON.parse(JSON.stringify(valid));
+oversized.exterior = 'x'.repeat(101 * 1024);
+globalThis.__RESULT__ = JSON.stringify({
+  valid: validateZoneDraft(valid),
+  short: validateZoneDraft(short),
+  crossing: validateZoneDraft(selfCrossing),
+  oversized: validateZoneDraft(oversized),
+});
+console.log(globalThis.__RESULT__);
+"""
+
+ZONE_XSS_DRIVER = r"""
+const payload = '<script>alert(1)</script>';
+const node = zoneLabelNode(payload);
+showZoneIssue(payload);
+const issue = document.getElementById('zoneValidation');
+globalThis.__RESULT__ = JSON.stringify({
+  tag: node.tagName,
+  text: node.textContent,
+  children: node.children.length,
+  issue: issue.textContent,
+  issueChildren: issue.children.length,
+});
+console.log(globalThis.__RESULT__);
+"""
+
 
 def _frontend_files():
     for root in FRONTEND_ROOTS:
@@ -188,6 +225,14 @@ def _image_source_results(urls):
 
 def _render_quality(state):
     return json.loads(_run_monitor_js(state, QUALITY_DRIVER))
+
+
+def _zone_validation_results():
+    return json.loads(_run_monitor_js(None, ZONE_VALIDATION_DRIVER))
+
+
+def _zone_xss_result():
+    return json.loads(_run_monitor_js(None, ZONE_XSS_DRIVER))
 
 
 @pytest.fixture
@@ -305,3 +350,24 @@ def test_unknown_zone_with_prototype_key_falls_back_to_camera_label():
 
     assert "En cámara" in result["texts"]
     assert not any("function" in text for text in result["texts"])
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")
+def test_zone_editor_validates_geometry_and_size_before_saving():
+    result = _zone_validation_results()
+
+    assert result["valid"] is None
+    assert "al menos 3 vértices" in result["short"]
+    assert "cruza consigo mismo" in result["crossing"]
+    assert "tamaño máximo" in result["oversized"]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")
+def test_zone_editor_renders_dynamic_labels_as_text():
+    result = _zone_xss_result()
+
+    assert result["tag"] == "OPTION"
+    assert result["text"] == "<script>alert(1)</script>"
+    assert result["children"] == 0
+    assert result["issue"] == "<script>alert(1)</script>"
+    assert result["issueChildren"] == 0

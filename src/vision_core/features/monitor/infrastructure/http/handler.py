@@ -8,6 +8,7 @@ per-request CSP nonce for the single-page UI.
 """
 
 import io
+import json
 import logging
 import secrets
 import time
@@ -16,8 +17,9 @@ from http.server import BaseHTTPRequestHandler
 from typing import TYPE_CHECKING, cast
 from urllib.parse import SplitResult, parse_qs, urlsplit
 
-from vision_core.core.errors import ValidationError, VisionCoreError, codes
+from vision_core.core.errors import ValidationError, VisionCoreError, ZoneConfigurationError, codes
 from vision_core.core.serialization import dumps_json
+from vision_core.core.validation.zone_payload import MAX_ZONE_PAYLOAD_BYTES, reject_duplicate_json_keys
 from vision_core.features.monitor.application.dto.request.request_frame import RequestFrame
 from vision_core.features.monitor.application.dto.request.request_snapshot import RequestSnapshot
 from vision_core.features.monitor.infrastructure.http.api import API_PREFIX, LEGACY_PREFIX
@@ -75,6 +77,18 @@ _SAFE_ERROR_MESSAGES = {
 }
 
 _FRAME_PARAMETERS = frozenset({"after"})
+
+_ZONE_READ_PATHS = frozenset({f"{API_PREFIX}/zones", f"{LEGACY_PREFIX}/zones"})
+_ZONE_SAVE_PATHS = _ZONE_READ_PATHS
+_ZONE_VALIDATE_PATHS = frozenset({f"{API_PREFIX}/zones/validate", f"{LEGACY_PREFIX}/zones/validate"})
+
+
+def _zone_write_route(method: str, path: str) -> bool:
+    if method == "PUT":
+        return path in _ZONE_SAVE_PATHS
+    if method == "POST":
+        return path in _ZONE_VALIDATE_PATHS
+    return False
 
 
 def csp_for(nonce: str) -> str:
@@ -249,7 +263,18 @@ class Handler(BaseHTTPRequestHandler):
         if not raw.isascii() or not raw.isdigit():
             self._send_error(400, "Invalid Content-Length")
             return True
-        if int(raw) > 0:
+        length = int(raw)
+        try:
+            path = urlsplit(self.path).path
+        except ValueError:
+            path = ""
+        if _zone_write_route(self.command, path):
+            if length > MAX_ZONE_PAYLOAD_BYTES:
+                self._monitor_server.limits_metrics.record("oversized")
+                self._send_error(413, "Payload too large")
+                return True
+            return False
+        if length > 0:
             self._monitor_server.limits_metrics.record("oversized")
             self._send_error(413, "Request body is not allowed")
             return True
@@ -277,6 +302,57 @@ class Handler(BaseHTTPRequestHandler):
         body, kind, code, sequence, retry_after = result
         self._respond(code, kind, body, sequence=sequence, retry_after=retry_after)
 
+    def do_PUT(self):
+        self._write_request("PUT")
+
+    def do_POST(self):
+        self._write_request("POST")
+
+    def _write_request(self, method: str):
+        try:
+            try:
+                url = urlsplit(self.path)
+            except ValueError as error:
+                raise ValidationError("Invalid URL") from error
+            if not _zone_write_route(method, url.path):
+                self._method_not_allowed()
+                return
+            if url.query:
+                raise ValidationError("Query parameters are not allowed")
+            self.close_connection = True
+            document = self._read_json_body()
+            editor = cast("MonitorHTTPServer", self.server).zone_editor
+            headers = dict(self.headers.items())
+            if method == "PUT":
+                response = editor.save(document, headers)
+            else:
+                response = {"zones": editor.validate(document)}
+            body = dumps_json(response).encode()
+        except Exception as error:  # noqa: BLE001 - el contrato HTTP debe seguir siendo JSON
+            self._send_exception(error)
+            return
+        self._respond(200, "application/json", body)
+
+    def _read_json_body(self):
+        content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+        if content_type != "application/json":
+            raise ValidationError("Content-Type must be application/json")
+        lengths = self.headers.get_all("Content-Length") or []
+        length = int(lengths[0]) if lengths else 0
+        remaining = self._deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError
+        self.connection.settimeout(remaining)
+        data = self.rfile.read(length)
+        if len(data) != length:
+            raise ValidationError("Invalid request body")
+        try:
+            return json.loads(data.decode("utf-8"), object_pairs_hook=reject_duplicate_json_keys)
+        except ZoneConfigurationError:
+            raise
+        except (UnicodeError, ValueError) as error:
+            raise ValidationError("Invalid JSON payload") from error
+
     def _route(self, url: SplitResult, query: dict[str, list[str]]):
         path = url.path
         server = cast("MonitorHTTPServer", self.server)
@@ -285,6 +361,17 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValidationError("Query parameters are not allowed")
             page = server.page.replace(b"__CSP_NONCE__", self._nonce.encode("ascii"))
             return page, "text/html; charset=utf-8", 200, None, None
+        if path in _ZONE_READ_PATHS:
+            if query:
+                raise ValidationError("Query parameters are not allowed")
+            editor = server.zone_editor
+            return (
+                dumps_json({"zones": editor.load(), "editor": editor.describe(dict(self.headers.items()))}).encode(),
+                "application/json",
+                200,
+                None,
+                None,
+            )
         if path in (f"{API_PREFIX}/state", f"{LEGACY_PREFIX}/state"):
             if query:
                 raise ValidationError("Query parameters are not allowed")

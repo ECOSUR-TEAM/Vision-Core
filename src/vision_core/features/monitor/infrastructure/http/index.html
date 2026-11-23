@@ -250,6 +250,53 @@
             color: var(--muted)
         }
 
+        .zone-editor {
+            margin-top: 20px;
+            padding: 18px
+        }
+
+        .zone-toolbar,
+        .zone-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 12px
+        }
+
+        .zone-editor select,
+        .zone-editor input,
+        .zone-editor button {
+            font: inherit;
+            padding: 6px 10px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: var(--panel);
+            color: var(--text)
+        }
+
+        .zone-editor button {
+            cursor: pointer;
+            border-color: var(--accent);
+            color: var(--accent)
+        }
+
+        #zoneCanvas {
+            display: block;
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            margin-top: 12px;
+            background: #17201b;
+            border-radius: 8px;
+            cursor: crosshair
+        }
+
+        .zone-validation {
+            font-size: 14px;
+            color: #a32626
+        }
+
         @media(max-width:850px) {
             .workspace {
                 grid-template-columns: minmax(0, 1fr) 230px;
@@ -343,6 +390,26 @@
                 <p id="notice" class="note" hidden><strong>Calibración pendiente.</strong> Más adelante marcaremos la
                     entrada, el interior y la puerta.</p>
                 <p id="qualityNotice" class="note" role="status" hidden></p>
+                <section id="zoneEditor" class="panel zone-editor" aria-label="Editor de zonas" hidden>
+                    <h2>Editor de zonas</h2>
+                    <p class="hint">Dibuja o arrastra vértices sobre el frame. Los cambios son una vista previa hasta que
+                        guardes.</p>
+                    <div class="zone-toolbar">
+                        <label for="zoneSelect">Zona</label>
+                        <select id="zoneSelect"></select>
+                        <button type="button" id="zoneAddToggle">Añadir vértice</button>
+                    </div>
+                    <canvas id="zoneCanvas" width="640" height="480" aria-label="Vista previa de zonas"></canvas>
+                    <p id="zoneValidation" class="zone-validation" role="alert" hidden></p>
+                    <div class="zone-actions">
+                        <label for="zoneToken">Token de edición</label>
+                        <input id="zoneToken" type="password" autocomplete="off">
+                        <label for="zoneUser">Usuario para auditoría</label>
+                        <input id="zoneUser" type="text" autocomplete="off" value="operador">
+                        <button type="button" id="zoneSave">Guardar zonas</button>
+                        <button type="button" id="zoneDiscard">Descartar cambios</button>
+                    </div>
+                </section>
             </section>
             <aside class="panel">
                 <h2>Personas visibles</h2><span class="count" id="visible">—</span>
@@ -374,6 +441,239 @@
             BLURRY_FRAME: 'La imagen está borrosa. Revisa el enfoque de la cámara.',
             EXPOSURE_OUT_OF_RANGE: 'La imagen está demasiado oscura o clara. Revisa la iluminación.',
         };
+
+        const zoneOrder = ['exterior', 'interior', 'door'];
+        const zoneLabels = { exterior: 'Exterior', interior: 'Interior', door: 'Puerta' };
+        const zoneColors = { exterior: '#ffb400', interior: '#00c800', door: '#ff4d4d' };
+        const MAX_ZONE_POINTS = 100;
+        const MAX_ZONE_PAYLOAD_CHARS = 100 * 1024;
+        let zonesOriginal = null, zonesDraft = null, zoneName = 'exterior', addMode = false;
+        let dragIndex = -1, zoneDidDrag = false, zoneFrameImage = null, editorInfo = null;
+
+        function zoneLabelNode(name) {
+            const node = document.createElement('option');
+            node.textContent = Object.hasOwn(zoneLabels, name) ? zoneLabels[name] : name;
+            node.value = name;
+            return node;
+        }
+
+        function cloneZones(document) {
+            return JSON.parse(JSON.stringify(document));
+        }
+
+        function segmentsCross(a, b, c, d) {
+            const cross = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+            const onSegment = (p, q, r) => Math.abs(cross(p, q, r)) < 1e-9
+                && Math.min(p[0], q[0]) <= r[0] && r[0] <= Math.max(p[0], q[0])
+                && Math.min(p[1], q[1]) <= r[1] && r[1] <= Math.max(p[1], q[1]);
+            return (cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0)
+                || onSegment(a, b, c) || onSegment(a, b, d) || onSegment(c, d, a) || onSegment(c, d, b);
+        }
+
+        function validateZoneDraft(draft) {
+            if (!draft || !Array.isArray(draft.frame_size) || draft.frame_size.length !== 2
+                || !draft.frame_size.every(value => Number.isInteger(value) && value > 0)) {
+                return 'frame_size debe tener dos enteros positivos.';
+            }
+            if (JSON.stringify(draft).length > MAX_ZONE_PAYLOAD_CHARS) {
+                return 'El payload supera el tamaño máximo permitido.';
+            }
+            const [width, height] = draft.frame_size;
+            for (const name of zoneOrder) {
+                const label = Object.hasOwn(zoneLabels, name) ? zoneLabels[name] : name;
+                const points = draft[name];
+                if (!Array.isArray(points) || points.length < 3) return label + ': se necesitan al menos 3 vértices.';
+                if (points.length > MAX_ZONE_POINTS) return label + ': demasiados vértices.';
+                for (const point of points) {
+                    if (!Array.isArray(point) || point.length !== 2 || point.some(value => !Number.isFinite(value))) {
+                        return label + ': coordenadas no válidas.';
+                    }
+                    if (point[0] < 0 || point[0] >= width || point[1] < 0 || point[1] >= height) {
+                        return label + ': hay vértices fuera del frame.';
+                    }
+                }
+                if (new Set(points.map(point => point.join(','))).size !== points.length) {
+                    return label + ': vértices repetidos.';
+                }
+                let area = 0;
+                for (let index = 0; index < points.length; index++) {
+                    const a = points[index], b = points[(index + 1) % points.length];
+                    area += a[0] * b[1] - b[0] * a[1];
+                }
+                if (Math.abs(area) < 1e-9) return label + ': el polígono no tiene área.';
+                for (let i = 0; i < points.length; i++) {
+                    const a = points[i], b = points[(i + 1) % points.length];
+                    for (let j = i + 2; j < points.length; j++) {
+                        if (i === 0 && j === points.length - 1) continue;
+                        if (segmentsCross(a, b, points[j], points[(j + 1) % points.length])) {
+                            return label + ': el polígono se cruza consigo mismo.';
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function showZoneIssue(message) {
+            const node = el('zoneValidation');
+            node.textContent = message || '';
+            node.hidden = !message;
+        }
+
+        function drawZones() {
+            if (!zonesDraft) return;
+            const canvas = el('zoneCanvas');
+            if (typeof canvas.getContext !== 'function') return;
+            const ctx = canvas.getContext('2d');
+            const [width, height] = zonesDraft.frame_size;
+            if (canvas.width !== width) canvas.width = width;
+            if (canvas.height !== height) canvas.height = height;
+            ctx.clearRect(0, 0, width, height);
+            if (zoneFrameImage && zoneFrameImage.complete) {
+                ctx.drawImage(zoneFrameImage, 0, 0, width, height);
+            } else {
+                ctx.fillStyle = '#17201b';
+                ctx.fillRect(0, 0, width, height);
+            }
+            for (const name of zoneOrder) {
+                const points = zonesDraft[name];
+                if (!Array.isArray(points) || points.length === 0) continue;
+                ctx.beginPath();
+                ctx.moveTo(points[0][0], points[0][1]);
+                for (let index = 1; index < points.length; index++) ctx.lineTo(points[index][0], points[index][1]);
+                ctx.closePath();
+                ctx.strokeStyle = zoneColors[name];
+                ctx.lineWidth = name === zoneName ? 3 : 2;
+                ctx.stroke();
+                if (name === zoneName) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                    ctx.fill();
+                }
+                points.forEach((point, index) => {
+                    ctx.beginPath();
+                    ctx.arc(point[0], point[1], name === zoneName ? 5 : 3, 0, Math.PI * 2);
+                    ctx.fillStyle = zoneColors[name];
+                    ctx.fill();
+                    if (name === zoneName) {
+                        ctx.fillStyle = '#17201b';
+                        ctx.font = '12px sans-serif';
+                        ctx.fillText(String(index + 1), point[0] + 6, point[1] - 6);
+                    }
+                });
+            }
+        }
+
+        function refreshZones() {
+            showZoneIssue(validateZoneDraft(zonesDraft));
+            drawZones();
+        }
+
+        function zoneCanvasPoint(event) {
+            const canvas = el('zoneCanvas');
+            const rect = canvas.getBoundingClientRect();
+            return [
+                Math.round((event.clientX - rect.left) * canvas.width / Math.max(rect.width, 1)),
+                Math.round((event.clientY - rect.top) * canvas.height / Math.max(rect.height, 1)),
+            ];
+        }
+
+        function zoneVertexAt(point) {
+            const points = zonesDraft[zoneName] || [];
+            for (let index = 0; index < points.length; index++) {
+                if (Math.abs(points[index][0] - point[0]) <= 8 && Math.abs(points[index][1] - point[1]) <= 8) return index;
+            }
+            return -1;
+        }
+
+        async function loadZones() {
+            try {
+                const response = await fetch('/api/v1/zones', { cache: 'no-store', signal: AbortSignal.timeout(3000) });
+                if (!response.ok) {
+                    el('zoneEditor').hidden = true;
+                    return;
+                }
+                const payload = await response.json();
+                zonesOriginal = payload.zones;
+                zonesDraft = cloneZones(zonesOriginal);
+                editorInfo = payload.editor;
+                el('zoneSelect').replaceChildren(...zoneOrder.map(zoneLabelNode));
+                el('zoneSelect').value = zoneName;
+                el('zoneEditor').hidden = false;
+                refreshZones();
+            } catch {
+                el('zoneEditor').hidden = true;
+            }
+        }
+
+        function initZoneEditor() {
+            const canvas = el('zoneCanvas');
+            el('zoneSelect').addEventListener('change', () => {
+                zoneName = el('zoneSelect').value;
+                refreshZones();
+            });
+            el('zoneAddToggle').addEventListener('click', () => {
+                addMode = !addMode;
+                el('zoneAddToggle').textContent = addMode ? 'Añadir vértice (activo)' : 'Añadir vértice';
+                refreshZones();
+            });
+            el('zoneDiscard').addEventListener('click', () => {
+                if (!zonesOriginal) return;
+                zonesDraft = cloneZones(zonesOriginal);
+                refreshZones();
+            });
+            el('zoneSave').addEventListener('click', async () => {
+                const issue = validateZoneDraft(zonesDraft);
+                if (issue) {
+                    showZoneIssue(issue);
+                    return;
+                }
+                try {
+                    const response = await fetch('/api/v1/zones', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + el('zoneToken').value,
+                            'X-Vision-User': el('zoneUser').value,
+                        },
+                        body: JSON.stringify(zonesDraft),
+                        cache: 'no-store',
+                        signal: AbortSignal.timeout(3000),
+                    });
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        showZoneIssue(payload?.error?.message || 'No se pudo guardar.');
+                        return;
+                    }
+                    zonesOriginal = cloneZones(payload.zones);
+                    zonesDraft = cloneZones(payload.zones);
+                    showZoneIssue('Zonas guardadas correctamente.');
+                    refreshZones();
+                } catch {
+                    showZoneIssue('No se pudo conectar con el servidor.');
+                }
+            });
+            canvas.addEventListener('mousedown', event => {
+                dragIndex = zoneVertexAt(zoneCanvasPoint(event));
+                zoneDidDrag = dragIndex >= 0;
+            });
+            canvas.addEventListener('mousemove', event => {
+                if (dragIndex < 0 || !zonesDraft) return;
+                zonesDraft[zoneName][dragIndex] = zoneCanvasPoint(event);
+                zoneDidDrag = true;
+                refreshZones();
+            });
+            canvas.addEventListener('mouseup', () => { dragIndex = -1; });
+            canvas.addEventListener('mouseleave', () => { dragIndex = -1; });
+            canvas.addEventListener('click', event => {
+                if (!addMode || zoneDidDrag || dragIndex >= 0) {
+                    zoneDidDrag = false;
+                    return;
+                }
+                zonesDraft[zoneName].push(zoneCanvasPoint(event));
+                zoneDidDrag = false;
+                refreshZones();
+            });
+        }
 
         function setImageSource(image, url) {
             if (!image || image.tagName !== 'IMG') {
@@ -454,12 +754,18 @@
                     const decoded = new Image();
                     setImageSource(decoded, next);
                     try { await decoded.decode(); } catch (error) { URL.revokeObjectURL(next); throw error; }
+                    zoneFrameImage = decoded;
+                    drawZones();
                     setImageSource(el('video'), next);
                     if (imageUrl) URL.revokeObjectURL(imageUrl);
                     imageUrl = next;
                     lastFrame = Number(response.headers.get('X-Frame-Sequence')); lastImageAt = performance.now(); videoFailed = false;
                 } catch { videoFailed = true; render(); await new Promise(resolve => setTimeout(resolve, 500)); }
             }
+        }
+        if (typeof el('zoneCanvas')?.getContext === 'function') {
+            initZoneEditor();
+            loadZones();
         }
         pollState(); videoLoop();
     </script>

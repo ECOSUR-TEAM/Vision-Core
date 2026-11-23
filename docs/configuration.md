@@ -75,6 +75,9 @@ La precisión configurada debe coincidir con `expected_config.precision` del des
 |---|---|---|
 | `VISION_CORE_ZONES_FILE` | Ninguno | Archivo existente si se usan zonas reales |
 | `VISION_CORE_ZONE_CONFIRMATION_FRAMES` | `3` | Entero positivo |
+| `VISION_CORE_ZONE_EDITOR_ENABLED` | `0` | Booleano; activa rutas y panel del editor |
+| `VISION_CORE_ZONE_EDITOR_TOKEN` | Ninguno | Obligatorio si el editor está activo; no imprimir en logs |
+| `VISION_CORE_ZONE_EDITOR_AUDIT_FILE` | Ninguno | Ruta JSONL opcional para auditoría de guardados |
 | `VISION_CORE_MONITOR_DEMO_ZONES` | `0` | Booleano |
 | `VISION_CORE_MONITOR_UNCALIBRATED` | `0` (Compose: `1`) | Booleano |
 | `VISION_CORE_MONITOR_HOST` | `127.0.0.1` | Host no vacio |

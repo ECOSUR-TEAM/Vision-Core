@@ -179,6 +179,12 @@ class Settings:
         confirmation_frames = integer("VISION_CORE_ZONE_CONFIRMATION_FRAMES", 3)
         demo_zones = boolean("VISION_CORE_MONITOR_DEMO_ZONES", False)
         uncalibrated = boolean("VISION_CORE_MONITOR_UNCALIBRATED", False)
+        editor_enabled = boolean("VISION_CORE_ZONE_EDITOR_ENABLED", False)
+        editor_token = env.get("VISION_CORE_ZONE_EDITOR_TOKEN", "").strip() or None
+        editor_audit_raw = env.get("VISION_CORE_ZONE_EDITOR_AUDIT_FILE", "").strip()
+        editor_audit_file = Path(editor_audit_raw).expanduser() if editor_audit_raw else None
+        if editor_enabled and editor_token is None:
+            errors.append("VISION_CORE_ZONE_EDITOR_TOKEN: obligatorio al habilitar el editor de zonas")
         zones_missing = (
             zones_file is not None
             and validate_startup
@@ -309,7 +315,15 @@ class Settings:
                 reid_ttl,
                 gallery_size,
             ),
-            zones=ZonesSettings(zones_file, confirmation_frames, demo_zones, uncalibrated),
+            zones=ZonesSettings(
+                zones_file,
+                confirmation_frames,
+                demo_zones,
+                uncalibrated,
+                editor_enabled,
+                editor_token,
+                editor_audit_file,
+            ),
             monitor=MonitorSettings(monitor_host, monitor_port, exit_on_error, minimum_free_disk_mb, disk_check_path),
             logging=LoggingSettings(log_level, log_json, camera_id),
             performance=PerformanceSettings(performance_interval),

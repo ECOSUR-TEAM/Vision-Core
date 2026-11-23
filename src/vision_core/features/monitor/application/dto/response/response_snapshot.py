@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from vision_core.core.dto import JSONValue
 from vision_core.core.dto.event_payload import EventPayload
 from vision_core.core.dto.monitor_person_payload import MonitorPersonPayload
+from vision_core.features.monitor.application.dto.response.response_camera_quality import ResponseCameraQuality
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,3 +22,4 @@ class ResponseSnapshot:
     fps: float
     dropped_frames: int
     persistence: Mapping[str, JSONValue] | None
+    camera_quality: ResponseCameraQuality

@@ -9,6 +9,7 @@ import json
 import secrets
 import socket
 import threading
+import time
 import uuid
 from http import HTTPStatus
 from http.server import ThreadingHTTPServer
@@ -25,6 +26,8 @@ MAX_CONNECTIONS = 4
 MAX_LONG_POLLS = 2
 _CSP_PLACEHOLDER = b"__CSP_NONCE__"
 _REQUIRED_PLACEHOLDERS = 2
+_DRAIN_TIMEOUT_SECONDS = 0.05
+_MAX_DRAIN_BYTES = 64 * 1024
 
 
 class MonitorHTTPServer(ThreadingHTTPServer):
@@ -95,7 +98,18 @@ class MonitorHTTPServer(ThreadingHTTPServer):
             pass
         finally:
             try:
-                request.shutdown(socket.SHUT_RDWR)
+                request.shutdown(socket.SHUT_WR)
+            except OSError:
+                pass
+            try:
+                request.settimeout(_DRAIN_TIMEOUT_SECONDS)
+                deadline = time.monotonic() + _DRAIN_TIMEOUT_SECONDS
+                drained = 0
+                while drained < _MAX_DRAIN_BYTES and time.monotonic() < deadline:
+                    chunk = request.recv(min(4096, _MAX_DRAIN_BYTES - drained))
+                    if not chunk:
+                        break
+                    drained += len(chunk)
             except OSError:
                 pass
             request.close()

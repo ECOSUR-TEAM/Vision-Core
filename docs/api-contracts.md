@@ -40,9 +40,15 @@ HTTP es una conveniencia para clientes.
 
 El cuerpo de `/api/v1/state` contiene: `status`, `error`, `demo_zones`, `frame`,
 `updated_at`, `age_seconds`, `people`, `events`, `counts`, `processing_ms`,
-`fps`, `dropped_frames`, `persistence`. Cada elemento de `events` sigue el esquema descrito
-más abajo. El cuerpo no incorpora `camera_id` en G0: la dimension se expone solo
-en `/metrics` y en `profiling_results.json` para preservar este contrato.
+`fps`, `dropped_frames`, `persistence` y `camera_quality`. Cada elemento de
+`events` sigue el esquema descrito más abajo. El cuerpo no incorpora `camera_id`
+en G0: la dimension se expone solo en `/metrics` y en `profiling_results.json`
+para preservar este contrato.
+
+`camera_quality` es un objeto con `status` (`ok` o `degraded`), `reason`
+(`null` o uno de los motivos estables de [calidad de cámara](camera-quality.md))
+y `signals` (mapa de motivo → booleano). Es un campo adicional compatible con
+`v1`: no modifica `status`, por lo que `/ready` y la inferencia no cambian.
 
 ### Envelope de error
 

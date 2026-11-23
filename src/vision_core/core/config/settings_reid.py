@@ -6,6 +6,7 @@ class ReIDSettings:
     model_name: str
     weights_profile: str
     device: str | None
+    precision: str
     threshold: float
     ambiguity_margin: float
     ttl_seconds: float

@@ -101,6 +101,18 @@ globalThis.__RESULT__ = JSON.stringify({ texts, tags, videoSrc: document.getElem
 console.log(globalThis.__RESULT__);
 """
 
+QUALITY_DRIVER = r"""
+state = globalThis.__STATE__;
+lastImageAt = performance.now();
+render();
+globalThis.__RESULT__ = JSON.stringify({
+  hidden: document.getElementById('qualityNotice').hidden,
+  text: document.getElementById('qualityNotice').textContent,
+  statusText: document.getElementById('statusText').textContent,
+});
+console.log(globalThis.__RESULT__);
+"""
+
 IMAGE_SOURCE_DRIVER = r"""
 const video = document.getElementById('video');
 const results = [];
@@ -174,6 +186,10 @@ def _image_source_results(urls):
     return json.loads(_run_monitor_js(None, driver))
 
 
+def _render_quality(state):
+    return json.loads(_run_monitor_js(state, QUALITY_DRIVER))
+
+
 @pytest.fixture
 def monitor_server():
     state = MonitorState()
@@ -241,6 +257,39 @@ def test_image_source_guard_allows_only_monitor_blobs(url, accepted):
     else:
         assert result["error"]
         assert result["src"] == ""
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")
+def test_quality_warning_is_visible_without_blocking_live_view():
+    result = _render_quality(
+        {
+            "status": "running",
+            "demo_zones": False,
+            "people": [],
+            "events": [],
+            "camera_quality": {"status": "degraded", "reason": "BLURRY_FRAME", "signals": {"BLURRY_FRAME": True}},
+        }
+    )
+
+    assert result["hidden"] is False
+    assert "borrosa" in result["text"]
+    assert result["statusText"] == "En vivo"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")
+def test_quality_warning_is_hidden_when_camera_is_ok():
+    result = _render_quality(
+        {
+            "status": "running",
+            "demo_zones": False,
+            "people": [],
+            "events": [],
+            "camera_quality": {"status": "ok", "reason": None, "signals": {}},
+        }
+    )
+
+    assert result["hidden"] is True
+    assert result["text"] == ""
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js es necesario para ejecutar el DOM simulado")

@@ -47,6 +47,9 @@ producir transiciones: estos eventos no representan una puerta real calibrada.
   indica si están dentro, fuera o fuera de las zonas marcadas.
 - Avisos claros cuando la imagen se detiene o se pierde la conexión. Si el navegador
   no recibe una imagen nueva en 2,5 segundos, deja de mostrar el conteo como actual.
+- Un aviso textual no intrusivo cuando la calidad de la cámara está `degraded`;
+  el video y el conteo siguen funcionando. Consulta
+  [calidad de cámara](camera-quality.md) para interpretarlo y actuar.
 
 El panel no muestra FPS, porcentajes, identificadores técnicos, tiempos ni tablas
  de eventos. Estos datos siguen disponibles en `/api/v1/state`. En modo demostración

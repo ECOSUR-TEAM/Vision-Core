@@ -128,9 +128,13 @@ suite en verde. Los paths horizontales antiguos ya no existen: sus contenidos
 están en `core/config/`, `core/contracts/`, `core/telemetry/`,
 `core/inference/`, `core/infrastructure/persistence/`,
 `core/model_registry/` y en los adaptadores de
-`features/<slice>/infrastructure/`. ECM-112 activa reglas automáticas que fallan
-si reaparece cualquiera de esos imports o si aparece una entrada de primer nivel
-fuera de `core/`, `features/` y `scripts/`.
+`features/<slice>/infrastructure/`. `vision_core.shared` desapareció en ECM-106:
+su contenido vive en `core/domain/`, `core/dto/`, `core/errors/`,
+`core/inference/`, `core/serialization/`, `core/telemetry/` y `core/validation/`.
+El HTML del monitor se sirve desde `features/monitor/infrastructure/http/static/`
+desde ECM-110. ECM-112 activa reglas automáticas que fallan si reaparece
+cualquiera de esos imports o si aparece una entrada de primer nivel fuera de
+`core/`, `features/` y `scripts/`.
 
 ### Fuera de alcance
 
@@ -204,4 +208,5 @@ fuera de `core/`, `features/` y `scripts/`.
 | 2026-11-23 | El path `vision_core.core.inference.frame_profiler` queda eliminado sin shim; el import público canónico es `from vision_core.core.telemetry import FrameProfiler, STAGES` | Romper el path legacy de forma explícita tras la migración | ADR 0008 |
 | 2026-11-23 | ECM-108 consolida `ReIDMemory` como `Protocol` canónico en `core/contracts`, elimina el `Protocol` duplicado del slice y actualiza todos los imports | Contrato único compartido entre slices sin identidades de clase duplicadas | ADR 0008 |
 | 2026-11-23 | El path `vision_core.features.reid.domain.ports.reid_memory` queda eliminado sin shim; el import público canónico es `from vision_core.core.contracts import ReIDMemory` | Cumplir la política de migración sin facades ni re-exports | ADR 0008 |
+| 2026-11-23 | ECM-110 confirma el fin del paquete horizontal de infraestructura: el HTML del monitor vive en `features/monitor/infrastructure/http/static/`, `package-data` apunta a ese paquete y los adaptadores/CLI permanecen en sus slices o en `scripts/` | Infraestructura feature-specific, sin shims de compatibilidad | ADR 0008 |
 | 2026-11-23 | ECM-112 mueve el registro de modelos a `core/model_registry/`, activa guardrails para todos los paths horizontales antiguos y restringe el contenido de primer nivel de `src/vision_core` | Cierre final del Sprint 10 con el árbol prohibido por tests | ADR 0008 |

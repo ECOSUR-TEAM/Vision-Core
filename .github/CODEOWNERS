@@ -85,7 +85,7 @@
 # Monitor, HTTP y UI
 /src/vision_core/features/monitor/ @bchanona
 /src/vision_core/features/monitor/infrastructure/ @bchanona
-/src/vision_core/features/monitor/infrastructure/http/index.html @bchanona @Carlosss2
+/src/vision_core/features/monitor/infrastructure/http/static/index.html @bchanona @Carlosss2
 /tests/features/monitor/ @bchanona
 /tests/infrastructure/monitor/ @bchanona
 /tests/contracts/test_monitor_contract.py @bchanona

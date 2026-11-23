@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import pytest
 
-from vision_core.features.video.application.mappers.video_mapper import validate_frame
+from vision_core.core.validation import validate_frame
 from vision_core.features.video.infrastructure.adapters.rtsp_video_source import (
     RtspVideoSource,
 )

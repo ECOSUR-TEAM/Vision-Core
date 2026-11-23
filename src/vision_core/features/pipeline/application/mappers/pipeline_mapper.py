@@ -1,55 +1,11 @@
-"""Mappers between pipeline domain entities and transport DTOs, plus event JSON serializers."""
+"""Mappers between pipeline domain entities and transport DTOs."""
 
-from vision_core.core.domain.event import Event
-from vision_core.core.dto import JSONValue
 from vision_core.core.dto.bbox_payload import BBoxPayload
 from vision_core.core.dto.resolved_track_payload import ResolvedTrackPayload
-from vision_core.core.serialization import dumps_json, to_json_value
-from vision_core.core.validation import (
-    bounded_int,
-    finite_bbox,
-    finite_float,
-    finite_unit_float,
-    json_metadata,
-    required_str,
-)
-from vision_core.features.pipeline.application.dto.response.response_pipeline_event import ResponsePipelineEvent
+from vision_core.core.validation import bounded_int, finite_bbox, finite_unit_float, required_str
 from vision_core.features.pipeline.domain.entities.resolved_track import ResolvedTrack
 
-__all__ = [
-    "event_to_dto",
-    "event_to_json",
-    "event_to_json_dict",
-    "resolved_track_to_dto",
-]
-
-
-def event_to_dto(event: Event) -> ResponsePipelineEvent:
-    return ResponsePipelineEvent(
-        event=required_str(event.event, "event"),
-        person_id=required_str(event.person_id, "person_id"),
-        timestamp=finite_float(event.timestamp, "timestamp"),
-        metadata=json_metadata(event.metadata),
-    )
-
-
-def event_to_json_dict(event: Event) -> dict[str, JSONValue]:
-    """Public JSON serializer injected into monitor; not a DTO mapper.
-
-    Domain events are converted through ``event_to_dto`` first, so validation
-    stays in the mapper and this function only produces the JSON-ready object.
-    """
-    payload = to_json_value(event_to_dto(event))
-    if not isinstance(payload, dict):
-        raise ValueError("Event DTO must serialize to a JSON object")
-    return payload
-
-
-def event_to_json(event: Event) -> str:
-    try:
-        return dumps_json(event_to_dto(event))
-    except ValueError as exc:
-        raise ValueError(f"Cannot serialize event {event.event!r} as JSON: {exc}") from exc
+__all__ = ["resolved_track_to_dto"]
 
 
 def resolved_track_to_dto(track: ResolvedTrack) -> ResolvedTrackPayload:

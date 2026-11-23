@@ -437,7 +437,7 @@ python -m pytest tests/test_one_class_per_file.py -q
 
 ## Seguridad de UI y output encoding
 
-El monitor servido por `src/vision_core/features/monitor/infrastructure/http/index.html` trata
+El monitor servido por `src/vision_core/features/monitor/infrastructure/http/static/index.html` trata
 **todo** dato que llega de `/api/v1/state` como texto no confiable, incluyendo
 `person_id`, `display_name`, zonas y `metadata`.
 

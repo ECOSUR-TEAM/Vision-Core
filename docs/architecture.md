@@ -116,6 +116,11 @@ desde DTOs.
   PNG), se sirven como `image/jpeg` y `to_json_value` los sustituye por `null`
   en JSON (nunca viaja su contenido binario); los floats no finitos se
   rechazan con contexto.
+- Serialización de eventos: `core/serialization/events.py` concentra la
+  implementación de `event_to_payload`, `event_to_json_dict` y `event_to_json`.
+  Devuelve el payload versionado de `core/dto` y es consumido por persistencia,
+  monitor, scripts y el composition root; los mappers de puerta y pipeline sólo
+  conservan adaptadores delgados y no reimplementan la serialización.
 
 La convención normativa está en
 [ADR-0001, § Convención DTO](adr/0001-screaming-architecture-vertical-slice.md#convención-dto).

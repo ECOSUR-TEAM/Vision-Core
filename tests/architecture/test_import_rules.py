@@ -145,6 +145,7 @@ def test_core_layout_is_present():
         "vision_core.core.errors.codes",
         "vision_core.core.model_registry",
         "vision_core.core.serialization",
+        "vision_core.core.serialization.events",
         "vision_core.core.telemetry",
         "vision_core.core.validation",
     ],
@@ -179,6 +180,16 @@ def test_no_legacy_package_imports_remain(name):
                 if module == prefix or module.startswith(f"{prefix}."):
                     violations.append((path.as_posix(), module))
     assert not violations, f"legacy import boundary violated for {name}: {violations}"
+
+
+def test_monitor_static_asset_owners_are_current():
+    codeowners = (PROJECT_ROOT / ".github" / "CODEOWNERS").read_text(encoding="utf-8")
+    static_asset = "/src/vision_core/features/monitor/infrastructure/http/static/index.html"
+    legacy_asset = "/src/vision_core/features/monitor/infrastructure/http/index.html"
+
+    assert static_asset in codeowners
+    assert legacy_asset not in codeowners
+    assert (SRC / "features" / "monitor" / "infrastructure" / "http" / "static" / "index.html").is_file()
 
 
 def test_legacy_import_rule_detects_every_forbidden_prefix():
@@ -220,6 +231,18 @@ def test_legacy_import_rule_detects_dynamic_and_alias_imports(tmp_path, monkeypa
 
     with pytest.raises(AssertionError, match=f"legacy import boundary violated for {legacy_name}"):
         test_no_legacy_package_imports_remain(legacy_name)
+
+
+def test_no_vision_core_infrastructure_imports_remain():
+    roots = (SRC, PROJECT_ROOT / "tests", PROJECT_ROOT / "main.py")
+    violations = []
+    for root in roots:
+        paths = (root,) if root.is_file() else _python_files(root)
+        for path in paths:
+            for module in _imports(path):
+                if module == "vision_core.infrastructure" or module.startswith("vision_core.infrastructure."):
+                    violations.append((path.as_posix(), module))
+    assert not violations, f"legacy infrastructure import boundary violated: {violations}"
 
 
 def test_core_rule_detects_forbidden_imports(tmp_path, monkeypatch):

@@ -12,12 +12,12 @@ import torch
 from vision_core.core.config import Settings
 from vision_core.core.errors import VisionCoreError, codes
 from vision_core.core.model_registry.activation import resolve_active_models
+from vision_core.core.serialization.events import event_to_json_dict
 from vision_core.features.detection.infrastructure.adapters.yolo_detector_manager import (
     YoloDetectorManager,
 )
 from vision_core.features.door.infrastructure.adapters.polygon_door_analytics import PolygonDoorAnalytics
 from vision_core.features.door.infrastructure.config.zone_loader import load_zones
-from vision_core.features.pipeline.application.mappers.pipeline_mapper import event_to_json_dict
 from vision_core.features.reid.infrastructure.adapters.embedder import TorchvisionEmbeddingExtractor
 from vision_core.features.reid.infrastructure.adapters.memory_reid import InMemoryReID
 from vision_core.features.video.infrastructure.adapters.file_video_source import FileVideoSource

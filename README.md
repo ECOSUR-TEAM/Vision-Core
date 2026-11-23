@@ -228,6 +228,8 @@ temporales; no identifican nombres ni rostros. Mientras no calibremos la sala,
 `VISION_CORE_MONITOR_UNCALIBRATED=1` evita inventar cruces de puerta.
 
 [Detalles del monitor](docs/monitor.md). La interfaz de Frigate sigue en 15000.
+Para recalibrar polígonos desde el navegador, activa explícitamente el
+[editor de zonas](docs/zone-editor.md) con token y archivo de auditoría.
 
 ## Validación manual con Python
 

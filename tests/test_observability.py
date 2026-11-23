@@ -63,6 +63,16 @@ def test_metrics_counter_gauge_and_histogram():
     assert payload["gauges"]["vision_core_fps"] == 24.5
     assert payload["histograms"]["vision_core_frame_processing_duration_ms"]["count"] == 2
     assert payload["histograms"]["vision_core_frame_processing_duration_ms"]["avg"] == 15
+    assert payload["histograms"]["vision_core_frame_processing_duration_ms"]["p95"] == 18
+
+
+def test_metric_histogram_exposes_p95_for_slo_dashboard():
+    metrics = ObservabilityMetrics()
+    for value in (10, 20, 30, 40, 50, 60, 70, 80, 90, 1000):
+        metrics.observe("vision_core_frame_processing_duration_ms", value)
+
+    histogram = metrics.snapshot()["histograms"]["vision_core_frame_processing_duration_ms"]
+    assert histogram["p95"] == 1000
 
 
 def test_metrics_keep_legacy_keys_and_add_camera_labels():

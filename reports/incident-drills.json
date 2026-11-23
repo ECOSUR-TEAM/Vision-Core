@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "kind": "incident-drills",
+  "mode": "synthetic",
+  "generated_at": "2026-11-23T19:53:53Z",
+  "catalog_codes": [
+    "CONFIGURATION_INVALID",
+    "INTERNAL_ERROR",
+    "MODEL_INPUT_INVALID",
+    "MODEL_UNAVAILABLE",
+    "PIPELINE_CALIBRATION_MISMATCH",
+    "PIPELINE_FAILED",
+    "REID_INPUT_INVALID",
+    "REID_MODEL_INVALID",
+    "REID_MODEL_UNAVAILABLE",
+    "REQUEST_NOT_FOUND",
+    "VALIDATION_FAILED",
+    "VIDEO_FRAME_INVALID",
+    "VIDEO_FRAME_PENDING",
+    "VIDEO_SOURCE_MISSING",
+    "VIDEO_SOURCE_STATE",
+    "VIDEO_SOURCE_UNAVAILABLE",
+    "ZONE_CONFIG_INVALID",
+    "ZONE_EDITOR_FORBIDDEN",
+    "ZONE_GEOMETRY_INVALID"
+  ],
+  "quality_reasons": [
+    "BLURRY_FRAME",
+    "EXPOSURE_OUT_OF_RANGE",
+    "FROZEN_FRAME",
+    "RESOLUTION_MISMATCH",
+    "ZONES_STALE"
+  ],
+  "exercised_codes": [
+    "CONFIGURATION_INVALID",
+    "FROZEN_FRAME",
+    "MODEL_UNAVAILABLE",
+    "PIPELINE_FAILED",
+    "VALIDATION_FAILED",
+    "VIDEO_FRAME_PENDING",
+    "VIDEO_SOURCE_UNAVAILABLE"
+  ],
+  "drills": [
+    {
+      "id": "rtsp_disconnected",
+      "title": "RTSP desconectado",
+      "slo_id": "camera_recovery",
+      "mode": "synthetic",
+      "measured": false,
+      "status": "passed",
+      "detection_seconds": 1.0,
+      "recovery_seconds": 12.0,
+      "detection_objective_seconds": 1.0,
+      "recovery_objective_seconds": 12.0,
+      "error_codes": [
+        "VIDEO_SOURCE_UNAVAILABLE",
+        "VIDEO_FRAME_PENDING"
+      ],
+      "signals": [
+        "vision_core_reconnections_total",
+        "vision_core_errors_total"
+      ],
+      "finding": "El monitor marca stale y /ready cae; la reconexión restaura /ready sin reiniciar el proceso.",
+      "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md",
+      "evidence": "RTSP desconectado: latencia simulada de detección 1.00s (objetivo 1.00s) y recuperación 12.00s (objetivo 12.00s); El monitor marca stale y /ready cae; la reconexión restaura /ready sin reiniciar el proceso."
+    },
+    {
+      "id": "frozen_frame",
+      "title": "Frame congelado",
+      "slo_id": "frame_freshness",
+      "mode": "synthetic",
+      "measured": false,
+      "status": "passed",
+      "detection_seconds": 0.5,
+      "recovery_seconds": 1.5,
+      "detection_objective_seconds": 0.5,
+      "recovery_objective_seconds": 1.5,
+      "error_codes": [
+        "FROZEN_FRAME"
+      ],
+      "signals": [
+        "vision_core_camera_quality_degraded_total",
+        "/api/v1/state.age_seconds"
+      ],
+      "finding": "La calidad degrada sin cortar el video; el aviso es textual y no bloquea el conteo.",
+      "runbook": "docs/runbooks/02-camara-caida-o-rtsp-inestable.md",
+      "evidence": "Frame congelado: latencia simulada de detección 0.50s (objetivo 0.50s) y recuperación 1.50s (objetivo 1.50s); La calidad degrada sin cortar el video; el aviso es textual y no bloquea el conteo."
+    },
+    {
+      "id": "weights_missing",
+      "title": "Pesos de modelo ausentes o corruptos",
+      "slo_id": "monitor_availability",
+      "mode": "synthetic",
+      "measured": false,
+      "status": "passed",
+      "detection_seconds": 0.5,
+      "recovery_seconds": 4.0,
+      "detection_objective_seconds": 0.5,
+      "recovery_objective_seconds": 4.0,
+      "error_codes": [
+        "MODEL_UNAVAILABLE",
+        "CONFIGURATION_INVALID"
+      ],
+      "signals": [
+        "/ready.checks.model",
+        "vision_core_errors_total"
+      ],
+      "finding": "/ready pasa a 503 antes de abrir stream; el arranque falla temprano con código estable.",
+      "runbook": "docs/runbooks/03-modelo-no-encontrado-o-error-de-inferencia.md",
+      "evidence": "Pesos de modelo ausentes o corruptos: latencia simulada de detección 0.50s (objetivo 0.50s) y recuperación 4.00s (objetivo 4.00s); /ready pasa a 503 antes de abrir stream; el arranque falla temprano con código estable."
+    },
+    {
+      "id": "event_sink_down",
+      "title": "Sink de eventos caído",
+      "slo_id": "event_delivery",
+      "mode": "synthetic",
+      "measured": false,
+      "status": "passed",
+      "detection_seconds": 2.0,
+      "recovery_seconds": 18.0,
+      "detection_objective_seconds": 2.0,
+      "recovery_objective_seconds": 18.0,
+      "error_codes": [
+        "PIPELINE_FAILED",
+        "VALIDATION_FAILED"
+      ],
+      "signals": [
+        "vision_core_events_emitted_total",
+        "/api/v1/state.persistence.failures"
+      ],
+      "finding": "La persistencia falla en modo fail-open; el pipeline sigue y contabiliza fallos.",
+      "runbook": "docs/runbooks/06-no-se-generan-eventos.md",
+      "evidence": "Sink de eventos caído: latencia simulada de detección 2.00s (objetivo 2.00s) y recuperación 18.00s (objetivo 18.00s); La persistencia falla en modo fail-open; el pipeline sigue y contabiliza fallos."
+    },
+    {
+      "id": "disk_full",
+      "title": "Disco lleno",
+      "slo_id": "monitor_availability",
+      "mode": "synthetic",
+      "measured": false,
+      "status": "passed",
+      "detection_seconds": 1.0,
+      "recovery_seconds": 9.0,
+      "detection_objective_seconds": 1.0,
+      "recovery_objective_seconds": 9.0,
+      "error_codes": [
+        "PIPELINE_FAILED"
+      ],
+      "signals": [
+        "/ready.checks.disk",
+        "/api/v1/state.persistence.failures"
+      ],
+      "finding": "/ready marca disk=false y la retención deja de escribir sin tumbar el monitor.",
+      "runbook": "docs/runbooks/04-disco-lleno-y-retencion.md",
+      "evidence": "Disco lleno: latencia simulada de detección 1.00s (objetivo 1.00s) y recuperación 9.00s (objetivo 9.00s); /ready marca disk=false y la retención deja de escribir sin tumbar el monitor."
+    },
+    {
+      "id": "container_restart",
+      "title": "Reinicio del contenedor",
+      "slo_id": "monitor_availability",
+      "mode": "synthetic",
+      "measured": false,
+      "status": "passed",
+      "detection_seconds": 0.5,
+      "recovery_seconds": 15.0,
+      "detection_objective_seconds": 0.5,
+      "recovery_objective_seconds": 15.0,
+      "error_codes": [
+        "VIDEO_SOURCE_UNAVAILABLE"
+      ],
+      "signals": [
+        "/health.status",
+        "/metrics.uptime_seconds"
+      ],
+      "finding": "El contenedor vuelve a /health alive; los IDs de sesión y el historial volátil se reinician.",
+      "runbook": "docs/runbooks/01-arranque-y-parada.md",
+      "evidence": "Reinicio del contenedor: latencia simulada de detección 0.50s (objetivo 0.50s) y recuperación 15.00s (objetivo 15.00s); El contenedor vuelve a /health alive; los IDs de sesión y el historial volátil se reinician."
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}
